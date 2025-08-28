@@ -15,8 +15,15 @@ export async function GET(req: Request) {
   const q = (searchParams.get('q') || '').trim()
   if (!q) return NextResponse.json({ items: [] })
 
+  // Not: Bazı Prisma kurulumlarında StringFilter'da `mode` yok (tip hatası veriyor).
+  // Bu yüzden case-insensitive için `mode` kullanmadan, hem ad hem e-posta üzerinden arıyoruz.
   const items = await prisma.user.findMany({
-    where: { name: { contains: q, mode: 'insensitive' as any } },
+    where: {
+      OR: [
+        { name: { contains: q } },
+        { email: { contains: q } },
+      ],
+    },
     take: 20,
     select: { id: true, name: true, email: true },
   })

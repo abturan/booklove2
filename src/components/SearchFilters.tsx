@@ -1,9 +1,11 @@
+// src/components/SearchFilters.tsx
+
 'use client'
 
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import Input from '@/components/ui/Input'
-import Select from '@/components/ui/Select'
+import Input from '@/components/ui/input'
+import Select from '@/components/ui/select'
 
 type SortKey = 'members_desc' | 'members_asc' | 'created_desc' | 'created_asc'
 
@@ -35,7 +37,7 @@ export default function SearchFilters() {
   }, [debouncedQ, sort])
 
   return (
-    <div className="sticky top-[72px] z-20">
+    <div className=" top-[72px] z-20">
       <div className="rounded-2xl border border-gray-100 bg-white/70 backdrop-blur p-3 shadow-sm">
         <div className="flex items-center gap-3">
           {/* geniş arama */}

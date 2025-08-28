@@ -86,14 +86,20 @@ export async function PUT(
       }
 
       const updated = await prisma.$transaction(async (tx) => {
+        // Diğer kulübün moderatörünü, bu kulübün eski moderatörüne ata (null yerine swap)
+        if (!current.moderatorId) {
+          throw new Error('Mevcut kulübün eski moderatörü bulunamadı.')
+        }
         await tx.club.update({
           where: { id: other.id },
-          data: { moderatorId: null },
+          data: { moderatorId: current.moderatorId },
         })
+
         await tx.user.update({
           where: { id: moderatorId },
           data: { role: 'MODERATOR' as any },
         })
+
         return tx.club.update({
           where: { id: params.id },
           data: {

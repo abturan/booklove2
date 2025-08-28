@@ -1,4 +1,3 @@
-// src/lib/auth.ts
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
@@ -6,7 +5,7 @@ import { prisma } from './prisma'
 
 declare module 'next-auth' {
   interface User {
-    id: string
+    id?: string
     role: 'ADMIN' | 'MODERATOR' | 'USER' | string
     avatarUrl?: string | null
   }
@@ -32,6 +31,12 @@ declare module 'next-auth/jwt' {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt' },
+  // 🔒 Hata ve giriş sayfasını sabitliyoruz: hata olursa hep /auth/signin'de kal
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/signin',
+  },
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     Credentials({
       name: 'credentials',
@@ -42,8 +47,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(creds) {
         if (!creds?.email || !creds?.password) return null
 
+        const email = String(creds.email).trim()
+        const password = String(creds.password)
+
         const user = await prisma.user.findUnique({
-          where: { email: creds.email },
+          where: { email },
           select: {
             id: true,
             email: true,
@@ -55,7 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
         if (!user || !user.passwordHash) return null
 
-        const ok = await bcrypt.compare(creds.password, user.passwordHash)
+        const ok = await bcrypt.compare(password, user.passwordHash)
         if (!ok) return null
 
         return {
@@ -71,7 +79,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
+        token.id = (user as any).id
         token.role = (user as any).role ?? 'USER'
         token.avatarUrl = (user as any).avatarUrl ?? null
       }

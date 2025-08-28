@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import ClubEditorForm from '@/components/admin/ClubEditorForm'
+import ClubCreateForm from '@/components/admin/ClubCreateForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,15 +11,7 @@ export default async function NewClubPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Yeni kulüp oluştur</h1>
-      <ClubEditorForm
-        mode="create"
-        initial={{
-          name: '',
-          description: '',
-          priceTRY: 0,
-          bannerUrl: '',
-        }}
-      />
+      <ClubCreateForm />
     </div>
   )
 }

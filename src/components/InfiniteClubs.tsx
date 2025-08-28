@@ -10,11 +10,13 @@ type Club = {
   id: string
   slug: string
   name: string
-  bannerUrl?: string | null
-  priceTRY?: number | null
-  moderator?: { name?: string | null } | null
-  memberCount?: number | null
-  pickCount?: number | null
+  bannerUrl: string | null
+  priceTRY: number
+  description: string | null          
+  moderator: { id: string; name: string } | null  
+  memberCount: number                 
+  pickCount: number
+
 }
 
 /** API’den gelen veriyi güvenli Club tipine dönüştürür. Uymayanları eler. */
@@ -29,21 +31,27 @@ function normalizeClub(x: RawClub, fallbackKey: string): Club | null {
     id: id || `tmp-${fallbackKey}`,
     slug,
     name,
+    description: x.description ?? null,     
     bannerUrl: x.bannerUrl ?? null,
-    priceTRY: typeof x.priceTRY === 'number' ? x.priceTRY : null,
-    moderator: x.moderator ?? (x.owner ? { name: x.owner?.name } : null) ?? null,
+    priceTRY: typeof x.priceTRY === 'number' ? x.priceTRY : 0,
+    moderator: x.moderator
+      ? { id: x.moderator.id ?? '', name: x.moderator.name ?? '' }
+      : x.owner
+      ? { id: x.owner.id ?? '', name: x.owner.name ?? '' }
+      : null,
     memberCount:
-      typeof x.memberCount === 'number'
-        ? x.memberCount
-        : typeof x._count?.memberships === 'number'
-        ? x._count.memberships
-        : null,
+    typeof x.memberCount === 'number'
+      ? x.memberCount
+      : typeof x._count?.memberships === 'number'
+      ? x._count.memberships
+      : 0,                       
     pickCount:
-      typeof x.pickCount === 'number'
-        ? x.pickCount
-        : Array.isArray(x.picks)
-        ? x.picks.length
-        : null,
+    typeof x.pickCount === 'number'
+      ? x.pickCount
+      : Array.isArray(x.picks)
+      ? x.picks.length
+      : 0,
+
   }
 }
 

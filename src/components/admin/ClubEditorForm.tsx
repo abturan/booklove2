@@ -350,7 +350,7 @@ export default function ClubEditorForm({
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-        <div className="relative w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
+        <div className="relative w-full  rounded-2xl bg-white p-5 shadow-xl w-full max-w-2xl bg-white rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
           <h3 className="text-lg font-semibold mb-3">
             {mode === 'new' ? 'Yeni program ekle' : 'Programı düzenle'}
           </h3>
@@ -406,7 +406,7 @@ export default function ClubEditorForm({
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600">Kapak yükle / URL</label>
+              <label className="block text-sm text-gray-600 pb-5">Kapak yükle / URL</label>
               <div className="flex gap-3">
                 <label className="inline-block">
                   <input
@@ -420,7 +420,7 @@ export default function ClubEditorForm({
                   </span>
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   placeholder="https://…"
                   className="flex-1 rounded-2xl border px-3 py-2"
                   value={coverUrl}
@@ -429,6 +429,7 @@ export default function ClubEditorForm({
                     if (e.target.value) setCoverFile(null)
                   }}
                 />
+                
               </div>
             </div>
 
@@ -494,7 +495,7 @@ export default function ClubEditorForm({
   return (
     <>
       {/* Kulüp formu */}
-      <form onSubmit={submitClub} className="space-y-8 max-w-3xl">
+      <form onSubmit={submitClub} className="space-y-8">
         {/* Banner */}
         <section className="rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-3 shadow-sm">
           <h2 className="text-base font-medium">Banner görseli</h2>
@@ -686,7 +687,7 @@ export default function ClubEditorForm({
       </form>
 
       {/* Programlar */}
-      <section className="mt-10 max-w-3xl rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-4 shadow-sm">
+      <section className="mt-10  rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-medium">Programlar</h2>
           <button

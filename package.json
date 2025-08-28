@@ -3,12 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start -p 3000",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "seed": "ts-node --compiler-options '{\"module\":\"commonjs\"}' prisma/seed.ts"
+    
   },
   "dependencies": {
     "@prisma/client": "^5.17.0",
@@ -29,6 +30,8 @@
     "@types/react": "18.2.66",
     "@types/react-dom": "18.2.22",
     "autoprefixer": "10.4.19",
+    "cross-env": "^10.0.0",
+    "detect-port": "^2.1.0",
     "postcss": "8.4.38",
     "prisma": "^5.17.0",
     "tailwindcss": "3.4.10",
