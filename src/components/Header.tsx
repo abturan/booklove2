@@ -1,9 +1,11 @@
+//src/components/Header.tsx
 'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
+import Image from 'next/image';
 
 export default function Header() {
   const { data: session, status } = useSession()
@@ -17,13 +19,17 @@ export default function Header() {
     <header className="border-b bg-white/70 backdrop-blur">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="font-semibold">
-          
+          <Image
+            src="logo-fixed.svg"           
+            alt="boook.love"
+            width={200}
+            height={32}
+            priority
+            className="rounded-md"
+          />
         </Link>
 
-        <nav className="flex items-center gap-6 text-sm">
-          <Link className={isActive('/')} href="/">Ana sayfa</Link>
-          <Link className={isActive('/clubs')} href="/clubs">Kulüpler</Link>
-        </nav>
+        
 
         <div className="flex items-center gap-2">
           {status === 'loading' && (

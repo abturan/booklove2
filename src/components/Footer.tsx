@@ -1,14 +1,16 @@
+import Link from 'next/link';
+
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t">
-      <div className="container mx-auto px-4 py-8 text-sm text-gray-600 flex flex-col md:flex-row items-center justify-between gap-2">
-        <p>© {new Date().getFullYear()} Boook.Love</p>
-        <div className="flex gap-4">
-          <a href="#" className="hover:underline">Hakkında</a>
-          <a href="#" className="hover:underline">Gizlilik</a>
-          <a href="#" className="hover:underline">İletişim</a>
-        </div>
+    <footer className="mt-auto border-t border-neutral-200 bg-white/70 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+        <p className="text-neutral-600">© {new Date().getFullYear()} bo❤️ok.love — Tüm hakları saklıdır.</p>
+        <nav className="flex items-center gap-5">
+          <Link href="/about" className="text-neutral-600 hover:text-black">Hakkında</Link>
+          <Link href="/privacy" className="text-neutral-600 hover:text-black">Gizlilik</Link>
+          <Link href="/contact" className="text-neutral-600 hover:text-black">İletişim</Link>
+        </nav>
       </div>
     </footer>
-  )
+  );
 }

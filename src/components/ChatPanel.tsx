@@ -80,7 +80,7 @@ export default function ChatPanel({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           className="flex-1 h-11 px-3 rounded-xl border"
-          placeholder="@isim yazarak etiketleyebilir, 🙂 gibi emojiler kullanabilirsin…"
+          placeholder=" 🙂 gibi emojiler kullanabilirsin…"
         />
         <button
           onClick={send}
