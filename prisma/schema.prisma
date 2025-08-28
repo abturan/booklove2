@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+  name         String
+  // Eğer daha önce enum kullanıyorsanız kendi satırınızı koruyun:
+  // role       AppRole  @default(USER)
+  // SQLite kullanıyorsanız string de olabilir:
+  role         String @default("USER")
+
+  avatarUrl  String?
+  city       String?
+  bio        String?
+  lastSeenAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // İlişkiler
+  Club          Club?           @relation("ClubModerator")
+  Memberships   Membership[]
+  Subscriptions Subscription[]
+  // Bildirimler için KARŞI ALAN (yoktu → eklendi)
+  Notifications Notification[]
+  PaymentIntent PaymentIntent[]
+  ChatMessage   ChatMessage[]
+  
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  type      String // 'MENTION' vb.
+  payload   String // JSON yerine string (SQLite JSON desteklemez)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  country     String   @default("Türkiye")
+  city        String?
+  bannerUrl   String?
+  priceTRY    Int      @default(49)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  published   Boolean  @default(false) // 👈 eklendi
+
+
+  moderatorId String @unique
+  moderator   User   @relation("ClubModerator", fields: [moderatorId], references: [id])
+
+  // Relations
+  memberships    Membership[]
+  picks          ClubPick[]
+  events         ClubEvent[]
+  chatRoom       ChatRoom?
+  subscriptions  Subscription[]
+  paymentIntents PaymentIntent[]
+}
+
+model Membership {
+  id       String   @id @default(cuid())
+  userId   String
+  clubId   String
+  role     String   @default("MEMBER") // was MemberRole enum
+  isActive Boolean  @default(true)
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  club Club @relation(fields: [clubId], references: [id])
+
+  @@unique([userId, clubId])
+}
+
+model Subscription {
+  id         String    @id @default(cuid())
+  userId     String
+  clubId     String
+  active     Boolean   @default(false)
+  startedAt  DateTime?
+  canceledAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  club Club @relation(fields: [clubId], references: [id])
+
+  @@unique([userId, clubId])
+}
+
+model PaymentIntent {
+  id        String   @id @default(cuid())
+  userId    String
+  clubId    String
+  amountTRY Int
+  status    String   @default("REQUIRES_PAYMENT") // was PaymentStatus enum
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  club Club @relation(fields: [clubId], references: [id])
+}
+
+model Book {
+  id         String  @id @default(cuid())
+  title      String
+  author     String
+  translator String?
+  pages      Int?
+  isbn       String?
+  coverUrl   String?
+
+  picks ClubPick[]
+}
+
+model ClubPick {
+  id        String  @id @default(cuid())
+  clubId    String
+  bookId    String
+  monthKey  String
+  isCurrent Boolean @default(false)
+  note      String?
+
+  club Club @relation(fields: [clubId], references: [id])
+  book Book @relation(fields: [bookId], references: [id])
+
+  @@unique([clubId, monthKey])
+}
+
+model ClubEvent {
+  id       String   @id @default(cuid())
+  clubId   String
+  startsAt DateTime
+  title    String   @default("Aylık Oturum")
+  notes    String?
+  club     Club     @relation(fields: [clubId], references: [id])
+}
+
+model ChatRoom {
+  id       String        @id @default(cuid())
+  clubId   String        @unique
+  club     Club          @relation(fields: [clubId], references: [id])
+  messages ChatMessage[]
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  authorId  String
+  body      String
+  quotedId  String?
+  createdAt DateTime @default(now())
+
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  author User     @relation(fields: [authorId], references: [id])
+
+  quoted   ChatMessage?  @relation("Quote", fields: [quotedId], references: [id])
+  quotedBy ChatMessage[] @relation("Quote")
+}

@@ -1,0 +1,95 @@
+# =========================
+# Genel / Node.js
+# =========================
+node_modules/
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Paket yöneticisi artıkları
+.npm/
+.pnpm-store/
+
+# =========================
+# Next.js
+# =========================
+.next/
+out/
+.vercel/
+.turbo/
+
+# Next.js build cache (bazı ortamlarda ayrı tutulur)
+.next/cache/
+
+# =========================
+# TypeScript
+# =========================
+*.tsbuildinfo
+
+# =========================
+# Test / Coverage
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# Ortam Değişkenleri
+# (örnek dosyayı repo’da tut)
+# =========================
+.env
+.env.*.local
+.env.local
+!.env.example
+
+# =========================
+# Prisma / SQLite (geliştirme)
+# migrations klasörünü commit’le
+# =========================
+prisma/*.db
+prisma/*.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+
+# =========================
+# Kullanıcı Yüklemeleri
+# (statik yüklemeleri repo dışında tut)
+# =========================
+public/uploads/*
+!public/uploads/.gitkeep
+
+# =========================
+# Editör / IDE
+# =========================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+.idea/
+.history/
+*.code-workspace
+
+# =========================
+# Mac / Sistem
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+Thumbs.db
+
+# =========================
+# Yarn v2+ (Berry)
+# Zero-installs kullanmıyorsan:
+# =========================
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/patches
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

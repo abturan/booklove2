@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 255 255 255;
+}
+
+body {
+  @apply bg-gradient-to-br from-rose-50 via-white to-sky-50 text-gray-900;
+}
+
+.container {
+  @apply mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.card {
+  @apply bg-white/80 backdrop-blur rounded-3xl shadow-soft;
+}
