@@ -3,89 +3,74 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id           String @id @default(cuid())
-  email        String @unique
-  passwordHash String
-  name         String
-  // Eğer daha önce enum kullanıyorsanız kendi satırınızı koruyun:
-  // role       AppRole  @default(USER)
-  // SQLite kullanıyorsanız string de olabilir:
-  role         String @default("USER")
-
-  avatarUrl  String?
-  city       String?
-  bio        String?
-  lastSeenAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // İlişkiler
+  id            String          @id @default(cuid())
+  email         String          @unique
+  passwordHash  String
+  name          String
+  role          String          @default("USER")
+  avatarUrl     String?
+  city          String?
+  bio           String?
+  lastSeenAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  ChatMessage   ChatMessage[]
   Club          Club?           @relation("ClubModerator")
   Memberships   Membership[]
-  Subscriptions Subscription[]
-  // Bildirimler için KARŞI ALAN (yoktu → eklendi)
   Notifications Notification[]
   PaymentIntent PaymentIntent[]
-  ChatMessage   ChatMessage[]
-  
+  Subscriptions Subscription[]
 }
 
 model Notification {
-  id String @id @default(cuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  type      String // 'MENTION' vb.
-  payload   String // JSON yerine string (SQLite JSON desteklemez)
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  payload   String
   readAt    DateTime?
   createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
 
 model Club {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  description String?
-  country     String   @default("Türkiye")
-  city        String?
-  bannerUrl   String?
-  priceTRY    Int      @default(49)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  published   Boolean  @default(false) // 👈 eklendi
-
-
-  moderatorId String @unique
-  moderator   User   @relation("ClubModerator", fields: [moderatorId], references: [id])
-
-  // Relations
-  memberships    Membership[]
-  picks          ClubPick[]
-  events         ClubEvent[]
+  id             String          @id @default(cuid())
+  slug           String          @unique
+  name           String
+  description    String?
+  country        String          @default("Türkiye")
+  city           String?
+  bannerUrl      String?
+  priceTRY       Int             @default(49)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  published      Boolean         @default(false)
+  moderatorId    String          @unique
   chatRoom       ChatRoom?
-  subscriptions  Subscription[]
+  moderator      User            @relation("ClubModerator", fields: [moderatorId], references: [id])
+  events         ClubEvent[]
+  picks          ClubPick[]
+  memberships    Membership[]
   paymentIntents PaymentIntent[]
+  subscriptions  Subscription[]
 }
 
 model Membership {
   id       String   @id @default(cuid())
   userId   String
   clubId   String
-  role     String   @default("MEMBER") // was MemberRole enum
+  role     String   @default("MEMBER")
   isActive Boolean  @default(true)
   joinedAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-  club Club @relation(fields: [clubId], references: [id])
+  club     Club     @relation(fields: [clubId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, clubId])
 }
@@ -97,9 +82,8 @@ model Subscription {
   active     Boolean   @default(false)
   startedAt  DateTime?
   canceledAt DateTime?
-
-  user User @relation(fields: [userId], references: [id])
-  club Club @relation(fields: [clubId], references: [id])
+  club       Club      @relation(fields: [clubId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, clubId])
 }
@@ -109,23 +93,21 @@ model PaymentIntent {
   userId    String
   clubId    String
   amountTRY Int
-  status    String   @default("REQUIRES_PAYMENT") // was PaymentStatus enum
+  status    String   @default("REQUIRES_PAYMENT")
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-  club Club @relation(fields: [clubId], references: [id])
+  club      Club     @relation(fields: [clubId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Book {
-  id         String  @id @default(cuid())
+  id         String     @id @default(cuid())
   title      String
   author     String
   translator String?
   pages      Int?
   isbn       String?
   coverUrl   String?
-
-  picks ClubPick[]
+  picks      ClubPick[]
 }
 
 model ClubPick {
@@ -135,9 +117,8 @@ model ClubPick {
   monthKey  String
   isCurrent Boolean @default(false)
   note      String?
-
-  club Club @relation(fields: [clubId], references: [id])
-  book Book @relation(fields: [bookId], references: [id])
+  book      Book    @relation(fields: [bookId], references: [id])
+  club      Club    @relation(fields: [clubId], references: [id])
 
   @@unique([clubId, monthKey])
 }
@@ -154,21 +135,19 @@ model ClubEvent {
 model ChatRoom {
   id       String        @id @default(cuid())
   clubId   String        @unique
-  club     Club          @relation(fields: [clubId], references: [id])
   messages ChatMessage[]
+  club     Club          @relation(fields: [clubId], references: [id])
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   roomId    String
   authorId  String
   body      String
   quotedId  String?
-  createdAt DateTime @default(now())
-
-  room   ChatRoom @relation(fields: [roomId], references: [id])
-  author User     @relation(fields: [authorId], references: [id])
-
-  quoted   ChatMessage?  @relation("Quote", fields: [quotedId], references: [id])
-  quotedBy ChatMessage[] @relation("Quote")
+  createdAt DateTime      @default(now())
+  author    User          @relation(fields: [authorId], references: [id])
+  quoted    ChatMessage?  @relation("Quote", fields: [quotedId], references: [id])
+  quotedBy  ChatMessage[] @relation("Quote")
+  room      ChatRoom      @relation(fields: [roomId], references: [id])
 }

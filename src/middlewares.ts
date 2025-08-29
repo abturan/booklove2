@@ -5,7 +5,7 @@ import { getToken } from 'next-auth/jwt'
 export async function middleware(req: NextRequest) {
   const token = await getToken({
     req,
-    secret: process.env.AUTH_SECRET as string,
+    secret: process.env.NEXTAUTH_SECRET as string,
     salt: process.env.AUTH_SALT as string, // yeni sürümde gerekli
   })
 
@@ -18,3 +18,7 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/profile/:path*'], // sadece profili koru
 }
+
+
+
+
