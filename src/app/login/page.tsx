@@ -1,82 +1,93 @@
 // src/app/login/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
+  const sp = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    const e = sp.get('error')
+    if (e) {
+      setError(e === 'CredentialsSignin' ? 'E-posta veya şifre hatalı.' : 'Giriş yapılamadı.')
+    }
+  }, [sp])
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
-
-    const res = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
-
-    if (!res?.ok) {
-      setLoading(false)
-      setError('E-posta veya şifre hatalı.')
-      return
-    }
-
-    // Session’dan rolü çek ve yönlendir
     try {
-      const r = await fetch('/api/auth/session', { cache: 'no-store' })
-      const s = await r.json()
-      const role = s?.user?.role
-      if (role === 'ADMIN') {
-        router.push('/admin')
-      } else {
-        router.push('/')
+      const res = await signIn('credentials', {
+        email,
+        password,
+        redirect: false, // Başarısızlıkta yönlendirme YOK
+      })
+      if (!res) {
+        setError('Beklenmeyen hata.')
+        return
       }
-      router.refresh()
-    } catch {
+      if (res.error) {
+        setError(res.error === 'CredentialsSignin' ? 'E-posta veya şifre hatalı.' : 'Giriş yapılamadı.')
+        return
+      }
       router.push('/')
       router.refresh()
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="max-w-md mx-auto my-10">
-      <h1 className="text-2xl font-semibold mb-6">Giriş yap</h1>
+    <div className="max-w-md mx-auto p-6 mt-8">
+      <h1 className="text-2xl font-bold mb-2">Giriş Yap</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        Hesabın yok mu?{' '}
+        <Link className="text-rose-600 hover:underline" href="/register">
+          Kayıt ol
+        </Link>
+      </p>
+
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 text-red-700 px-4 py-3">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm text-gray-600 mb-1">E-posta</label>
+          <label className="block text-sm font-medium mb-1">E-posta</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-rose-400"
-            placeholder="ornek@eposta.com"
+            className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+            placeholder="ornek@boook.love"
+            autoComplete="email"
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Şifre</label>
+          <label className="block text-sm font-medium mb-1">Şifre</label>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-rose-400"
+            className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
             placeholder="••••••••"
+            autoComplete="current-password"
           />
         </div>
-        {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-            {error}
-          </div>
-        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -85,10 +96,6 @@ export default function LoginPage() {
           {loading ? 'Giriş yapılıyor…' : 'Giriş yap'}
         </button>
       </form>
-
-      <div className="mt-6 text-sm text-gray-500">
-        Admin test hesabı: <span className="font-mono">superadmin@book.love / admin123</span>
-      </div>
     </div>
   )
 }

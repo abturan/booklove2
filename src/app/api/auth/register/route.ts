@@ -14,15 +14,15 @@ export async function POST(req: Request) {
       password.length < 6
     ) {
       return NextResponse.json(
-        { ok: false, message: 'Geçersiz form verisi' },
+        { ok: false, message: 'Geçersiz alanlar.' },
         { status: 400 }
       )
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } })
-    if (existing) {
+    const exists = await prisma.user.findUnique({ where: { email } })
+    if (exists) {
       return NextResponse.json(
-        { ok: false, message: 'Bu e-posta zaten kayıtlı' },
+        { ok: false, message: 'Bu e-posta zaten kayıtlı.' },
         { status: 409 }
       )
     }
@@ -30,8 +30,8 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 10)
     await prisma.user.create({
       data: {
-        email,
         name,
+        email,
         passwordHash,
         role: 'USER',
       },
