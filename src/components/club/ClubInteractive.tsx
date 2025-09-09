@@ -1,11 +1,21 @@
 'use client'
 
 import Image from 'next/image'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import ChatPanel from '@/components/ChatPanel'
+import ProfileInfoModal from '@/components/modals/ProfileInfoModal'
+import ContractModal from '@/components/modals/ContractModal'
 
 type Initial = {
-  me: { id: string | null; name: string | null; avatarUrl: string | null }
+  me: {
+    id: string | null
+    name: string | null
+    email: string | null
+    avatarUrl: string | null
+    city: string | null
+    district: string | null
+    phone: string | null
+  }
   club: {
     id: string
     slug: string
@@ -42,8 +52,57 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const [memberCount, setMemberCount] = useState(initial.club.memberCount)
   const [busy, setBusy] = useState(false)
 
+  // Profil & sözleşme akışı
+  const [profileMissing, setProfileMissing] = useState(
+    !!initial.me.id && (!initial.me.city || !initial.me.district || !initial.me.phone),
+  )
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [profile, setProfile] = useState({
+    city: initial.me.city ?? '',
+    district: initial.me.district ?? '',
+    phone: initial.me.phone ?? '',
+  })
+  const [showContract, setShowContract] = useState(false)
+  const [contractChecked, setContractChecked] = useState(false)
+  const [downloadedOnce, setDownloadedOnce] = useState(false)
+
+  // Inline hata mesajı
+  const [uiError, setUiError] = useState<string | null>(null)
+  const errorRef = useRef<HTMLDivElement | null>(null)
+  const showError = (msg: string) => {
+    setUiError(msg)
+    // hatayı görünür alana getir
+    requestAnimationFrame(() => {
+      errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }
+
+  const membersPreview = useMemo(() => initial.club.members.slice(0, 30), [initial.club.members])
+  const needContractUI = !!initial.me.id && !isMember
+
   const onSubscribe = async () => {
     if (busy) return
+    setUiError(null)
+
+    // Giriş yoksa login'e
+    if (!initial.me.id) {
+      const cb = `/clubs/${initial.club.slug}#subscribe`
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(cb)}`
+      return
+    }
+
+    // Profil eksikse modalı aç
+    if (profileMissing) {
+      setShowProfileModal(true)
+      return
+    }
+
+    // Sözleşme onayı zorunlu
+    if (!contractChecked) {
+      showError('Lütfen Mesafeli Satış Sözleşmesini okuyup onay kutucuğunu işaretleyin.')
+      return
+    }
+
     setBusy(true)
     try {
       const res = await fetch(`/api/clubs/${initial.club.id}/subscribe`, { method: 'POST' })
@@ -52,19 +111,17 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
         window.location.href = `/login?callbackUrl=${encodeURIComponent(cb)}`
         return
       }
-      if (!res.ok) throw new Error('Abonelik işlemi başarısız.')
+      if (!res.ok) throw new Error()
       const nowIso = new Date().toISOString()
       setIsMember(true)
       setMemberSince(nowIso)
       setMemberCount((c) => c + 1)
-    } catch (e) {
-      alert('Abonelik sırasında bir sorun oluştu. Lütfen tekrar deneyin.')
+    } catch {
+      showError('Abonelik sırasında bir sorun oluştu. Lütfen tekrar deneyin.')
     } finally {
       setBusy(false)
     }
   }
-
-  const membersPreview = useMemo(() => initial.club.members.slice(0, 30), [initial.club.members])
 
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-6">
@@ -162,19 +219,72 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           <div className="text-3xl font-semibold">₺{initial.club.priceTRY}</div>
 
           {!isMember ? (
-            <button
-              onClick={onSubscribe}
-              disabled={busy}
-              className="mt-4 w-full rounded-full h-11 bg-rose-600 text-white font-medium hover:bg-rose-700 transition disabled:opacity-60"
-            >
-              {busy ? 'Abone olunuyor…' : `Abone ol (₺${initial.club.priceTRY})`}
-            </button>
+            <>
+              <button
+                onClick={onSubscribe}
+                disabled={busy}
+                className="mt-4 w-full rounded-full h-11 bg-rose-600 text-white font-medium hover:bg-rose-700 transition disabled:opacity-60"
+              >
+                {busy ? 'Abone olunuyor…' : `Abone ol (₺${initial.club.priceTRY})`}
+              </button>
+
+              {/* Eksik bilgi uyarısı */}
+              {profileMissing && (
+                <div className="mt-3 text-sm text-amber-900 bg-amber-50 rounded-xl p-3">
+                  Eksik bilgiler var, lütfen doldurun.{' '}
+                  <button
+                    className="underline font-medium"
+                    onClick={() => setShowProfileModal(true)}
+                    aria-label="Profil bilgisi modalını aç"
+                  >
+                    Bilgileri tamamla
+                  </button>
+                </div>
+              )}
+
+              {/* PROFİL TAMAMLANDIYSA sözleşme alanı */}
+              {!profileMissing && needContractUI && (
+                <div className="mt-4 space-y-2">
+                  <label className="inline-flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={contractChecked}
+                      onChange={(e) => setContractChecked(e.target.checked)}
+                    />
+                    <span>
+                      <button
+                        type="button"
+                        className="underline font-medium"
+                        onClick={() => setShowContract(true)}
+                      >
+                        Mesafeli Satış Sözleşmesi
+                      </button>
+                      ’ni okudum ve kabul ediyorum.
+                    </span>
+                  </label>
+                  {!downloadedOnce && (
+                    <div className="text-xs text-gray-500">
+                      Not: Linke tıklayın; sözleşme penceresinde en alta indiğinizde “PDF indir” aktif olacaktır.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* inline hata */}
+              {uiError && (
+                <div
+                  ref={errorRef}
+                  className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3"
+                >
+                  {uiError}
+                </div>
+              )}
+            </>
           ) : (
             <div className="mt-4 rounded-2xl bg-emerald-50 text-emerald-900 p-4 text-sm">
               <div className="font-medium mb-1">Abonesiniz</div>
-              {memberSince && (
-                <div>Şu tarihten beri: {formatDateTR(memberSince)}</div>
-              )}
+              {memberSince && <div>Şu tarihten beri: {formatDateTR(memberSince)}</div>}
             </div>
           )}
         </div>
@@ -187,6 +297,35 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           <div className="text-sm">Üye sayısı: <span className="font-medium">{memberCount}</span></div>
         </div>
       </aside>
+
+      {/* Modals */}
+      <ProfileInfoModal
+        open={showProfileModal}
+        initial={profile}
+        onClose={() => setShowProfileModal(false)}
+        onSaved={(v) => {
+          setProfile(v)
+          setProfileMissing(false)
+          setShowProfileModal(false)
+          setUiError(null)
+        }}
+      />
+
+      <ContractModal
+        open={showContract}
+        onClose={() => setShowContract(false)}
+        onDownloaded={() => setDownloadedOnce(true)}
+        data={{
+          buyerName: initial.me.name || '',
+          buyerEmail: initial.me.email || '',
+          buyerPhone: profile.phone,
+          city: profile.city,
+          district: profile.district,
+          priceTRY: initial.club.priceTRY,
+          startDateISO: new Date().toISOString(),
+          ...( { clubId: initial.club.id } as any )
+        }}
+      />
     </div>
   )
 }

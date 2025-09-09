@@ -16,6 +16,9 @@ model User {
   role          String          @default("USER")
   avatarUrl     String?
   city          String?
+  /** EKLENDİ: İlçe ve telefon */
+  district      String?
+  phone         String?
   bio           String?
   lastSeenAt    DateTime?
   createdAt     DateTime        @default(now())

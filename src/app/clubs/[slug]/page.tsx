@@ -30,7 +30,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     where: { clubId: club.id, isActive: true }
   })
 
-  // 3) Üyeler (maks 30 avatar) — joinedAt ile sırala
+  // 3) Üyeler (maks 30 avatar)
   const members = await prisma.membership.findMany({
     where: { clubId: club.id, isActive: true },
     orderBy: { joinedAt: 'desc' },
@@ -43,7 +43,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
   // 4) Bu ayın seçkisi
   const currentPick = await prisma.clubPick.findFirst({
     where: { clubId: club.id, isCurrent: true },
-    include: { book: { select: { title: true, author: true, coverUrl: true } } }
+    include: { book: { select: { title: true, author: true, coverUrl: true} } }
   })
 
   // 5) Yaklaşan etkinlik
@@ -59,7 +59,24 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     select: { id: true }
   })
 
-  // 7) Benim üyeliğim
+  // 7) Kullanıcı bilgisi (eksik alanlar için)
+  const me =
+    session?.user?.id
+      ? await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+            city: true,
+            district: true,
+            phone: true
+          }
+        })
+      : null
+
+  // 8) Benim üyeliğim
   let myMembership: { since: string } | null = null
   if (session?.user?.id) {
     const m = await prisma.membership.findUnique({
@@ -71,9 +88,13 @@ export default async function ClubPage({ params }: { params: { slug: string } })
 
   const initial = {
     me: {
-      id: session?.user?.id ?? null,
-      name: session?.user?.name ?? null,
-      avatarUrl: (session?.user as any)?.avatarUrl ?? null
+      id: me?.id ?? null,
+      name: me?.name ?? null,
+      email: me?.email ?? null,
+      avatarUrl: me?.avatarUrl ?? null,
+      city: me?.city ?? null,
+      district: me?.district ?? null,
+      phone: me?.phone ?? null
     },
     club: {
       id: club.id,
