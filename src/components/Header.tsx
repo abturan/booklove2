@@ -30,9 +30,9 @@ export default function Header() {
   return (
     <header
       className="sticky top-0 z-50 border-b bg-white/70 backdrop-blur
-                 supports-backdrop-blur:bg-white/60"
+                 supports-backdrop-blur:bg-white/60 "
     >
-      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+      <div className="container  mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="font-semibold">
           <Image
             src="/logo-fixed.svg"
@@ -44,7 +44,7 @@ export default function Header() {
           />
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 header-buttons-container">
           {status === 'loading' && (
             <div className="h-8 w-28 rounded-full bg-gray-200 animate-pulse" />
           )}
@@ -53,7 +53,7 @@ export default function Header() {
             <>
               <Link
                 href="/login"
-                className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm"
+                className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm "
               >
                 Giriş yap
               </Link>

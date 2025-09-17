@@ -22,3 +22,7 @@ body {
     width: 50% !important;
     margin-top: 50px;
 }
+
+.header-buttons-container{
+  min-width: 180px;
+}
