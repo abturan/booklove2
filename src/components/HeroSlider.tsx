@@ -10,7 +10,7 @@ const fallback3 =
   'https://images.unsplash.com/photo-1516979187457-637abb4f9353?q=80&w=1600&auto=format&fit=crop'
 
 const slides = [
-  { id: 1, title: "Okuma Spotlight'ı", subtitle: "Kulüpler, aylık seçkiler ve yeni kitaplar — hepsi tek akışta.", image: fallback1 },
+  { id: 1, title: "Dünyanın tüm okurları, birleşin!", subtitle: "Kulüpler, aylık seçkiler ve yeni kitaplar — hepsi tek akışta.", image: fallback1 },
   { id: 2, title: "Yazar kürasyonlu kulüpler", subtitle: "Katıl, keşfet, oku.", image: fallback2 },
   { id: 3, title: "Boook.Love", subtitle: "Sohbet et, etkinliklere katıl, sosyalleş.", image: fallback3 }
 ]
