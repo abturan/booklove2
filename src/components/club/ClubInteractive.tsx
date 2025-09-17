@@ -1,3 +1,4 @@
+// src/components/club/ClubInteractive.tsx
 'use client'
 
 import Image from 'next/image'
@@ -71,7 +72,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const errorRef = useRef<HTMLDivElement | null>(null)
   const showError = (msg: string) => {
     setUiError(msg)
-    // hatayı görünür alana getir
     requestAnimationFrame(() => {
       errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
@@ -329,3 +329,10 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     </div>
   )
 }
+
+
+
+
+
+
+

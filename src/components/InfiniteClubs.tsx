@@ -187,7 +187,7 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
       <div className="flex justify-center py-4">
         {loading && <span className="text-sm text-gray-600">Yükleniyor…</span>}
         {!hasMore && safeItems.length > 0 && (
-          <span className="text-sm text-gray-500">Hepsi bu kadar 🎉</span>
+          <span className="text-sm text-gray-500">❤️❤️❤️</span>
         )}
       </div>
     </div>
