@@ -35,7 +35,7 @@ export default function ModalFrame({ title, children, onCloseHref = '/' }: Props
             ✕
           </button>
         </div>
-        <div className="max-h-[75vh] overflow-auto px-6 py-5 text-base md:text-lg leading-[1.9]">
+        <div className="max-h-[75vh] overflow-auto px-6 py-5 text-base  leading-[1.9]">
           {children}
         </div>
       </div>

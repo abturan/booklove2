@@ -40,7 +40,7 @@ export default function Header() {
             width={200}
             height={32}
             priority
-            className="rounded-md"
+            className="rounded-md logo-main-page"
           />
         </Link>
 

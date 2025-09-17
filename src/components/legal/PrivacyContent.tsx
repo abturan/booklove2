@@ -4,7 +4,12 @@ import { privacyHtml } from '@/content/legal/privacy'
 export default function PrivacyContent() {
   return (
     <div
-      className="prose prose-neutral prose-lg leading-[1.9] max-w-none prose-p:my-4 prose-li:my-2.5 prose-headings:mt-6 prose-headings:mb-2"
+      className="
+        prose prose-neutral max-w-none leading-[1.8]
+        prose-headings:text-[12px] prose-p:text-[12px] prose-li:text-[12px]
+        prose-a:text-[12px] prose-strong:text-[12px]
+        prose-p:my-3 prose-li:my-2 prose-headings:mb-2
+      "
       dangerouslySetInnerHTML={{ __html: privacyHtml }}
     />
   )

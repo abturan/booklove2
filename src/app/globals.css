@@ -17,3 +17,8 @@ body {
 .card {
   @apply bg-white/80 backdrop-blur rounded-3xl shadow-soft;
 }
+
+.logo-main-page{
+    width: 50% !important;
+    margin-top: 50px;
+}
