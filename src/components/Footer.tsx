@@ -38,7 +38,7 @@ export default function Footer() {
           <div className="flex items-center gap-4">
             <Image className="opacity-80 grayscale hover:opacity-100 transition" src="/logos/visa.svg" alt="Visa" width={68} height={28} />
             <Image className="opacity-80 grayscale hover:opacity-100 transition" src="/logos/mastercard.svg" alt="Mastercard" width={96} height={28} />
-            <Image className="opacity-80 grayscale hover:opacity-100 transition" src="/logos/iyzico.svg" alt="iyzico ile Öde" width={116} height={28} />
+            <Image className="opacity-80 grayscale hover:opacity-100 transition" src="/logos/paytr.png" alt="Paytr ile Öde" width={116} height={28} />
           </div>
         </div>
       </div>
