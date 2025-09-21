@@ -6,6 +6,7 @@ import { useMemo, useRef, useState } from 'react'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileInfoModal from '@/components/modals/ProfileInfoModal'
 import ContractModal from '@/components/modals/ContractModal'
+import PaytrIframeModal from '@/components/modals/PaytrIframeModal'
 
 type Initial = {
   me: {
@@ -80,6 +81,10 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const membersPreview = useMemo(() => initial.club.members.slice(0, 30), [initial.club.members])
   const needContractUI = !!initial.me.id && !isMember
 
+  // PayTR modal state
+  const [paytrOpen, setPaytrOpen] = useState(false)
+  const [paytrUrl, setPaytrUrl] = useState<string | null>(null)
+
   const onSubscribe = async () => {
     if (busy) return
     setUiError(null)
@@ -103,21 +108,31 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
       return
     }
 
+    // PayTR token al ve modal içinde iFrame aç
     setBusy(true)
     try {
-      const res = await fetch(`/api/clubs/${initial.club.id}/subscribe`, { method: 'POST' })
-      if (res.status === 401) {
-        const cb = `/clubs/${initial.club.slug}#subscribe`
-        window.location.href = `/login?callbackUrl=${encodeURIComponent(cb)}`
-        return
-      }
-      if (!res.ok) throw new Error()
-      const nowIso = new Date().toISOString()
-      setIsMember(true)
-      setMemberSince(nowIso)
-      setMemberCount((c) => c + 1)
-    } catch {
-      showError('Abonelik sırasında bir sorun oluştu. Lütfen tekrar deneyin.')
+      const res = await fetch('/api/paytr/get-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: initial.me.email,
+          userName: initial.me.name || 'Abone',
+          userAddress: `${profile.district || ''} ${profile.city || 'Türkiye'}`.trim(),
+          userPhone: profile.phone || '0000000000',
+          amount: initial.club.priceTRY, // TL
+          clubId: initial.club.id,
+          clubName: initial.club.name,
+          redirectSlug: `clubs/${initial.club.slug}`,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Ödeme başlatılamadı')
+
+      setPaytrUrl(data.iframe_url as string)
+      setPaytrOpen(true)
+      // üyelik aktivasyonunu callback yapacak; burada state'i değiştirmiyoruz
+    } catch (e: any) {
+      showError(e?.message || 'Ödeme başlatılamadı. Lütfen tekrar deneyin.')
     } finally {
       setBusy(false)
     }
@@ -265,7 +280,8 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
                   </label>
                   {!downloadedOnce && (
                     <div className="text-xs text-gray-500">
-                      Not: Linke tıklayın; sözleşme penceresinde en alta indiğinizde “PDF indir” aktif olacaktır.
+                      Not: Linke tıklayın; sözleşme penceresinde en alta indiğinizde “PDF indir”
+                      aktif olacaktır.
                     </div>
                   )}
                 </div>
@@ -326,13 +342,14 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           ...( { clubId: initial.club.id } as any )
         }}
       />
+
+      {/* PayTR iFrame Modal */}
+      <PaytrIframeModal
+        open={paytrOpen}
+        onClose={() => setPaytrOpen(false)}
+        iframeUrl={paytrUrl}
+        title="Güvenli Ödeme — PayTR"
+      />
     </div>
   )
 }
-
-
-
-
-
-
-
