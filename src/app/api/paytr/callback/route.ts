@@ -2,36 +2,72 @@
 import { NextRequest } from 'next/server'
 import { getPaytrEnv, verifyCallbackHash } from '@/lib/paytr'
 
-// Not: Bu endpoint kullanıcıya görünmez; PayTR sunucuları POST yapar.
-// Dönüş tek satır "OK" olmalı; aksi halde ödeme "Devam Ediyor" kalır.
-export async function POST(req: NextRequest) {
-  const { merchantKey, merchantSalt } = getPaytrEnv()
-  const form = await req.formData()
+// PayTR callback için: yönlendirme YOK, auth YOK, sadece düz metin cevap.
+// Edge yerine Node.js runtime kullan (form parse ve ağ uyumu için).
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-  const merchant_oid = String(form.get('merchant_oid') || '')
-  const status = String(form.get('status') || '')
-  const total_amount = String(form.get('total_amount') || '')
-  const incomingHash = String(form.get('hash') || '')
-  const test_mode = String(form.get('test_mode') || '0')
-
-  const ok = verifyCallbackHash({
-    merchantKey,
-    merchantSalt,
-    merchantOid: merchant_oid,
-    status,
-    totalAmount: total_amount,
-    incomingHash,
-  })
-
-  if (!ok) {
-    return new Response('PAYTR notification failed: bad hash', { status: 400 })
+// Helper: hem x-www-form-urlencoded hem multipart/form-data al
+async function readParams(req: NextRequest): Promise<URLSearchParams> {
+  const ctype = req.headers.get('content-type') || ''
+  if (ctype.includes('application/x-www-form-urlencoded')) {
+    const raw = await req.text()
+    return new URLSearchParams(raw)
   }
+  // multipart/form-data veya diğerleri
+  const fd = await req.formData()
+  const sp = new URLSearchParams()
+  for (const [k, v] of fd.entries()) sp.append(k, String(v))
+  return sp
+}
 
-  // TODO: idempotent davranın — merchant_oid eşsizdir.
-  // 1) DB’de ödeme kaydını bulun/oluşturun
-  // 2) status === 'success' ise aboneliği aktifleştirin; yoksa başarısız olarak işaretleyin
-  // 3) toplam tutar (total_amount) kuruş cinsinden gelir
+export async function POST(req: NextRequest) {
+  try {
+    const { merchantKey, merchantSalt } = getPaytrEnv()
+    const params = await readParams(req)
 
-  // Önemli: Sadece düz metin "OK" dönün; HTML/JSON dönmeyin.
+    const merchant_oid = params.get('merchant_oid') ?? ''
+    const status = params.get('status') ?? ''
+    const total_amount = params.get('total_amount') ?? ''
+    const incomingHash = params.get('hash') ?? ''
+    const failed_reason_code = params.get('failed_reason_code') ?? ''
+    const failed_reason_msg = params.get('failed_reason_msg') ?? ''
+    const test_mode = params.get('test_mode') ?? '0'
+
+    // Hash doğrulaması
+    const okHash = verifyCallbackHash({
+      merchantKey,
+      merchantSalt,
+      merchantOid: merchant_oid,
+      status,
+      totalAmount: total_amount,
+      incomingHash,
+    })
+
+    if (!okHash) {
+      // HATALI: PayTR panelinde "Sitenizden Gelen Yanıt"ta bu metin görünür
+      return new Response('HASH_MISMATCH', {
+        status: 400,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      })
+    }
+
+    // TODO: idempotent kayıt/iş mantığı — merchant_oid eşsizdir
+    // status === 'success' => aboneliği aktifleştir
+    // status === 'failed'  => başarısız kaydı oluştur (failed_reason_* alanlarını logla)
+
+    // ÖNEMLİ: yalnızca düz metin "OK" dön
+    return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } })
+  } catch (err: any) {
+    // Uygulama hatası
+    return new Response(`ERROR:${err?.message || 'UNKNOWN'}`, {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    })
+  }
+}
+
+// (İsteğe bağlı) GET sağlık kontrolü: PayTR kullanmaz ama sizin testiniz için
+export async function GET() {
   return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } })
 }
