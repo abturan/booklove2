@@ -81,34 +81,53 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const membersPreview = useMemo(() => initial.club.members.slice(0, 30), [initial.club.members])
   const needContractUI = !!initial.me.id && !isMember
 
-  // PayTR modal state
+  // PayTR modal & pending state
   const [paytrOpen, setPaytrOpen] = useState(false)
   const [paytrUrl, setPaytrUrl] = useState<string | null>(null)
+  const pendingKey = `paytr_pending_${initial.club.id}`
 
   const onSubscribe = async () => {
     if (busy) return
     setUiError(null)
 
-    // Giriş yoksa login'e
+    // 1) Giriş kontrolü
     if (!initial.me.id) {
       const cb = `/clubs/${initial.club.slug}#subscribe`
       window.location.href = `/login?callbackUrl=${encodeURIComponent(cb)}`
       return
     }
 
-    // Profil eksikse modalı aç
+    // 2) Profil eksikse modalı aç
     if (profileMissing) {
       setShowProfileModal(true)
       return
     }
 
-    // Sözleşme onayı zorunlu
+    // 3) Sözleşme onayı zorunlu
     if (!contractChecked) {
       showError('Lütfen Mesafeli Satış Sözleşmesini okuyup onay kutucuğunu işaretleyin.')
       return
     }
 
-    // PayTR token al ve modal içinde iFrame aç
+    // 4) Bekleyen işlem var mı? (callback gelmediyse aynı iFrame’i tekrar aç)
+    try {
+      const raw = localStorage.getItem(pendingKey)
+      if (raw) {
+        const p = JSON.parse(raw)
+        const fresh = Date.now() - (p?.createdAt || 0) < 30 * 60 * 1000 // 30dk
+        if (p?.iframe_url && fresh) {
+          setPaytrUrl(p.iframe_url)
+          setPaytrOpen(true)
+          showError('Bekleyen abonelik işleminiz var. Ödemeyi tamamlayın veya 30 dk sonra yeniden deneyin.')
+          return
+        }
+        localStorage.removeItem(pendingKey)
+      }
+    } catch {
+      /* ignore */
+    }
+
+    // 5) PayTR token al ve modalda iFrame aç
     setBusy(true)
     try {
       const res = await fetch('/api/paytr/get-token', {
@@ -125,12 +144,34 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           redirectSlug: `clubs/${initial.club.slug}`,
         }),
       })
+
+      // JSON olmayan cevap (ör. HTML hata sayfası) ise kullanıcıya anlamlı uyarı ver
+      const ctype = res.headers.get('content-type') || ''
+      if (!ctype.includes('application/json')) {
+        throw new Error('Bekleyen abonelik işleminiz olabilir. Mevcut ödemeyi tamamlayın veya 30 dk sonra yeniden deneyin.')
+      }
+
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Ödeme başlatılamadı')
+      if (!res.ok || !data?.iframe_url) {
+        throw new Error(data?.error || 'Ödeme başlatılamadı')
+      }
+
+      // Pending kaydet (ok/fail sayfaları bu kaydı temizler)
+      try {
+        localStorage.setItem(
+          pendingKey,
+          JSON.stringify({
+            merchant_oid: data.merchant_oid,
+            iframe_url: data.iframe_url,
+            createdAt: Date.now(),
+          }),
+        )
+      } catch {
+        /* ignore */
+      }
 
       setPaytrUrl(data.iframe_url as string)
       setPaytrOpen(true)
-      // üyelik aktivasyonunu callback yapacak; burada state'i değiştirmiyoruz
     } catch (e: any) {
       showError(e?.message || 'Ödeme başlatılamadı. Lütfen tekrar deneyin.')
     } finally {
@@ -201,9 +242,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           <div className="card p-4">
             <div className="text-sm text-gray-600">Yaklaşan oturum</div>
             {initial.club.nextEvent ? (
-              <div className="mt-2">
-                {formatDateTR(initial.club.nextEvent.startsAt)}
-              </div>
+              <div className="mt-2">{formatDateTR(initial.club.nextEvent.startsAt)}</div>
             ) : (
               <div className="mt-2 text-gray-600 text-sm">Planlanmadı</div>
             )}
@@ -221,7 +260,8 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           </div>
           {!isMember && (
             <div className="px-4 pb-4 text-xs text-gray-600">
-              Yalnızca aboneler mesaj görebilir ve yazabilir. Birini <code>@isim</code> ile etiketlediğinde bildirim oluşturulur.
+              Yalnızca aboneler mesaj görebilir ve yazabilir. Birini <code>@isim</code> ile
+              etiketlediğinde bildirim oluşturulur.
             </div>
           )}
         </div>
@@ -310,7 +350,9 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           <div className="mt-2 text-sm">
             Moderatör: <span className="font-medium">{initial.club.moderatorName}</span>
           </div>
-          <div className="text-sm">Üye sayısı: <span className="font-medium">{memberCount}</span></div>
+          <div className="text-sm">
+            Üye sayısı: <span className="font-medium">{memberCount}</span>
+          </div>
         </div>
       </aside>
 
@@ -353,3 +395,9 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     </div>
   )
 }
+
+
+
+
+
+
