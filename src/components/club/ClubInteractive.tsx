@@ -2,7 +2,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileInfoModal from '@/components/modals/ProfileInfoModal'
 import ContractModal from '@/components/modals/ContractModal'
@@ -48,6 +48,8 @@ function formatDateTR(iso?: string | null) {
   }
 }
 
+type Pending = { merchant_oid: string; iframe_url: string; createdAt: number } | null
+
 export default function ClubInteractive({ initial }: { initial: Initial }) {
   const [isMember, setIsMember] = useState(initial.club.isMember)
   const [memberSince, setMemberSince] = useState<string | null>(initial.club.memberSince)
@@ -85,6 +87,43 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const [paytrOpen, setPaytrOpen] = useState(false)
   const [paytrUrl, setPaytrUrl] = useState<string | null>(null)
   const pendingKey = `paytr_pending_${initial.club.id}`
+  const [pending, setPending] = useState<Pending>(null)
+
+  // Pending okuyucu (her çağrıda localStorage'dan taze okur)
+  function readPending(): Pending {
+    try {
+      const raw = localStorage.getItem(pendingKey)
+      if (!raw) return null
+      const p = JSON.parse(raw)
+      const fresh = Date.now() - (p?.createdAt || 0) < 30 * 60 * 1000 // 30dk
+      if (p?.iframe_url && fresh) return p
+      localStorage.removeItem(pendingKey)
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  function clearPending(p?: Pending) {
+    try {
+      const oid = p?.merchant_oid
+      if (oid) sessionStorage.removeItem(`paytr_iframe_${oid}`)
+      localStorage.removeItem(pendingKey)
+    } catch {}
+    setPending(null)
+  }
+
+  function resumePending(p: Pending) {
+    if (!p?.iframe_url) return
+    setPaytrUrl(p.iframe_url)
+    setPaytrOpen(true)
+    showError('Bekleyen abonelik işleminizi tekrar açtık. Ödemeyi tamamlayın veya kapatın.')
+  }
+
+  useEffect(() => {
+    setPending(readPending())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const onSubscribe = async () => {
     if (busy) return
@@ -110,21 +149,11 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     }
 
     // 4) Bekleyen işlem var mı? (callback gelmediyse aynı iFrame’i tekrar aç)
-    try {
-      const raw = localStorage.getItem(pendingKey)
-      if (raw) {
-        const p = JSON.parse(raw)
-        const fresh = Date.now() - (p?.createdAt || 0) < 30 * 60 * 1000 // 30dk
-        if (p?.iframe_url && fresh) {
-          setPaytrUrl(p.iframe_url)
-          setPaytrOpen(true)
-          showError('Bekleyen abonelik işleminiz var. Ödemeyi tamamlayın veya 30 dk sonra yeniden deneyin.')
-          return
-        }
-        localStorage.removeItem(pendingKey)
-      }
-    } catch {
-      /* ignore */
+    const existing = readPending()
+    if (existing) {
+      setPending(existing)
+      resumePending(existing)
+      return
     }
 
     // 5) PayTR token al ve modalda iFrame aç
@@ -148,7 +177,9 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
       // JSON olmayan cevap (ör. HTML hata sayfası) ise kullanıcıya anlamlı uyarı ver
       const ctype = res.headers.get('content-type') || ''
       if (!ctype.includes('application/json')) {
-        throw new Error('Bekleyen abonelik işleminiz olabilir. Mevcut ödemeyi tamamlayın veya 30 dk sonra yeniden deneyin.')
+        throw new Error(
+          'Bekleyen abonelik işleminiz olabilir. Mevcut ödemeyi tamamlayın veya 30 dk sonra yeniden deneyin.',
+        )
       }
 
       const data = await res.json()
@@ -158,14 +189,13 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
 
       // Pending kaydet (ok/fail sayfaları bu kaydı temizler)
       try {
-        localStorage.setItem(
-          pendingKey,
-          JSON.stringify({
-            merchant_oid: data.merchant_oid,
-            iframe_url: data.iframe_url,
-            createdAt: Date.now(),
-          }),
-        )
+        const p: Pending = {
+          merchant_oid: data.merchant_oid,
+          iframe_url: data.iframe_url,
+          createdAt: Date.now(),
+        }
+        localStorage.setItem(pendingKey, JSON.stringify(p))
+        setPending(p)
       } catch {
         /* ignore */
       }
@@ -275,6 +305,31 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
 
           {!isMember ? (
             <>
+              {pending && !busy && (
+                <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                  Bekleyen abonelik işleminiz var.
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => resumePending(pending)}
+                      className="rounded-full bg-amber-600 text-white px-3 py-1.5 text-sm hover:bg-amber-700"
+                    >
+                      Devam et
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => clearPending(pending)}
+                      className="rounded-full bg-white text-amber-900 border border-amber-300 px-3 py-1.5 text-sm hover:bg-amber-100"
+                    >
+                      İptal et
+                    </button>
+                  </div>
+                  <div className="mt-1 text-xs text-amber-800">
+                    30 dk içinde tamamlanmayan işlemler otomatik olarak sıfırlanır.
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={onSubscribe}
                 disabled={busy}
