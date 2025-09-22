@@ -1,105 +1,126 @@
 // src/app/iletisim/page.tsx
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useState } from 'react'
 
-export default function ContactPage() {
-  const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    const form = e.currentTarget
-    const data = Object.fromEntries(new FormData(form).entries())
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error('Gönderilemedi')
-      setDone(true)
-      form.reset()
-    } catch (err: any) {
-      setError(err.message || 'Bir hata oluştu')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (done) {
-    return (
-      <section className="mx-auto max-w-xl">
-        <h1 className="text-3xl font-bold tracking-tight">İletişim</h1>
-        <p className="mt-3 text-neutral-700">
-          Mesajınız alındı. En kısa sürede dönüş yapacağız. Teşekkürler!
-        </p>
-        <div className="mt-6">
-          <Link
-            href="/"
-            className="inline-block rounded-lg border px-4 py-2 hover:bg-neutral-50"
-          >
-            Ana sayfaya dön
-          </Link>
-        </div>
-      </section>
-    )
-  }
-
-  return (
-    <section className="mx-auto max-w-xl">
-      <h1 className="text-3xl font-bold tracking-tight">İletişim</h1>
-      <p className="mt-3 text-neutral-700">
-        Bize bu form üzerinden ulaşabilirsiniz. E-posta: <strong>info@boook.love</strong>
-      </p>
-
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <input
-          type="text"
-          name="name"
-          placeholder="Adınız"
-          required
-          className="w-full rounded-lg border px-4 py-3"
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="E-posta"
-          required
-          className="w-full rounded-lg border px-4 py-3"
-        />
-        <input
-          type="text"
-          name="subject"
-          placeholder="Konu (opsiyonel)"
-          className="w-full rounded-lg border px-4 py-3"
-        />
-        <textarea
-          name="message"
-          placeholder="Mesajınız"
-          required
-          rows={6}
-          className="w-full rounded-lg border px-4 py-3"
-        />
-        {/* Honeypot */}
-        <input type="text" name="website" className="hidden" tabIndex={-1} autoComplete="off" />
-        <button
-          disabled={loading}
-          className="rounded-lg bg-black text-white px-5 py-3 disabled:opacity-60"
-        >
-          {loading ? 'Gönderiliyor…' : 'Gönder'}
-        </button>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-      </form>
-    </section>
-  )
+export const metadata: Metadata = {
+  title: 'İletişim | boook.love',
+  description:
+    'boook.love iletişim bilgileri: adres, telefon ve e-posta.',
+  alternates: { canonical: '/iletisim' },
+  openGraph: {
+    title: 'İletişim | boook.love',
+    description:
+      'boook.love iletişim bilgileri: adres, telefon ve e-posta.',
+    url: 'https://www.boook.love/iletisim',
+    siteName: 'boook.love',
+    type: 'website',
+  },
 }
 
+const COMPANY = 'boook.love'
+const ADDRESS_TEXT =
+  'Rasimpaşa Mah. Duatepe Sk. No: 55/15 34716 Kadıköy/İstanbul'
+const ADDRESS_MAP_URL =
+  'https://www.google.com/maps/search/?api=1&query=' +
+  encodeURIComponent(ADDRESS_TEXT)
+const PHONE_DISPLAY = '0 (541) 788 94 98'
+const PHONE_TEL = '+905417889498'
+const EMAIL = 'info@boook.love'
 
+export default function ContactPage() {
+  return (
+    <>
+      {/* SEO: Organization JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: COMPANY,
+            url: 'https://www.boook.love',
+            email: EMAIL,
+            telephone: PHONE_TEL,
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: 'Rasimpaşa Mah. Duatepe Sk. No: 55/15',
+              postalCode: '34716',
+              addressLocality: 'Kadıköy',
+              addressRegion: 'İstanbul',
+              addressCountry: 'TR',
+            },
+          }),
+        }}
+      />
+
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          İletişim
+        </h1>
+
+        <div className="mt-6 rounded-2xl border bg-white p-6 shadow-sm">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <dt className="text-sm text-gray-600">Şirket</dt>
+              <dd className="text-base font-medium">{COMPANY}</dd>
+            </div>
+
+            <div className="space-y-1">
+              <dt className="text-sm text-gray-600">Telefon</dt>
+              <dd className="text-base">
+                <a
+                  href={`tel:${PHONE_TEL}`}
+                  className="text-rose-700 hover:underline"
+                >
+                  {PHONE_DISPLAY}
+                </a>
+              </dd>
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <dt className="text-sm text-gray-600">E-posta</dt>
+              <dd className="text-base break-all">
+                <a
+                  href={`mailto:${EMAIL}`}
+                  className="text-rose-700 hover:underline"
+                >
+                  {EMAIL}
+                </a>
+              </dd>
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <dt className="text-sm text-gray-600">Adres</dt>
+              <dd className="text-base">
+                <a
+                  href={ADDRESS_MAP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {ADDRESS_TEXT}
+                </a>
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-6">
+            <iframe
+              title="Harita"
+              src={`https://www.google.com/maps?q=${encodeURIComponent(
+                ADDRESS_TEXT,
+              )}&output=embed`}
+              className="w-full h-72 rounded-xl border"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+       
+      </main>
+    </>
+  )
+}
 
 
 
