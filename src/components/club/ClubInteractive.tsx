@@ -26,6 +26,7 @@ type Initial = {
     bannerUrl: string
     priceTRY: number
     moderatorName: string
+    moderatorAvatarUrl?: string | null
     memberCount: number
     isMember: boolean
     memberSince: string | null
@@ -70,7 +71,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const [contractChecked, setContractChecked] = useState(false)
   const [downloadedOnce, setDownloadedOnce] = useState(false)
 
-  // Inline hata mesajı
+  // Inline hata
   const [uiError, setUiError] = useState<string | null>(null)
   const errorRef = useRef<HTMLDivElement | null>(null)
   const showError = (msg: string) => {
@@ -83,19 +84,18 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const membersPreview = useMemo(() => initial.club.members.slice(0, 30), [initial.club.members])
   const needContractUI = !!initial.me.id && !isMember
 
-  // PayTR modal & pending state
+  // PayTR modal & pending
   const [paytrOpen, setPaytrOpen] = useState(false)
   const [paytrUrl, setPaytrUrl] = useState<string | null>(null)
   const pendingKey = `paytr_pending_${initial.club.id}`
   const [pending, setPending] = useState<Pending>(null)
 
-  // Pending okuyucu (her çağrıda localStorage'dan taze okur)
   function readPending(): Pending {
     try {
       const raw = localStorage.getItem(pendingKey)
       if (!raw) return null
       const p = JSON.parse(raw)
-      const fresh = Date.now() - (p?.createdAt || 0) < 30 * 60 * 1000 // 30dk
+      const fresh = Date.now() - (p?.createdAt || 0) < 30 * 60 * 1000
       if (p?.iframe_url && fresh) return p
       localStorage.removeItem(pendingKey)
       return null
@@ -103,7 +103,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
       return null
     }
   }
-
   function clearPending(p?: Pending) {
     try {
       const oid = p?.merchant_oid
@@ -112,14 +111,12 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     } catch {}
     setPending(null)
   }
-
   function resumePending(p: Pending) {
     if (!p?.iframe_url) return
     setPaytrUrl(p.iframe_url)
     setPaytrOpen(true)
     showError('Bekleyen abonelik işleminizi tekrar açtık. Ödemeyi tamamlayın veya kapatın.')
   }
-
   useEffect(() => {
     setPending(readPending())
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,26 +126,19 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     if (busy) return
     setUiError(null)
 
-    // 1) Giriş kontrolü
     if (!initial.me.id) {
       const cb = `/clubs/${initial.club.slug}#subscribe`
       window.location.href = `/login?callbackUrl=${encodeURIComponent(cb)}`
       return
     }
-
-    // 2) Profil eksikse modalı aç
     if (profileMissing) {
       setShowProfileModal(true)
       return
     }
-
-    // 3) Sözleşme onayı zorunlu
     if (!contractChecked) {
       showError('Lütfen Mesafeli Satış Sözleşmesini okuyup onay kutucuğunu işaretleyin.')
       return
     }
-
-    // 4) Bekleyen işlem var mı? (callback gelmediyse aynı iFrame’i tekrar aç)
     const existing = readPending()
     if (existing) {
       setPending(existing)
@@ -156,7 +146,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
       return
     }
 
-    // 5) PayTR token al ve modalda iFrame aç
     setBusy(true)
     try {
       const res = await fetch('/api/paytr/get-token', {
@@ -167,27 +156,22 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           userName: initial.me.name || 'Abone',
           userAddress: `${profile.district || ''} ${profile.city || 'Türkiye'}`.trim(),
           userPhone: profile.phone || '0000000000',
-          amount: initial.club.priceTRY, // TL
+          amount: initial.club.priceTRY,
           clubId: initial.club.id,
           clubName: initial.club.name,
           redirectSlug: `clubs/${initial.club.slug}`,
         }),
       })
 
-      // JSON olmayan cevap (ör. HTML hata sayfası) ise kullanıcıya anlamlı uyarı ver
       const ctype = res.headers.get('content-type') || ''
       if (!ctype.includes('application/json')) {
         throw new Error(
           'Bekleyen abonelik işleminiz olabilir. Mevcut ödemeyi tamamlayın veya 30 dk sonra yeniden deneyin.',
         )
       }
-
       const data = await res.json()
-      if (!res.ok || !data?.iframe_url) {
-        throw new Error(data?.error || 'Ödeme başlatılamadı')
-      }
+      if (!res.ok || !data?.iframe_url) throw new Error(data?.error || 'Ödeme başlatılamadı')
 
-      // Pending kaydet (ok/fail sayfaları bu kaydı temizler)
       try {
         const p: Pending = {
           merchant_oid: data.merchant_oid,
@@ -196,11 +180,9 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
         }
         localStorage.setItem(pendingKey, JSON.stringify(p))
         setPending(p)
-      } catch {
-        /* ignore */
-      }
+      } catch {}
 
-      setPaytrUrl(data.iframe_url as string)
+      setPaytrUrl(data.iframe_url)
       setPaytrOpen(true)
     } catch (e: any) {
       showError(e?.message || 'Ödeme başlatılamadı. Lütfen tekrar deneyin.')
@@ -215,10 +197,35 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
       <div className="space-y-6">
         <div>
           <div className="text-sm text-gray-600">Moderatör</div>
-          <h1 className="text-2xl md:text-3xl font-semibold">
-            {initial.club.moderatorName} — {initial.club.name}
-          </h1>
-          <p className="mt-2 text-gray-700">{initial.club.description}</p>
+
+          {/* Moderatör avatarı + ad (gerçek görsel) */}
+          <div className="mt-1 flex items-center gap-3">
+            {initial.club.moderatorAvatarUrl ? (
+              <span className="inline-block w-20 h-20 rounded-full overflow-hidden ring-2 ring-white shadow">
+                <Image
+                  src={initial.club.moderatorAvatarUrl}
+                  alt={initial.club.moderatorName}
+                  width={80}
+                  height={80}
+                  className="object-cover"
+                  sizes="80px"
+                  priority
+                />
+              </span>
+            ) : (
+              <span className="inline-grid place-items-center w-20 h-20 rounded-full bg-gray-100 text-gray-500 ring-2 ring-white shadow">
+                <span className="text-sm">👤</span>
+              </span>
+            )}
+
+            <h1 className="text-2xl md:text-3xl font-semibold">
+              {initial.club.moderatorName} — {initial.club.name}
+            </h1>
+          </div>
+
+          {initial.club.description && (
+            <p className="mt-2 text-gray-700">{initial.club.description}</p>
+          )}
         </div>
 
         {/* Üyeler bulutu */}
@@ -338,7 +345,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
                 {busy ? 'Abone olunuyor…' : `Abone ol (₺${initial.club.priceTRY})`}
               </button>
 
-              {/* Eksik bilgi uyarısı */}
               {profileMissing && (
                 <div className="mt-3 text-sm text-amber-900 bg-amber-50 rounded-xl p-3">
                   Eksik bilgiler var, lütfen doldurun.{' '}
@@ -352,7 +358,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
                 </div>
               )}
 
-              {/* PROFİL TAMAMLANDIYSA sözleşme alanı */}
               {!profileMissing && needContractUI && (
                 <div className="mt-4 space-y-2">
                   <label className="inline-flex items-start gap-2 text-sm">
@@ -382,7 +387,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
                 </div>
               )}
 
-              {/* inline hata */}
               {uiError && (
                 <div
                   ref={errorRef}
@@ -403,7 +407,24 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
         <div className="card p-4">
           <div className="text-sm text-gray-600">Kulüp bilgileri</div>
           <div className="mt-2 text-sm">
-            Moderatör: <span className="font-medium">{initial.club.moderatorName}</span>
+            Moderatör:{' '}
+            <span className="inline-flex items-center gap-2 font-medium">
+              {initial.club.moderatorAvatarUrl ? (
+                <span className="inline-block w-6 h-6 rounded-full overflow-hidden ring-2 ring-white shadow">
+                  <Image
+                    src={initial.club.moderatorAvatarUrl}
+                    alt={initial.club.moderatorName}
+                    width={24}
+                    height={24}
+                  />
+                </span>
+              ) : (
+                <span className="inline-grid place-items-center w-6 h-6 rounded-full bg-gray-100 text-gray-500">
+                  <span className="text-[10px]">👤</span>
+                </span>
+              )}
+              {initial.club.moderatorName}
+            </span>
           </div>
           <div className="text-sm">
             Üye sayısı: <span className="font-medium">{memberCount}</span>
@@ -440,7 +461,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
         }}
       />
 
-      {/* PayTR iFrame Modal */}
       <PaytrIframeModal
         open={paytrOpen}
         onClose={() => setPaytrOpen(false)}
@@ -450,9 +470,3 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     </div>
   )
 }
-
-
-
-
-
-

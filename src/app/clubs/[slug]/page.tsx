@@ -18,7 +18,8 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       description: true,
       bannerUrl: true,
       priceTRY: true,
-      moderator: { select: { name: true } }
+      // ← avatarUrl'ı da seçiyoruz
+      moderator: { select: { name: true, avatarUrl: true } }
     }
   })
   if (!club) {
@@ -43,7 +44,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
   // 4) Bu ayın seçkisi
   const currentPick = await prisma.clubPick.findFirst({
     where: { clubId: club.id, isCurrent: true },
-    include: { book: { select: { title: true, author: true, coverUrl: true} } }
+    include: { book: { select: { title: true, author: true, coverUrl: true } } }
   })
 
   // 5) Yaklaşan etkinlik
@@ -106,6 +107,8 @@ export default async function ClubPage({ params }: { params: { slug: string } })
         'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1600&auto=format&fit=crop',
       priceTRY: club.priceTRY,
       moderatorName: club.moderator?.name ?? '—',
+      // ← ClubInteractive’ın beklediği alan
+      moderatorAvatarUrl: club.moderator?.avatarUrl ?? null,
       memberCount,
       isMember: !!myMembership,
       memberSince: myMembership?.since ?? null,
@@ -141,3 +144,4 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     </div>
   )
 }
+

@@ -1,3 +1,4 @@
+// src/components/ClubCard.tsx
 'use client'
 
 import Image from 'next/image'
@@ -11,13 +12,15 @@ type ClubItem = {
   description: string | null
   bannerUrl: string | null
   priceTRY: number
-  moderator?: { id: string; name: string } | null
+  // avatarUrl alanını ekledim; başka hiçbir şeyi bozmadım.
+  moderator?: { id: string; name: string; avatarUrl?: string | null } | null
   memberCount: number
   pickCount: number
 }
 
 export default function ClubCard({ club }: { club: ClubItem }) {
   const moderatorName = club.moderator?.name ?? 'Moderatör'
+  const moderatorAvatar = club.moderator?.avatarUrl || null
   const cover =
     club.bannerUrl ??
     'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1200&auto=format&fit=crop'
@@ -49,7 +52,21 @@ export default function ClubCard({ club }: { club: ClubItem }) {
           </h3>
         </Link>
 
-        <div className="mt-1 text-sm text-gray-600 line-clamp-1">{moderatorName}</div>
+        {/* Moderatör adı + GERÇEK avatar (varsa) */}
+        <div className="mt-1 text-sm text-gray-600 line-clamp-1 flex items-center gap-2">
+          {moderatorAvatar ? (
+            <img
+              src={moderatorAvatar}
+              alt={moderatorName}
+              width={20}
+              height={20}
+              className="rounded-full object-cover"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          ) : null}
+          <span className="truncate">{moderatorName}</span>
+        </div>
 
         <div className="mt-3 flex items-center gap-3 text-sm text-gray-700">
           <span>👥 {club.memberCount} abone</span>
