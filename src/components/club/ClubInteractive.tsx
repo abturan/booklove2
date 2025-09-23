@@ -404,32 +404,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           )}
         </div>
 
-        <div className="card p-4">
-          <div className="text-sm text-gray-600">Kulüp bilgileri</div>
-          <div className="mt-2 text-sm">
-            Moderatör:{' '}
-            <span className="inline-flex items-center gap-2 font-medium">
-              {initial.club.moderatorAvatarUrl ? (
-                <span className="inline-block w-6 h-6 rounded-full overflow-hidden ring-2 ring-white shadow">
-                  <Image
-                    src={initial.club.moderatorAvatarUrl}
-                    alt={initial.club.moderatorName}
-                    width={24}
-                    height={24}
-                  />
-                </span>
-              ) : (
-                <span className="inline-grid place-items-center w-6 h-6 rounded-full bg-gray-100 text-gray-500">
-                  <span className="text-[10px]">👤</span>
-                </span>
-              )}
-              {initial.club.moderatorName}
-            </span>
-          </div>
-          <div className="text-sm">
-            Üye sayısı: <span className="font-medium">{memberCount}</span>
-          </div>
-        </div>
+        
       </aside>
 
       {/* Modals */}

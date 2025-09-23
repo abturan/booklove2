@@ -1,3 +1,4 @@
+// src/app/api/clubs/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -8,11 +9,19 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get('limit') || '0') || undefined
 
   const where: any = { published: true }
+
+  // Arama: tokenlara böl, her token için (name OR moderator.name) contains (case-insensitive)
   if (q) {
-    where.OR = [
-      { name: { contains: q } as any },
-      { moderator: { name: { contains: q } as any } },
-    ]
+    const tokens = q.split(/\s+/).filter(Boolean)
+    if (tokens.length > 0) {
+      where.AND = tokens.map((tok) => ({
+        OR: [
+          { name: { contains: tok, mode: 'insensitive' } as any },
+          // İlişkili alan: mevcut projede bu kullanım çalışıyor; davranışı bozmayalım.
+          { moderator: { name: { contains: tok, mode: 'insensitive' } as any } },
+        ],
+      }))
+    }
   }
 
   let orderBy: any
@@ -56,7 +65,3 @@ export async function GET(req: Request) {
     }))
   )
 }
-
-
-
-
