@@ -1,3 +1,4 @@
+//src/app/profile/settings/page.tsx
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
