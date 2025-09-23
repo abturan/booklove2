@@ -12,11 +12,10 @@ type Club = {
   name: string
   bannerUrl: string | null
   priceTRY: number
-  description: string | null          
-  moderator: { id: string; name: string } | null  
-  memberCount: number                 
+  description: string | null
+  moderator: { id: string; name: string; avatarUrl?: string | null } | null
+  memberCount: number
   pickCount: number
-
 }
 
 /** API’den gelen veriyi güvenli Club tipine dönüştürür. Uymayanları eler. */
@@ -31,27 +30,34 @@ function normalizeClub(x: RawClub, fallbackKey: string): Club | null {
     id: id || `tmp-${fallbackKey}`,
     slug,
     name,
-    description: x.description ?? null,     
+    description: x.description ?? null,
     bannerUrl: x.bannerUrl ?? null,
     priceTRY: typeof x.priceTRY === 'number' ? x.priceTRY : 0,
     moderator: x.moderator
-      ? { id: x.moderator.id ?? '', name: x.moderator.name ?? '' }
+      ? {
+          id: x.moderator.id ?? '',
+          name: x.moderator.name ?? '',
+          avatarUrl: x.moderator.avatarUrl ?? null,
+        }
       : x.owner
-      ? { id: x.owner.id ?? '', name: x.owner.name ?? '' }
+      ? {
+          id: x.owner.id ?? '',
+          name: x.owner.name ?? '',
+          avatarUrl: x.owner.avatarUrl ?? null,
+        }
       : null,
     memberCount:
-    typeof x.memberCount === 'number'
-      ? x.memberCount
-      : typeof x._count?.memberships === 'number'
-      ? x._count.memberships
-      : 0,                       
+      typeof x.memberCount === 'number'
+        ? x.memberCount
+        : typeof x._count?.memberships === 'number'
+        ? x._count.memberships
+        : 0,
     pickCount:
-    typeof x.pickCount === 'number'
-      ? x.pickCount
-      : Array.isArray(x.picks)
-      ? x.picks.length
-      : 0,
-
+      typeof x.pickCount === 'number'
+        ? x.pickCount
+        : Array.isArray(x.picks)
+        ? x.picks.length
+        : 0,
   }
 }
 
@@ -193,3 +199,9 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
     </div>
   )
 }
+
+
+
+
+
+
