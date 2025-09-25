@@ -1,4 +1,4 @@
-//src/app/api/upload/route.ts
+// src/app/api/upload/route.ts
 import { NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
@@ -14,7 +14,7 @@ function extFromType(type: string) {
 export async function POST(req: Request) {
   try {
     const url = new URL(req.url)
-    const kind = url.searchParams.get('type') // 'avatar' | 'banner' | null
+    const kind = url.searchParams.get('type') // 'avatar' | 'banner' | 'post' | null
     const form = await req.formData()
     const file = form.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'Dosya bulunamadı' }, { status: 400 })
@@ -22,14 +22,16 @@ export async function POST(req: Request) {
     const ok = ['image/png', 'image/jpeg']
     if (!ok.includes(file.type))
       return NextResponse.json({ error: 'Sadece PNG/JPG kabul edilir' }, { status: 400 })
+
+    // ✅ 2MB sınırı (UI ile tutarlı)
     if (file.size > 2 * 1024 * 1024)
       return NextResponse.json({ error: 'Dosya en fazla 2MB olmalı' }, { status: 400 })
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // varsayılan: avatar (eski kullanım bozulmasın)
-    const sub = kind === 'banner' ? 'banners' : 'avatars'
+    // klasör: avatar/banner/post
+    const sub = kind === 'banner' ? 'banners' : kind === 'post' ? 'posts' : 'avatars'
     const dir = path.join(process.cwd(), 'public', 'uploads', sub)
     await mkdir(dir, { recursive: true })
 

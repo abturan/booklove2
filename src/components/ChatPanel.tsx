@@ -1,8 +1,11 @@
+// src/components/ChatPanel.tsx
 'use client'
 
 import useSWR from 'swr'
 import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
+import Link from 'next/link'
+import Avatar from '@/components/Avatar'
+import { userPath } from '@/lib/userPath'
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -55,18 +58,11 @@ export default function ChatPanel({
         )}
         {items.map((m) => (
           <div key={m.id} className="flex gap-2 items-start p-2">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-100">
-              <Image
-                src={
-                  m.author.avatarUrl ||
-                  `https://api.dicebear.com/8.x/thumbs/png?seed=${encodeURIComponent(m.author.id)}`
-                }
-                alt={m.author.name ?? 'Üye'}
-                fill
-              />
-            </div>
+            <Link href={userPath(m.author?.username, m.author?.name)} className="relative w-8 h-8 inline-block rounded-full overflow-hidden bg-gray-100">
+              <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} />
+            </Link>
             <div>
-              <div className="text-sm font-medium">{m.author.name ?? 'Üye'}</div>
+              <div className="text-sm font-medium">{m.author?.name ?? 'Üye'}</div>
               <div className="text-sm">{m.body}</div>
             </div>
           </div>

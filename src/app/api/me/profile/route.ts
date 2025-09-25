@@ -1,7 +1,31 @@
+// src/app/api/me/route.ts
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+/**
+ * GET → oturum sahibinin en güncel verisini döner (header avatar’ı canlı yenilemek için)
+ */
+export async function GET() {
+  const session = await auth()
+  const userId = session?.user?.id
+  if (!userId) {
+    return NextResponse.json({ ok: false, error: 'Yetkisiz' }, { status: 401 })
+  }
+
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, avatarUrl: true },
+  })
+  if (!me) {
+    return NextResponse.json({ ok: false, error: 'Bulunamadı' }, { status: 404 })
+  }
+  return NextResponse.json(me)
+}
+
+/**
+ * POST → (ORJİNALİN AYNISI) Parça parça profil güncelleme
+ */
 export async function POST(req: Request) {
   const session = await auth()
   const userId = session?.user?.id

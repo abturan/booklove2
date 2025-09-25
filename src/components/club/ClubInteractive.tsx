@@ -2,11 +2,14 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileInfoModal from '@/components/modals/ProfileInfoModal'
 import ContractModal from '@/components/modals/ContractModal'
 import PaytrIframeModal from '@/components/modals/PaytrIframeModal'
+import Avatar from '@/components/Avatar'
+import { userPath } from '@/lib/userPath'
 
 type Initial = {
   me: {
@@ -57,7 +60,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const [memberCount, setMemberCount] = useState(initial.club.memberCount)
   const [busy, setBusy] = useState(false)
 
-  // Profil & sözleşme akışı
   const [profileMissing, setProfileMissing] = useState(
     !!initial.me.id && (!initial.me.city || !initial.me.district || !initial.me.phone),
   )
@@ -71,7 +73,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const [contractChecked, setContractChecked] = useState(false)
   const [downloadedOnce, setDownloadedOnce] = useState(false)
 
-  // Inline hata
   const [uiError, setUiError] = useState<string | null>(null)
   const errorRef = useRef<HTMLDivElement | null>(null)
   const showError = (msg: string) => {
@@ -84,7 +85,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const membersPreview = useMemo(() => initial.club.members.slice(0, 30), [initial.club.members])
   const needContractUI = !!initial.me.id && !isMember
 
-  // PayTR modal & pending
   const [paytrOpen, setPaytrOpen] = useState(false)
   const [paytrUrl, setPaytrUrl] = useState<string | null>(null)
   const pendingKey = `paytr_pending_${initial.club.id}`
@@ -119,7 +119,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   }
   useEffect(() => {
     setPending(readPending())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onSubscribe = async () => {
@@ -193,42 +192,28 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
 
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-      {/* Sol içerik */}
       <div className="space-y-6">
         <div>
           <div className="text-sm text-gray-600">Moderatör</div>
-
-          {/* Moderatör avatarı + ad (gerçek görsel) */}
           <div className="mt-1 flex items-center gap-3">
             {initial.club.moderatorAvatarUrl ? (
-              <span className="inline-block w-20 h-20 rounded-full overflow-hidden ring-2 ring-white shadow">
-                <Image
-                  src={initial.club.moderatorAvatarUrl}
-                  alt={initial.club.moderatorName}
-                  width={80}
-                  height={80}
-                  className="object-cover"
-                  sizes="80px"
-                  priority
-                />
-              </span>
+              <Link href={userPath(undefined, initial.club.moderatorName)} className="inline-block">
+                <Avatar src={initial.club.moderatorAvatarUrl} size={80} alt={initial.club.moderatorName} className="ring-2 ring-white shadow" />
+              </Link>
             ) : (
               <span className="inline-grid place-items-center w-20 h-20 rounded-full bg-gray-100 text-gray-500 ring-2 ring-white shadow">
                 <span className="text-sm">👤</span>
               </span>
             )}
-
             <h1 className="text-2xl md:text-3xl font-semibold">
               {initial.club.moderatorName} — {initial.club.name}
             </h1>
           </div>
-
           {initial.club.description && (
             <p className="mt-2 text-gray-700">{initial.club.description}</p>
           )}
         </div>
 
-        {/* Üyeler bulutu */}
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div className="font-medium">Üyeler</div>
@@ -237,9 +222,11 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           <div className="mt-3 flex flex-wrap gap-2 items-center">
             {membersPreview.map((m) => (
               <div key={m.id} className="relative group">
-                <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white shadow">
-                  <Image src={m.avatarUrl} alt={m.name} width={36} height={36} />
-                </div>
+                <Link href={userPath(undefined, m.name)} className="block">
+                  <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white shadow">
+                    <Avatar src={m.avatarUrl} size={36} alt={m.name} />
+                  </div>
+                </Link>
                 <div className="absolute left-1/2 -translate-x-1/2 -top-8 pointer-events-none opacity-0 group-hover:opacity-100 transition text-xs bg-gray-900 text-white px-2 py-1 rounded-xl whitespace-nowrap">
                   {m.name}
                 </div>
@@ -253,7 +240,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           </div>
         </div>
 
-        {/* Seçki - Etkinlik */}
         <div className="grid md:grid-cols-2 gap-4">
           <div className="card p-4">
             <div className="text-sm text-gray-600">Bu ayın seçkisi</div>
@@ -287,7 +273,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           </div>
         </div>
 
-        {/* Sohbet */}
         <div className="card p-0 overflow-hidden">
           <div className="px-4 pt-4">
             <div className="font-medium">Sohbet</div>
@@ -304,7 +289,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
         </div>
       </div>
 
-      {/* Sağ – Abonelik kutusu */}
       <aside className="space-y-4">
         <div className="card p-4">
           <div className="text-sm text-gray-600">Abonelik</div>
@@ -403,11 +387,8 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
             </div>
           )}
         </div>
-
-        
       </aside>
 
-      {/* Modals */}
       <ProfileInfoModal
         open={showProfileModal}
         initial={profile}

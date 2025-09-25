@@ -4,6 +4,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import clsx from 'clsx'
+import Avatar from '@/components/Avatar'
+import { userPath } from '@/lib/userPath'
 
 type ClubItem = {
   id: string
@@ -12,8 +14,7 @@ type ClubItem = {
   description: string | null
   bannerUrl: string | null
   priceTRY: number
-  // avatarUrl alanını ekledim; başka hiçbir şeyi bozmadım.
-  moderator?: { id: string; name: string; avatarUrl?: string | null } | null
+  moderator?: { id: string; name: string; avatarUrl?: string | null; username?: string | null } | null
   memberCount: number
   pickCount: number
 }
@@ -52,20 +53,15 @@ export default function ClubCard({ club }: { club: ClubItem }) {
           </h3>
         </Link>
 
-        {/* Moderatör adı + GERÇEK avatar (varsa) */}
         <div className="mt-1 text-sm text-gray-600 line-clamp-1 flex items-center gap-2">
           {moderatorAvatar ? (
-            <img
-              src={moderatorAvatar}
-              alt={moderatorName}
-              width={20}
-              height={20}
-              className="rounded-full object-cover"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-            />
-          ) : null}
-          <span className="truncate">{moderatorName}</span>
+            <Link href={userPath(club.moderator?.username, moderatorName)} className="inline-flex items-center gap-2">
+              <Avatar src={moderatorAvatar} size={20} alt={moderatorName} />
+              <span className="truncate">{moderatorName}</span>
+            </Link>
+          ) : (
+            <span className="truncate">{moderatorName}</span>
+          )}
         </div>
 
         <div className="mt-3 flex items-center gap-3 text-sm text-gray-700">

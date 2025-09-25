@@ -1,3 +1,4 @@
+//src/components/modals/ProfileInfoModal.tsx
 'use client'
 
 import { useState } from 'react'

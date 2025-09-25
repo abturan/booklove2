@@ -1,3 +1,4 @@
+// src/app/clubs/[slug]/page.tsx
 import Image from 'next/image'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -8,7 +9,6 @@ export const dynamic = 'force-dynamic'
 export default async function ClubPage({ params }: { params: { slug: string } }) {
   const session = await auth()
 
-  // 1) Kulübün temel bilgileri
   const club = await prisma.club.findUnique({
     where: { slug: params.slug },
     select: {
@@ -18,66 +18,53 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       description: true,
       bannerUrl: true,
       priceTRY: true,
-      // ← avatarUrl'ı da seçiyoruz
-      moderator: { select: { name: true, avatarUrl: true } }
+      moderator: { select: { name: true, avatarUrl: true, username: true } }
     }
   })
   if (!club) {
     return <div className="container mx-auto px-4 py-10">Kulüp bulunamadı.</div>
   }
 
-  // 2) Üye sayısı
   const memberCount = await prisma.membership.count({
     where: { clubId: club.id, isActive: true }
   })
 
-  // 3) Üyeler (maks 30 avatar)
   const members = await prisma.membership.findMany({
     where: { clubId: club.id, isActive: true },
     orderBy: { joinedAt: 'desc' },
     take: 30,
     select: {
-      user: { select: { id: true, name: true, avatarUrl: true } }
+      user: { select: { id: true, name: true, username: true, avatarUrl: true } }
     }
   })
 
-  // 4) Bu ayın seçkisi
   const currentPick = await prisma.clubPick.findFirst({
     where: { clubId: club.id, isCurrent: true },
     include: { book: { select: { title: true, author: true, coverUrl: true } } }
   })
 
-  // 5) Yaklaşan etkinlik
   const nextEvent = await prisma.clubEvent.findFirst({
     where: { clubId: club.id },
     orderBy: { startsAt: 'asc' },
     select: { id: true, title: true, startsAt: true }
   })
 
-  // 6) Sohbet odası
   const room = await prisma.chatRoom.findFirst({
     where: { clubId: club.id },
     select: { id: true }
   })
 
-  // 7) Kullanıcı bilgisi (eksik alanlar için)
   const me =
     session?.user?.id
       ? await prisma.user.findUnique({
           where: { id: session.user.id },
           select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
-            city: true,
-            district: true,
-            phone: true
+            id: true, name: true, email: true, avatarUrl: true,
+            city: true, district: true, phone: true
           }
         })
       : null
 
-  // 8) Benim üyeliğim
   let myMembership: { since: string } | null = null
   if (session?.user?.id) {
     const m = await prisma.membership.findUnique({
@@ -107,8 +94,8 @@ export default async function ClubPage({ params }: { params: { slug: string } })
         'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1600&auto=format&fit=crop',
       priceTRY: club.priceTRY,
       moderatorName: club.moderator?.name ?? '—',
-      // ← ClubInteractive’ın beklediği alan
       moderatorAvatarUrl: club.moderator?.avatarUrl ?? null,
+      moderatorUsername: club.moderator?.username ?? null,
       memberCount,
       isMember: !!myMembership,
       memberSince: myMembership?.since ?? null,
@@ -128,9 +115,8 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       members: members.map((m) => ({
         id: m.user.id,
         name: m.user.name ?? 'Üye',
-        avatarUrl:
-          m.user.avatarUrl ||
-          `https://api.dicebear.com/8.x/thumbs/png?seed=${encodeURIComponent(m.user.id)}`
+        username: m.user.username ?? null,
+        avatarUrl: m.user.avatarUrl ?? null
       }))
     }
   }
@@ -140,8 +126,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden">
         <Image src={initial.club.bannerUrl} alt="" fill className="object-cover" priority />
       </div>
-      <ClubInteractive initial={initial} />
+      <ClubInteractive initial={initial as any} />
     </div>
   )
 }
-

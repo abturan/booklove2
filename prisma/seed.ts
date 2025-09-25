@@ -1,6 +1,9 @@
+import 'dotenv/config'
+
 import { PrismaClient, type User, type Club } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { slugify } from '../src/lib/slugify'
+
 
 const prisma = new PrismaClient()
 

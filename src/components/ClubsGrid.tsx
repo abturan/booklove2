@@ -1,3 +1,4 @@
+//src/components/ClubsGrid.tsx
 'use client'
 
 import { useEffect, useState } from "react";
