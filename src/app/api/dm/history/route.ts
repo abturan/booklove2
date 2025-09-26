@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 function orderIds(a: string, b: string) {
-  return a < b ? [a, b] as const : [b, a] as const
+  return a < b ? ([a, b] as const) : ([b, a] as const)
 }
 
 export async function GET(req: Request) {
@@ -17,7 +17,9 @@ export async function GET(req: Request) {
   const cursor = url.searchParams.get('cursor') || ''
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 50)
 
-  if (!peerId || peerId === meId) return NextResponse.json({ ok: false, error: 'Geçersiz kullanıcı' }, { status: 400 })
+  if (!peerId || peerId === meId) {
+    return NextResponse.json({ ok: false, error: 'Geçersiz kullanıcı' }, { status: 400 })
+  }
 
   const isFriend = await prisma.friendRequest.findFirst({
     where: {
@@ -28,8 +30,12 @@ export async function GET(req: Request) {
   })
   if (!isFriend) return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
 
-  const [u1Id, u2Id] = orderIds(meId, peerId)
-  const thread = await prisma.dmThread.findUnique({ where: { u1Id_u2Id: { u1Id, u2Id } }, select: { id: true } })
+  const [userAId, userBId] = orderIds(meId, peerId)
+
+  const thread = await prisma.dmThread.findUnique({
+    where: { userAId_userBId: { userAId, userBId } },
+    select: { id: true },
+  })
   if (!thread) return NextResponse.json({ ok: true, items: [], nextCursor: null })
 
   const items = await prisma.dmMessage.findMany({

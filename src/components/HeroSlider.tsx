@@ -23,12 +23,17 @@ const slides = [
 
 export default function HeroSlider() {
   const [i, setI] = useState(0)
-  const timer = useRef<NodeJS.Timeout | null>(null)
+  const timer = useRef<number | null>(null)
   const hostRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    timer.current = setInterval(() => setI((x) => (x + 1) % slides.length), 5000)
-    return () => timer.current && clearInterval(timer.current)
+    timer.current = window.setInterval(() => setI((x) => (x + 1) % slides.length), 5000)
+    return () => {
+      if (timer.current !== null) {
+        window.clearInterval(timer.current)
+        timer.current = null
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -54,7 +59,6 @@ export default function HeroSlider() {
 
   return (
     <div ref={hostRef} className="relative rounded-3xl overflow-hidden hero-fixed" style={{ background: BRAND_RED }}>
-      {/* Mobilde BG imajı tamamen gizle; >=sm ekranlarda göster */}
       <Image
         src={s.img}
         alt=""
@@ -62,14 +66,11 @@ export default function HeroSlider() {
         priority
         className="hidden sm:block object-contain object-right lg:object-right-bottom pointer-events-none select-none -z-0"
       />
-
-      {/* Metin bloğu – var olan marjlar korunur */}
       <div className="absolute inset-x-0 top-6 sm:top-8 lg:top-10 z-10 mt-2 ml-10">
         <div className="container">
           <div className="grid grid-cols-12 items-start gap-6">
             <div className="col-span-12 md:col-span-10 lg:col-span-10">
               <div className="flex items-start gap-4 sm:gap-6">
-                {/* Logo – mobilde daha kompakt */}
                 <img src="/logos/logo-white.png" alt="boook.love" className="w-14 sm:w-20 lg:w-28 h-auto shrink-0" />
                 <div className="text-white">
                   <h1 className="leading-[1] font-semibold text-[26px] sm:text-[42px] lg:text-[56px] max-w-[18ch]">
@@ -83,12 +84,10 @@ export default function HeroSlider() {
                 </div>
               </div>
             </div>
-
             <div className="col-span-12 md:col-span-5 lg:col-span-5" />
           </div>
         </div>
       </div>
-
       <div className="absolute left-6 bottom-4 flex items-center gap-2 z-20">
         {slides.map((_, idx) => (
           <button
@@ -102,7 +101,6 @@ export default function HeroSlider() {
           />
         ))}
       </div>
-
       <div className="absolute right-6 bottom-4 flex items-center gap-2 z-20">
         <button
           onClick={() => go(-1)}
@@ -122,3 +120,10 @@ export default function HeroSlider() {
     </div>
   )
 }
+
+
+
+
+
+
+

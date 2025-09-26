@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 function orderIds(a: string, b: string) {
-  return a < b ? [a, b] as const : [b, a] as const
+  return a < b ? ([a, b] as const) : ([b, a] as const)
 }
 
 export async function POST(req: Request) {
@@ -12,8 +12,10 @@ export async function POST(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   const meId = session.user.id
 
-  const { peerId } = await req.json().catch(() => ({}))
-  if (!peerId || peerId === meId) return NextResponse.json({ ok: false, error: 'Geçersiz kullanıcı' }, { status: 400 })
+  const { peerId } = await req.json()
+  if (!peerId || peerId === meId) {
+    return NextResponse.json({ ok: false, error: 'Geçersiz kullanıcı' }, { status: 400 })
+  }
 
   const isFriend = await prisma.friendRequest.findFirst({
     where: {
@@ -24,12 +26,13 @@ export async function POST(req: Request) {
   })
   if (!isFriend) return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
 
-  const [u1Id, u2Id] = orderIds(meId, peerId)
+  const [userAId, userBId] = orderIds(meId, peerId)
 
   const thread = await prisma.dmThread.upsert({
-    where: { u1Id_u2Id: { u1Id, u2Id } },
+    where: { userAId_userBId: { userAId, userBId } },
     update: {},
-    create: { u1Id, u2Id },
+    create: { userAId, userBId },
+    select: { id: true },
   })
 
   return NextResponse.json({ ok: true, threadId: thread.id })
