@@ -15,6 +15,18 @@ export default function Header() {
   const [signingOut, setSigningOut] = useState(false)
   const [menu, setMenu] = useState(false)
 
+  const [dockedLogo, setDockedLogo] = useState(false)
+  useEffect(() => {
+    const hasHero = !!document.querySelector('.hero-fixed')
+    if (!hasHero) setDockedLogo(true)
+    const onDock = (e: Event) => {
+      const det = (e as CustomEvent<boolean>).detail
+      setDockedLogo(typeof det === 'boolean' ? det : (hasHero ? false : true))
+    }
+    window.addEventListener('hero:dock', onDock as EventListener)
+    return () => window.removeEventListener('hero:dock', onDock as EventListener)
+  }, [])
+
   const [me, setMe] = useState<MeLite | null>(null)
   const [loaded, setLoaded] = useState(false)
 
@@ -56,13 +68,19 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b bg-white/70 backdrop-blur supports-backdrop-blur:bg-white/60">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="font-semibold">
+        <Link href="/" className="font-semibold" aria-label="boook.love">
           <img
             src="/logo-fixed.svg"
             alt="boook.love"
             width={200}
             height={32}
             className="rounded-md logo-main-page1 mt-[36px] lg:mt-[60px] w-[50%]"
+            style={{
+              opacity: dockedLogo ? 1 : 0,
+              transform: `translateY(${dockedLogo ? 0 : -6}px)`,
+              transition: 'opacity 220ms ease, transform 220ms ease',
+              pointerEvents: dockedLogo ? 'auto' : 'none',
+            }}
           />
         </Link>
 
@@ -97,10 +115,16 @@ export default function Header() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <Link href="/login" className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm ">
+            <Link
+              href="/login"
+              className="px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm rounded-full bg-gray-900 text-white whitespace-nowrap leading-none"
+            >
               Giriş yap
             </Link>
-            <Link href="/register" className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-sm">
+            <Link
+              href="/register"
+              className="px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm rounded-full bg-rose-600 text-white whitespace-nowrap leading-none"
+            >
               Kayıt ol
             </Link>
           </div>
@@ -109,3 +133,10 @@ export default function Header() {
     </header>
   )
 }
+
+
+
+
+
+
+

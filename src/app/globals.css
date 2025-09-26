@@ -1,3 +1,4 @@
+/* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,7 +19,27 @@ body {
   @apply bg-white/80 backdrop-blur rounded-3xl shadow-soft;
 }
 
-
 .header-buttons-container{
   min-width: 180px;
 }
+
+/* Logo daha büyük */
+.logo-header {
+  @apply h-10 sm:h-11 w-auto select-none;
+}
+
+/* Banner içindeki logo daha da büyük */
+.logo-hero {
+  @apply w-[144px] sm:w-[160px] h-auto select-none;
+}
+
+/* Banner yüksekliği: en fazla 300px */
+.hero-fixed {
+  @apply h-[240px] sm:h-[280px] lg:h-[300px];
+}
+
+
+
+
+
+

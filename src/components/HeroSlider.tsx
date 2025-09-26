@@ -1,38 +1,123 @@
+// src/components/HeroSlider.tsx
 'use client'
+
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import clsx from 'clsx'
 
-const fallback1 =
-  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1600&auto=format&fit=crop'
-const fallback2 =
-  'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop'
-const fallback3 =
-  'https://images.unsplash.com/photo-1516979187457-637abb4f9353?q=80&w=1600&auto=format&fit=crop'
+const BRAND_RED = '#fa3c30'
 
 const slides = [
-  { id: 1, title: "Dünyanın tüm okurları, birleşin!", subtitle: "Kulüpler, aylık seçkiler ve yeni kitaplar — hepsi tek akışta.", image: fallback1 },
-  { id: 2, title: "Yazar kürasyonlu kulüpler", subtitle: "Katıl, keşfet, oku.", image: fallback2 },
-  { id: 3, title: "Boook.Love", subtitle: "Sohbet et, etkinliklere katıl, sosyalleş.", image: fallback3 }
+  { id: 1, title: 'Yazar kürasyonlu\nkulüpler', subtitle: 'Katıl, keşfet, oku.', img: '/banners/banner1.png' },
+  { id: 2, title: 'Dünyanın tüm okurları,\nbirleşin!', subtitle: 'Kulüpler, seçkiler, yeni kitaplar.', img: '/banners/banner2.png' },
+  { id: 3, title: 'Boook.Love\nseni bekliyor', subtitle: 'Sohbet et, etkinliklere katıl, sosyalleş.', img: '/banners/banner3.png' },
+  { id: 4, title: 'Arkadaşlarını ekle\nve keşfet', subtitle: 'Yeni dostluklar kur, birlikte oku.', img: '/banners/banner1.png' },
+  { id: 5, title: 'Mesajlaş\nanında bağlan', subtitle: 'Özel mesajlarla sohbet et.', img: '/banners/banner2.png' },
+  { id: 6, title: 'Paylaşım yap\nbeğeni topla', subtitle: 'Gönderiler oluştur, beğen ve yorumla.', img: '/banners/banner3.png' },
+  { id: 7, title: 'Arkadaşlık kur\nçevreni büyüt', subtitle: 'Takip et, etkileşime geç, tanış.', img: '/banners/banner1.png' },
+  { id: 8, title: 'Kulüplere katıl\nsohbete dahil ol', subtitle: 'İlgi alanına göre kulüp bul.', img: '/banners/banner2.png' },
+  { id: 9, title: 'Aylık kitaplar\nmoderatörlerle', subtitle: 'Seçilen kitabı birlikte okuyun.', img: '/banners/banner3.png' },
+  { id: 10, title: 'Etkinlikler\ncanlı buluşmalar', subtitle: 'Okuma seansları ve yayınlar.', img: '/banners/banner1.png' },
+  { id: 11, title: 'Keşfet akışı\nyeni paylaşımlar', subtitle: 'Gündemi takip et, trendleri yakala.', img: '/banners/banner2.png' },
 ]
 
 export default function HeroSlider() {
-  const [index, setIndex] = useState(0)
+  const [i, setI] = useState(0)
   const timer = useRef<NodeJS.Timeout | null>(null)
+  const hostRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    timer.current = setInterval(() => setIndex(i => (i + 1) % slides.length), 4000)
-    return () => { if (timer.current) clearInterval(timer.current) }
+    timer.current = setInterval(() => setI((x) => (x + 1) % slides.length), 5000)
+    return () => timer.current && clearInterval(timer.current)
   }, [])
 
-  const s = slides[index]
+  useEffect(() => {
+    const el = hostRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const e = entries[0]
+        const dock = e.boundingClientRect.top <= 64
+        window.dispatchEvent(new CustomEvent('hero:dock', { detail: dock }))
+      },
+      { rootMargin: '-64px 0px 0px 0px', threshold: [0, 1] }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  function go(n: number) {
+    setI((prev) => (prev + n + slides.length) % slides.length)
+  }
+
+  const s = slides[i]
+
   return (
-    <div className="relative overflow-hidden rounded-3xl h-56 sm:h-64 md:h-72 lg:h-80">
-      <Image src={s.image} alt="" fill className="object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
-      <div className="absolute left-6 right-6 top-8 text-white">
-        <div className="text-xs uppercase tracking-widest opacity-80">BOOOKLOVE</div>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold drop-shadow">{s.title}</h1>
-        <p className="mt-2 max-w-2xl text-white/90">{s.subtitle}</p>
+    <div ref={hostRef} className="relative rounded-3xl overflow-hidden hero-fixed" style={{ background: BRAND_RED }}>
+      {/* Mobilde BG imajı tamamen gizle; >=sm ekranlarda göster */}
+      <Image
+        src={s.img}
+        alt=""
+        fill
+        priority
+        className="hidden sm:block object-contain object-right lg:object-right-bottom pointer-events-none select-none -z-0"
+      />
+
+      {/* Metin bloğu – var olan marjlar korunur */}
+      <div className="absolute inset-x-0 top-6 sm:top-8 lg:top-10 z-10 mt-2 ml-10">
+        <div className="container">
+          <div className="grid grid-cols-12 items-start gap-6">
+            <div className="col-span-12 md:col-span-10 lg:col-span-10">
+              <div className="flex items-start gap-4 sm:gap-6">
+                {/* Logo – mobilde daha kompakt */}
+                <img src="/logos/logo-white.png" alt="boook.love" className="w-14 sm:w-20 lg:w-28 h-auto shrink-0" />
+                <div className="text-white">
+                  <h1 className="leading-[1] font-semibold text-[26px] sm:text-[42px] lg:text-[56px] max-w-[18ch]">
+                    {s.title.split('\n').map((line, idx) => (
+                      <span key={idx} className="block">
+                        {line}
+                      </span>
+                    ))}
+                  </h1>
+                  <p className="mt-2 sm:mt-3 text-sm sm:text-lg opacity-95">{s.subtitle}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-12 md:col-span-5 lg:col-span-5" />
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute left-6 bottom-4 flex items-center gap-2 z-20">
+        {slides.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setI(idx)}
+            aria-label={`Slide ${idx + 1}`}
+            className={clsx(
+              'h-2 rounded-full transition-all',
+              idx === i ? 'w-8 bg-white' : 'w-3 bg-white/70 hover:bg-white/90'
+            )}
+          />
+        ))}
+      </div>
+
+      <div className="absolute right-6 bottom-4 flex items-center gap-2 z-20">
+        <button
+          onClick={() => go(-1)}
+          aria-label="Önceki"
+          className="h-9 w-9 rounded-full bg-white text-gray-900 grid place-content-center shadow hover:scale-[1.03] transition"
+        >
+          ‹
+        </button>
+        <button
+          onClick={() => go(+1)}
+          aria-label="Sonraki"
+          className="h-9 w-9 rounded-full bg-white text-gray-900 grid place-content-center shadow hover:scale-[1.03] transition"
+        >
+          ›
+        </button>
       </div>
     </div>
   )

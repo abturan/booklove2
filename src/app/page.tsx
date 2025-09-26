@@ -1,3 +1,4 @@
+//src/app/page.tsx
 import HeroSlider from '@/components/HeroSlider'
 import SearchFilters from '@/components/SearchFilters'
 import InfiniteClubs from '@/components/InfiniteClubs'
