@@ -1,5 +1,7 @@
 // src/app/api/paytr/get-token/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import {
   getPaytrEnv,
   getClientIp,
@@ -8,19 +10,20 @@ import {
   amountToKurus,
 } from '@/lib/paytr'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 function makeMerchantOid(clubId: string) {
-  // PayTR: sadece alfanümerik izinli. Özel karakter içermemeli.
-  // Örn: "SUB" + sanitized clubId + time base36 + random base36
   const cleanedClub = String(clubId).replace(/[^A-Za-z0-9]/g, '')
   const t = Date.now().toString(36)
   const r = Math.random().toString(36).slice(2, 8)
-  const oid = `SUB${cleanedClub}${t}${r}`.replace(/[^A-Za-z0-9]/g, '')
-  // Uzunluk emniyeti (PayTR sınırı 64 karakter varsayımıyla)
-  return oid.slice(0, 64)
+  return (`SUB${cleanedClub}${t}${r}`).slice(0, 64)
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth()
+    const userId = session?.user?.id || null
     const { merchantId, merchantKey, merchantSalt, baseUrl, testMode } = getPaytrEnv()
     const body = await req.json()
 
@@ -29,10 +32,10 @@ export async function POST(req: NextRequest) {
       userName,
       userAddress,
       userPhone,
-      amount, // number, TL
+      amount,
       clubId,
       clubName,
-      redirectSlug, // e.g. clubs/my-club
+      redirectSlug,
       noInstallment = 0,
       maxInstallment = 0,
       currency = 'TL',
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userIp = getClientIp(req.headers)
-    const merchant_oid = makeMerchantOid(clubId)
+    const merchant_oid = makeMerchantOid(String(clubId))
     const payment_amount = amountToKurus(amount)
     const user_basket = toPaytrBasketBase64([[`Üyelik - ${clubName}`, amount.toFixed(2), 1]])
 
@@ -63,6 +66,18 @@ export async function POST(req: NextRequest) {
       testMode: Number(testMode ?? 0),
     })
 
+    if (userId) {
+      await prisma.paymentIntent.create({
+        data: {
+          userId,
+          clubId,
+          amountTRY: payment_amount,
+          status: 'REQUIRES_PAYMENT',
+          merchantOid: merchant_oid,
+        },
+      })
+    }
+
     const form = new URLSearchParams({
       merchant_id: merchantId,
       user_ip: userIp,
@@ -77,12 +92,8 @@ export async function POST(req: NextRequest) {
       user_name: userName || 'Abone',
       user_address: userAddress || 'Türkiye',
       user_phone: userPhone || '0000000000',
-      merchant_ok_url: `${baseUrl}/paytr/ok?oid=${encodeURIComponent(
-        merchant_oid,
-      )}&to=/${redirectSlug}`,
-      merchant_fail_url: `${baseUrl}/paytr/fail?oid=${encodeURIComponent(
-        merchant_oid,
-      )}&to=/${redirectSlug}`,
+      merchant_ok_url: `${baseUrl}/paytr/ok?oid=${encodeURIComponent(merchant_oid)}&to=/${redirectSlug}`,
+      merchant_fail_url: `${baseUrl}/paytr/fail?oid=${encodeURIComponent(merchant_oid)}&to=/${redirectSlug}`,
       timeout_limit: '30',
       currency,
       test_mode: String(testMode ?? '0'),

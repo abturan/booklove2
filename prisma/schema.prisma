@@ -106,14 +106,17 @@ model Subscription {
 }
 
 model PaymentIntent {
-  id        String   @id @default(cuid())
-  userId    String
-  clubId    String
-  amountTRY Int
-  status    String   @default("REQUIRES_PAYMENT")
-  createdAt DateTime @default(now())
-  club      Club     @relation(fields: [clubId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  id          String   @id @default(cuid())
+  userId      String
+  clubId      String
+  amountTRY   Int
+  status      String   @default("REQUIRES_PAYMENT")
+  merchantOid String?  @unique
+  createdAt   DateTime @default(now())
+  club        Club     @relation(fields: [clubId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([merchantOid])
 }
 
 model Book {
@@ -265,3 +268,9 @@ model DmMessage {
 
   @@index([threadId, createdAt])
 }
+
+
+
+
+
+
