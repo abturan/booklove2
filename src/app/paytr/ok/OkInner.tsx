@@ -9,25 +9,39 @@ export default function OkInner() {
   const q = useSearchParams()
 
   useEffect(() => {
-    const oid = q.get('oid') || ''
+    const run = async () => {
+      const oid = q.get('oid') || ''
+      try {
+        if (oid) sessionStorage.removeItem(`paytr_iframe_${oid}`)
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i) || ''
+          if (!k.startsWith('paytr_pending_')) continue
+          const v = localStorage.getItem(k)
+          if (!v) continue
+          try {
+            const o = JSON.parse(v)
+            if (o?.merchant_oid === oid) localStorage.removeItem(k)
+          } catch {}
+        }
+      } catch {}
 
-    // iFrame URL cache + pending kayıt temizliği
-    try {
-      if (oid) sessionStorage.removeItem(`paytr_iframe_${oid}`)
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i) || ''
-        if (!k.startsWith('paytr_pending_')) continue
-        const v = localStorage.getItem(k)
-        if (!v) continue
-        try {
-          const o = JSON.parse(v)
-          if (o?.merchant_oid === oid) localStorage.removeItem(k)
-        } catch {}
+      const to = q.get('to') || '/'
+      if (to.startsWith('/clubs/')) {
+        const slug = to.split('/')[2] || ''
+        if (slug) {
+          try {
+            await fetch('/api/subscriptions/activate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ clubSlug: slug }),
+              cache: 'no-store',
+            })
+          } catch {}
+        }
       }
-    } catch {}
-
-    const to = q.get('to') || '/'
-    r.replace(to + '?payment=ok')
+      r.replace(to + '?payment=ok')
+    }
+    run()
   }, [q, r])
 
   return <div>Yönlendiriliyorsunuz…</div>

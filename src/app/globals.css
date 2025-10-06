@@ -23,20 +23,18 @@ body {
   min-width: 180px;
 }
 
-/* Logo daha büyük */
 .logo-header {
-  @apply h-10 sm:h-11 w-auto select-none;
+  @apply h-8 sm:h-9 lg:h-9 w-auto select-none;
 }
 
-/* Banner içindeki logo daha da büyük */
 .logo-hero {
-  @apply w-[144px] sm:w-[160px] h-auto select-none;
+  @apply w-[112px] sm:w-[128px] h-auto select-none;
 }
 
-/* Banner yüksekliği: en fazla 300px */
 .hero-fixed {
-  @apply h-[240px] sm:h-[280px] lg:h-[300px];
+  @apply h-[320px] sm:h-[320px] lg:h-[320px];
 }
+
 
 
 

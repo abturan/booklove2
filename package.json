@@ -8,7 +8,9 @@
     "start": "next start -p 3000",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "q": "node scripts/queue-files.mjs"
+
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
