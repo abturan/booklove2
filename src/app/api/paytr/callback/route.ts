@@ -18,7 +18,8 @@ async function readParams(req: NextRequest) {
       hash: g('hash'),
     }
   }
-  const raw = await req.text()
+  const raw = await req.text().catch(() => '')
+  if (!raw) return { merchant_oid: '', status: '', total_amount: '', hash: '' }
   const sp = new URLSearchParams(raw)
   return {
     merchant_oid: sp.get('merchant_oid') || '',
@@ -33,12 +34,10 @@ export async function POST(req: NextRequest) {
     const { merchantKey, merchantSalt } = getPaytrEnv()
     const p = await readParams(req)
 
-    // Alanlar eksikse yine de "OK" dön → PayTR yeniden denemesin
     if (!p.merchant_oid || !p.status || !p.total_amount || !p.hash) {
       return new Response('OK', { headers: { 'Content-Type': 'text/plain' } })
     }
 
-    // Hash doğrulaması
     const ok = verifyCallbackHash({
       merchantKey,
       merchantSalt,
@@ -47,22 +46,18 @@ export async function POST(req: NextRequest) {
       totalAmount: p.total_amount,
       incomingHash: p.hash,
     })
+
     if (!ok) {
-      // Güvenlik politikana göre burada 400 döndürebilirsin;
-      // biz PayTR tekrar denemesin diye OK yanıtlıyoruz.
       return new Response('OK', { headers: { 'Content-Type': 'text/plain' } })
     }
 
-    // Niyet kaydını bul
     const intent = await prisma.paymentIntent.findFirst({
       where: { merchantOid: p.merchant_oid },
-      select: { id: true, userId: true, clubId: true, status: true },
+      select: { id: true, userId: true, clubId: true },
     })
 
     if (intent) {
       if (p.status === 'success') {
-        // İdempotent upsert: PaymentIntent → SUCCEEDED,
-        // Subscription → active, Membership → isActive
         await prisma.$transaction([
           prisma.paymentIntent.update({
             where: { id: intent.id },
@@ -80,24 +75,15 @@ export async function POST(req: NextRequest) {
           }),
         ])
       } else {
-        // Başarısızlık: PaymentIntent → FAILED (abonelik/üyelikte değişiklik yok)
-        if (intent.status !== 'SUCCEEDED') {
-          await prisma.paymentIntent.update({
-            where: { id: intent.id },
-            data: { status: 'FAILED' },
-          })
-        }
+        await prisma.paymentIntent.update({
+          where: { id: intent.id },
+          data: { status: 'FAILED' },
+        })
       }
     }
 
-    // PayTR, OK görünce tekrar denemez
     return new Response('OK', { headers: { 'Content-Type': 'text/plain' } })
   } catch {
-    // Her durumda OK dön, aksi halde PayTR defalarca deneyebilir
     return new Response('OK', { headers: { 'Content-Type': 'text/plain' } })
   }
-}
-
-export async function GET() {
-  return new Response('OK', { headers: { 'Content-Type': 'text/plain' } })
 }

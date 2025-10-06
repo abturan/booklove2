@@ -1,9 +1,9 @@
-// src/components/club/ClubInteractive.tsx
 'use client'
 
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileInfoModal from '@/components/modals/ProfileInfoModal'
 import ContractModal from '@/components/modals/ContractModal'
@@ -30,13 +30,14 @@ type Initial = {
     priceTRY: number
     moderatorName: string
     moderatorAvatarUrl?: string | null
+    moderatorUsername?: string | null
     memberCount: number
     isMember: boolean
     memberSince: string | null
     chatRoomId: string | null
     currentPick: { title: string; author: string; coverUrl: string } | null
     nextEvent: { title: string; startsAt: string } | null
-    members: { id: string; name: string; avatarUrl: string }[]
+    members: { id: string; name: string; avatarUrl: string | null }[]
   }
 }
 
@@ -90,6 +91,8 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const pendingKey = `paytr_pending_${initial.club.id}`
   const [pending, setPending] = useState<Pending>(null)
 
+  const search = useSearchParams()
+
   function readPending(): Pending {
     try {
       const raw = localStorage.getItem(pendingKey)
@@ -120,6 +123,46 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   useEffect(() => {
     setPending(readPending())
   }, [])
+
+  // Ödeme dönüşünde veya üye değilken açılışta üyelik durumunu canlı doğrula
+  useEffect(() => {
+    let cancelled = false
+
+    async function refreshMembership(reason: 'payment-ok' | 'not-member') {
+      try {
+        const res = await fetch(`/api/me/is-member?clubId=${initial.club.id}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        if (data?.isMember) {
+          try {
+            const raw = localStorage.getItem(pendingKey)
+            if (raw) {
+              const p = JSON.parse(raw)
+              if (p?.merchant_oid) sessionStorage.removeItem(`paytr_iframe_${p.merchant_oid}`)
+            }
+            localStorage.removeItem(pendingKey)
+          } catch {}
+          setIsMember(true)
+          setMemberSince(data.memberSince ?? null)
+          if (reason === 'payment-ok') setMemberCount((c) => Math.max(c + 1, c))
+          setPaytrOpen(false)
+          setPaytrUrl(null)
+          setUiError(null)
+        }
+      } catch {}
+    }
+
+    const paidOk = search?.get('payment') === 'ok'
+    if (paidOk) refreshMembership('payment-ok')
+    else if (!isMember) refreshMembership('not-member')
+
+    return () => {
+      cancelled = true
+    }
+    // isMember'ı bilinçli eklemiyoruz: ilk giriş/ödeme anında çalışsın
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, initial.club.id])
 
   const onSubscribe = async () => {
     if (busy) return
@@ -423,6 +466,62 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
         iframeUrl={paytrUrl}
         title="Güvenli Ödeme — PayTR"
       />
+    </div>
+  )
+}
+3) “Yönlendiriliyorsunuz…” (OK sayfası) düzenli görünüm
+src/app/paytr/ok/OkInner.tsx
+
+tsx
+Copy code
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+
+export default function OkInner() {
+  const r = useRouter()
+  const q = useSearchParams()
+
+  useEffect(() => {
+    const run = async () => {
+      const oid = q.get('oid') || ''
+
+      // Ödeme iFrame/pending temizliği
+      try {
+        if (oid) sessionStorage.removeItem(`paytr_iframe_${oid}`)
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i) || ''
+          if (!k.startsWith('paytr_pending_')) continue
+          const v = localStorage.getItem(k)
+          if (!v) continue
+          try {
+            const o = JSON.parse(v)
+            if (o?.merchant_oid === oid) localStorage.removeItem(k)
+          } catch {}
+        }
+      } catch {}
+
+      const to = q.get('to') || '/'
+      setTimeout(() => {
+        r.replace(to + '?payment=ok')
+      }, 700)
+    }
+    run()
+  }, [q, r])
+
+  return (
+    <div className="min-h-[60vh] grid place-items-center px-4">
+      <div className="w-full max-w-md rounded-3xl border bg-white p-6 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="animate-spin h-5 w-5 rounded-full border-2 border-gray-300 border-t-gray-800" />
+          <div className="font-medium">Ödemeniz alındı, yönlendiriliyoruz…</div>
+        </div>
+        <p className="mt-3 text-sm text-gray-600">
+          Bu pencere otomatik kapanmazsa tarayıcınızın “geri” tuşunu kullanabilir
+          veya sekmeyi kapatabilirsiniz.
+        </p>
+      </div>
     </div>
   )
 }

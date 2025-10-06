@@ -112,9 +112,11 @@ model PaymentIntent {
   amountTRY Int
   status    String   @default("REQUIRES_PAYMENT")
   createdAt DateTime @default(now())
-  merchantOid String? @unique
+  merchantOid String @unique
   club      Club     @relation(fields: [clubId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
 }
 
 model Book {
