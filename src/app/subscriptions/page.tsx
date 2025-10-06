@@ -17,14 +17,16 @@ export default async function SubscriptionsPage() {
     select: {
       id: true,
       bannerUrl: true,
-      Memberships: {
-        where: { isActive: true },
+      Subscriptions: {
+        where: { active: true },
         select: { club: { select: { id: true, slug: true, name: true, bannerUrl: true } } },
       },
     },
   })
 
   if (!me) return <div className="p-6">Bulunamadı</div>
+
+  const subs = me.Subscriptions
 
   return (
     <div className="space-y-6">
@@ -40,12 +42,12 @@ export default async function SubscriptionsPage() {
             <h1 className="text-2xl font-semibold mb-4">Aboneliklerim</h1>
 
             <div className="grid md:grid-cols-3 gap-4">
-              {me.Memberships.map((m, i) => (
-                <div key={m.club.id ?? i} className="card p-3">
+              {subs.map((s, i) => (
+                <div key={s.club.id ?? i} className="card p-3">
                   <div className="relative h-24 rounded-xl overflow-hidden">
                     <Image
                       src={
-                        m.club.bannerUrl ||
+                        s.club.bannerUrl ||
                         'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop'
                       }
                       alt=""
@@ -53,16 +55,16 @@ export default async function SubscriptionsPage() {
                       className="object-cover"
                     />
                   </div>
-                  <div className="mt-3 font-medium">{m.club.name}</div>
+                  <div className="mt-3 font-medium">{s.club.name}</div>
                   <div className="mt-2 flex gap-2">
-                    <Link href={`/clubs/${m.club.slug}`} className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm">
+                    <Link href={`/clubs/${s.club.slug}`} className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm">
                       İncele
                     </Link>
                   </div>
                 </div>
               ))}
 
-              {!me.Memberships.length && <div className="text-sm text-gray-600">Aktif aboneliğiniz yok.</div>}
+              {!subs.length && <div className="text-sm text-gray-600">Aktif aboneliğiniz yok.</div>}
             </div>
           </div>
         </div>
@@ -70,10 +72,3 @@ export default async function SubscriptionsPage() {
     </div>
   )
 }
-
-
-
-
-
-
-
