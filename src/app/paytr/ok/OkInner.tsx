@@ -14,7 +14,6 @@ export default function OkInner() {
       // Ödeme iFrame/pending temizliği
       try {
         if (oid) sessionStorage.removeItem(`paytr_iframe_${oid}`)
-        // Her kulüp için saklanan pending kayıtlarını süpür
         for (let i = localStorage.length - 1; i >= 0; i--) {
           const k = localStorage.key(i) || ''
           if (!k.startsWith('paytr_pending_')) continue
@@ -28,7 +27,6 @@ export default function OkInner() {
       } catch {}
 
       const to = q.get('to') || '/'
-      // Küçük bir nefes payı: callback DB’yi yazarken kullanıcı “boş” sayfa görmesin
       setTimeout(() => {
         r.replace(to + '?payment=ok')
       }, 700)
@@ -36,7 +34,6 @@ export default function OkInner() {
     run()
   }, [q, r])
 
-  // Basit, şık bir yönlendirme ekranı
   return (
     <div className="min-h-[60vh] grid place-items-center px-4">
       <div className="w-full max-w-md rounded-3xl border bg-white p-6 shadow-lg">
