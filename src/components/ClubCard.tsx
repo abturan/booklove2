@@ -34,13 +34,13 @@ export default function ClubCard({ club }: { club: ClubItem }) {
       )}
     >
       <Link href={`/clubs/${club.slug}`} className="block">
-        <div className="relative h-40 w-full overflow-hidden">
+        <div className="relative h-41 w-full overflow-hidden">
           <Image
             src={cover}
             alt={club.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            sizes="(max-width: 768px) 100vw, 33vw"
+            sizes="(max-width: 768px) 100vw, 34vw"
             priority={false}
           />
         </div>
