@@ -101,7 +101,7 @@ export default function Header() {
                 <Link href="/feed" className="block px-3 py-2 text-sm hover:bg-gray-50">Akış</Link>
                 <Link href="/profile/settings" className="block px-3 py-2 text-sm hover:bg-gray-50">Profil ayarları</Link>
                 <Link href="/subscriptions" className="block px-3 py-2 text-sm hover:bg-gray-50">Abonelikler</Link>
-                <Link href="/friends" className="block px-3 py-2 text-sm hover:bg-gray-50">Arkadaşlar</Link>
+                <Link href="/friends" className="block px-3 py-2 text-sm hover:bg-gray-50">Book Buddy</Link>
                 <Link href="/messages" className="block px-3 py-2 text-sm hover:bg-gray-50">Mesajlar</Link>
                 <button
                   onClick={handleSignOut}

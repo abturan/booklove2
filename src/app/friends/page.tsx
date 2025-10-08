@@ -52,9 +52,9 @@ export default async function FriendsPage() {
 
         <div className="lg:col-span-2 space-y-6">
           <div className="card p-4">
-            <h1 className="text-lg font-semibold mb-2">Arkadaşlar</h1>
+            <h1 className="text-lg font-semibold mb-2">Book Buddy</h1>
             {accepted.length === 0 ? (
-              <div className="text-sm text-gray-600">Henüz arkadaşınız yok.</div>
+              <div className="text-sm text-gray-600">Henüz Book Buddy’in yok.</div>
             ) : (
               <ul className="divide-y divide-gray-100">
                 {accepted.map((fr) => {
