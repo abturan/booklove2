@@ -26,9 +26,11 @@ export default function PublicVisibilityCard({ username }: { username?: string |
     }
   }
 
+  const title = hasUsername ? 'Profiliniz şu an herkese açık' : 'Profilini herkese görünür yap'
+
   return (
     <div className="card p-4 space-y-3 text-sm">
-      <div className="font-medium">Profilini herkese görünür yap</div>
+      <div className="font-medium">{title}</div>
 
       {!hasUsername ? (
         <>
