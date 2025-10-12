@@ -21,6 +21,7 @@ type ProgramLite = {
   monthKey: string
   isCurrent: boolean
   note: string
+  startsAt?: string | ''
   book: {
     title: string
     author: string
@@ -35,6 +36,19 @@ function monthKeyFromISO(iso: string) {
   const d = new Date(iso)
   if (isNaN(d.getTime())) return ''
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+function toISOZ(v: string) {
+  if (!v) return ''
+  return new Date(v).toISOString()
+}
+
+function isoToLocalInput(iso?: string | null) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 export default function ClubEditorForm({
@@ -63,7 +77,6 @@ export default function ClubEditorForm({
   const moneyToNumber = (v: string) =>
     Number(String(v).replace(',', '.').replace(/[^\d.]/g, ''))
 
-  // ---- club state
   const [name, setName] = React.useState(initialClub.name ?? '')
   const [computedSlug, setComputedSlug] = React.useState(
     initialClub.slug || slugifyTr(initialClub.name || '')
@@ -79,7 +92,6 @@ export default function ClubEditorForm({
   const [moderatorErr, setModeratorErr] = React.useState<string | null>(null)
   const [serverErr, setServerErr] = React.useState<string | null>(null)
 
-  // ---- moderator search
   const [moderatorQuery, setModeratorQuery] = React.useState(
     initialClub.moderator ? `${initialClub.moderator.name}` : ''
   )
@@ -90,7 +102,6 @@ export default function ClubEditorForm({
   const [openList, setOpenList] = React.useState(false)
   const [searching, setSearching] = React.useState(false)
 
-  // ---- programs
   const [programs, setPrograms] = React.useState<ProgramLite[]>(initialPrograms)
 
   React.useEffect(() => {
@@ -221,11 +232,10 @@ export default function ClubEditorForm({
     }
   }
 
-  // ========= Program Modal =========
   function ProgramModal({
     open,
     onClose,
-    mode, // 'new' | 'edit'
+    mode,
     clubId,
     program,
   }: {
@@ -251,20 +261,28 @@ export default function ClubEditorForm({
       if (!open) {
         setStartsAt('')
         setErr(null)
+        return
       }
-    }, [open])
+      if (mode === 'edit' && program?.startsAt) {
+        setStartsAt(isoToLocalInput(program.startsAt))
+      }
+    }, [open, mode, program?.startsAt])
 
     const uploadCoverIfNeeded = async () => {
       if (!coverFile) return null
       const fd = new FormData()
       fd.append('file', coverFile)
       const r = await fetch('/api/upload?scope=bookCover', { method: 'POST', body: fd })
-      const j = await r.json()
+      const ct = r.headers.get('content-type') || ''
+      let j: any = null
+      if (ct.includes('application/json')) {
+        try { j = await r.json() } catch {}
+      }
       if (!r.ok) {
         setErr(j?.error || 'Kapak yüklenemedi.')
         return null
       }
-      return j.url as string
+      return j?.url as string
     }
 
     const canSave =
@@ -282,8 +300,9 @@ export default function ClubEditorForm({
 
       try {
         if (mode === 'new') {
+          const iso = toISOZ(startsAt)
           const payload = {
-            startsAt,
+            startsAt: iso,
             book: {
               title: title.trim(),
               author: author.trim() || null,
@@ -293,18 +312,22 @@ export default function ClubEditorForm({
               isbn: isbn || null,
             },
             note: note.trim() || null,
-            monthKey: monthKeyFromISO(startsAt),
+            monthKey: monthKeyFromISO(iso),
           }
           const r = await fetch(`/api/admin/clubs/${clubId}/program`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           })
-          const j = await r.json()
+          const ct = r.headers.get('content-type') || ''
+          let j: any = null
+          if (ct.includes('application/json')) {
+            try { j = await r.json() } catch {}
+          }
           if (!r.ok) throw new Error(j?.error || 'Kaydedilemedi.')
         } else if (mode === 'edit' && program) {
           const payload: any = {
-            startsAt: startsAt || null,
+            startsAt: startsAt ? toISOZ(startsAt) : null,
             book: {
               title: title.trim(),
               author: author.trim() || null,
@@ -320,7 +343,11 @@ export default function ClubEditorForm({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           })
-          const j = await r.json()
+          const ct = r.headers.get('content-type') || ''
+          let j: any = null
+          if (ct.includes('application/json')) {
+            try { j = await r.json() } catch {}
+          }
           if (!r.ok) throw new Error(j?.error || 'Güncellenemedi.')
         }
         onClose()
@@ -337,7 +364,11 @@ export default function ClubEditorForm({
       if (!confirm('Program silinsin mi? Bu işlem geri alınamaz.')) return
       try {
         const r = await fetch(`/api/admin/picks/${program.id}`, { method: 'DELETE' })
-        const j = await r.json()
+        const ct = r.headers.get('content-type') || ''
+        let j: any = null
+        if (ct.includes('application/json')) {
+          try { j = await r.json() } catch {}
+        }
         if (!r.ok) throw new Error(j?.error || 'Silinemedi.')
         onClose()
         router.refresh()
@@ -355,17 +386,15 @@ export default function ClubEditorForm({
             {mode === 'new' ? 'Yeni program ekle' : 'Programı düzenle'}
           </h3>
           <form onSubmit={onSave} className="space-y-4">
-            {mode === 'new' && (
-              <div>
-                <label className="block text-sm text-gray-600">Oturum tarihi & saati *</label>
-                <input
-                  type="datetime-local"
-                  className="w-full rounded-2xl border px-3 py-2"
-                  value={startsAt}
-                  onChange={(e) => setStartsAt(e.target.value)}
-                />
-              </div>
-            )}
+            <div>
+              <label className="block text-sm text-gray-600">Oturum tarihi & saati *</label>
+              <input
+                type="datetime-local"
+                className="w-full rounded-2xl border px-3 py-2"
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
+              />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -429,7 +458,6 @@ export default function ClubEditorForm({
                     if (e.target.value) setCoverFile(null)
                   }}
                 />
-                
               </div>
             </div>
 
@@ -483,9 +511,7 @@ export default function ClubEditorForm({
       </div>
     )
   }
-  // ========= Program Modal son =========
 
-  // Modal state
   const [modalOpen, setModalOpen] = React.useState(false)
   const [modalMode, setModalMode] = React.useState<'new' | 'edit'>('new')
   const [editingProgram, setEditingProgram] = React.useState<ProgramLite | undefined>(
@@ -494,9 +520,7 @@ export default function ClubEditorForm({
 
   return (
     <>
-      {/* Kulüp formu */}
       <form onSubmit={submitClub} className="space-y-8">
-        {/* Banner */}
         <section className="rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-3 shadow-sm">
           <h2 className="text-base font-medium">Banner görseli</h2>
           <div className="flex flex-wrap items-center gap-3">
@@ -523,7 +547,6 @@ export default function ClubEditorForm({
             />
           </div>
           <div className="mt-2 rounded-2xl overflow-hidden border bg-gray-100 h-48">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={
                 bannerUrl ||
@@ -538,7 +561,6 @@ export default function ClubEditorForm({
           )}
         </section>
 
-        {/* Temel bilgiler */}
         <section className="rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-4 shadow-sm">
           <h2 className="text-base font-medium">Temel bilgiler</h2>
 
@@ -598,7 +620,6 @@ export default function ClubEditorForm({
           </div>
         </section>
 
-        {/* Moderatör */}
         <section className="rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-3 shadow-sm">
           <h2 className="text-base font-medium">Moderatör *</h2>
           <div className="relative">
@@ -668,7 +689,6 @@ export default function ClubEditorForm({
           )}
         </section>
 
-        {/* Hata + Kaydet */}
         {serverErr && (
           <div className="rounded-2xl bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-sm">
             {serverErr}
@@ -686,7 +706,6 @@ export default function ClubEditorForm({
         </div>
       </form>
 
-      {/* Programlar */}
       <section className="mt-10  rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-medium">Programlar</h2>
@@ -711,7 +730,6 @@ export default function ClubEditorForm({
           {programs.map((p) => (
             <li key={p.id} className="rounded-2xl border p-3 bg-white flex items-center gap-3">
               <div className="w-10 h-14 overflow-hidden rounded-md border bg-gray-100 shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.book.coverUrl || '/placeholder.svg'}
                   alt=""

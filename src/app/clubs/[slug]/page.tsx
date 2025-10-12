@@ -6,6 +6,14 @@ import ClubInteractive from '@/components/club/ClubInteractive'
 
 export const dynamic = 'force-dynamic'
 
+// Verilen monthKey (YYYY-MM) için UTC ay başlangıç/bitiş aralığı
+function monthRangeUTC(monthKey: string) {
+  const [y, m] = monthKey.split('-').map((n) => parseInt(n, 10))
+  const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0))
+  const end = new Date(Date.UTC(y, m, 1, 0, 0, 0))
+  return { start, end }
+}
+
 export default async function ClubPage({ params }: { params: { slug: string } }) {
   const session = await auth()
 
@@ -18,15 +26,15 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       description: true,
       bannerUrl: true,
       priceTRY: true,
-      moderator: { select: { name: true, avatarUrl: true, username: true } }
-    }
+      moderator: { select: { name: true, avatarUrl: true, username: true } },
+    },
   })
   if (!club) {
     return <div className="container mx-auto px-4 py-10">Kulüp bulunamadı.</div>
   }
 
   const memberCount = await prisma.membership.count({
-    where: { clubId: club.id, isActive: true }
+    where: { clubId: club.id, isActive: true },
   })
 
   const members = await prisma.membership.findMany({
@@ -34,24 +42,51 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     orderBy: { joinedAt: 'desc' },
     take: 30,
     select: {
-      user: { select: { id: true, name: true, username: true, avatarUrl: true } }
-    }
+      user: { select: { id: true, name: true, username: true, avatarUrl: true } },
+    },
   })
 
+  // Güncel seçki (kitap)
   const currentPick = await prisma.clubPick.findFirst({
     where: { clubId: club.id, isCurrent: true },
-    include: { book: { select: { title: true, author: true, coverUrl: true } } }
+    select: {
+      id: true,
+      monthKey: true,
+      isCurrent: true,
+      book: { select: { title: true, author: true, coverUrl: true } },
+    },
   })
 
-  const nextEvent = await prisma.clubEvent.findFirst({
-    where: { clubId: club.id },
-    orderBy: { startsAt: 'asc' },
-    select: { id: true, title: true, startsAt: true }
-  })
+  const now = new Date()
+
+  // Yaklaşan oturumu belirle:
+  // 1) Eğer güncel seçkinin ayı içinde (ve gelecekte) bir etkinlik varsa onu al
+  // 2) Yoksa kulübün en yakın gelecekteki etkinliğini al
+  let nextEvent: { id: string; title: string | null; startsAt: Date } | null = null
+
+  if (currentPick?.monthKey) {
+    const { start, end } = monthRangeUTC(currentPick.monthKey)
+    const eventInPickMonth = await prisma.clubEvent.findFirst({
+      where: { clubId: club.id, startsAt: { gte: start, lt: end } },
+      orderBy: { startsAt: 'asc' },
+      select: { id: true, title: true, startsAt: true },
+    })
+    if (eventInPickMonth && eventInPickMonth.startsAt >= now) {
+      nextEvent = eventInPickMonth
+    }
+  }
+
+  if (!nextEvent) {
+    nextEvent = await prisma.clubEvent.findFirst({
+      where: { clubId: club.id, startsAt: { gte: now } },
+      orderBy: { startsAt: 'asc' },
+      select: { id: true, title: true, startsAt: true },
+    })
+  }
 
   const room = await prisma.chatRoom.findFirst({
     where: { clubId: club.id },
-    select: { id: true }
+    select: { id: true },
   })
 
   const me =
@@ -59,9 +94,14 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       ? await prisma.user.findUnique({
           where: { id: session.user.id },
           select: {
-            id: true, name: true, email: true, avatarUrl: true,
-            city: true, district: true, phone: true
-          }
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+            city: true,
+            district: true,
+            phone: true,
+          },
         })
       : null
 
@@ -69,7 +109,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
   if (session?.user?.id) {
     const m = await prisma.membership.findUnique({
       where: { userId_clubId: { userId: session.user.id, clubId: club.id } },
-      select: { isActive: true, joinedAt: true }
+      select: { isActive: true, joinedAt: true },
     })
     if (m?.isActive) myMembership = { since: m.joinedAt.toISOString() }
   }
@@ -82,7 +122,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       avatarUrl: me?.avatarUrl ?? null,
       city: me?.city ?? null,
       district: me?.district ?? null,
-      phone: me?.phone ?? null
+      phone: me?.phone ?? null,
     },
     club: {
       id: club.id,
@@ -106,19 +146,19 @@ export default async function ClubPage({ params }: { params: { slug: string } })
             author: currentPick.book.author,
             coverUrl:
               currentPick.book.coverUrl ??
-              'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop'
+              'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop',
           }
         : null,
       nextEvent: nextEvent
-        ? { title: nextEvent.title, startsAt: nextEvent.startsAt.toISOString() }
+        ? { title: nextEvent.title ?? 'Aylık Oturum', startsAt: nextEvent.startsAt.toISOString() }
         : null,
       members: members.map((m) => ({
         id: m.user.id,
         name: m.user.name ?? 'Üye',
         username: m.user.username ?? null,
-        avatarUrl: m.user.avatarUrl ?? null
-      }))
-    }
+        avatarUrl: m.user.avatarUrl ?? null,
+      })),
+    },
   }
 
   return (

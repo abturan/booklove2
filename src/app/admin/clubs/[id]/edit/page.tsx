@@ -7,6 +7,10 @@ import ClubEditorForm from '@/components/admin/ClubEditorForm'
 
 export const dynamic = 'force-dynamic'
 
+function monthKeyFromDateUTC(d: Date) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
 export default async function EditClubPage({ params }: { params: { id: string } }) {
   const session = await auth()
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/')
@@ -36,7 +40,7 @@ export default async function EditClubPage({ params }: { params: { id: string } 
               translator: true,
               pages: true,
               coverUrl: true,
-              isbn: true, // <- backText yerine isbn
+              isbn: true,
             },
           },
         },
@@ -44,6 +48,16 @@ export default async function EditClubPage({ params }: { params: { id: string } 
     },
   })
   if (!club) redirect('/admin')
+
+  const events = await prisma.clubEvent.findMany({
+    where: { clubId: params.id },
+    select: { id: true, startsAt: true },
+  })
+  const eventByMonth = new Map<string, string>()
+  for (const e of events) {
+    const k = monthKeyFromDateUTC(e.startsAt)
+    if (!eventByMonth.has(k)) eventByMonth.set(k, e.startsAt.toISOString())
+  }
 
   return (
     <div className="space-y-6">
@@ -74,6 +88,7 @@ export default async function EditClubPage({ params }: { params: { id: string } 
           monthKey: p.monthKey,
           isCurrent: p.isCurrent,
           note: p.note || '',
+          startsAt: eventByMonth.get(p.monthKey) || '',
           book: {
             title: p.book?.title || '',
             author: p.book?.author || '',

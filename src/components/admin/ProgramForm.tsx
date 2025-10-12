@@ -1,10 +1,10 @@
+// src/components/admin/ProgramForm.tsx
 'use client'
 
 import * as React from 'react'
 
 export default function ProgramForm({ clubId }: { clubId: string }) {
-  // Form state
-  const [startsAt, setStartsAt] = React.useState('') // datetime-local
+  const [startsAt, setStartsAt] = React.useState('')
   const [coverUrl, setCoverUrl] = React.useState('')
   const [coverFile, setCoverFile] = React.useState<File | null>(null)
   const [title, setTitle] = React.useState('')
@@ -21,18 +21,15 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
 
   const canSave = !!startsAt && !!title.trim()
 
-  // JSON olmayan yanıtta patlamamak için
   async function safeJson(res: Response) {
     const ct = res.headers.get('content-type') || ''
     if (!ct.includes('application/json')) return null
     try { return await res.json() } catch { return null }
   }
 
-  // datetime-local -> ISO Z
   function toISOZ(v: string) {
     if (!v) return ''
-    const d = new Date(v)
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString()
+    return new Date(v).toISOString()
   }
 
   async function uploadCoverIfNeeded() {
@@ -89,8 +86,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
         setErr(j?.error || 'Kaydedilemedi.')
       } else {
         setOk('Program kaydedildi.')
-        // İstersen burada formu sıfırlayabilirsin
-        // setStartsAt(''); setTitle(''); ...
       }
     } catch (e: any) {
       setErr(e?.message || 'Sunucu hatası')
@@ -101,10 +96,7 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
 
   return (
     <form onSubmit={onSubmit} className="w-full max-w-2xl bg-white rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
-      {/* Başlık */}
       <div className="text-lg font-semibold ">Yeni program ekle</div>
-
-      {/* Tarih */}
       <div>
         <label className="block text-sm text-gray-600 mb-1">Oturum tarihi &amp; saati *</label>
         <input
@@ -115,8 +107,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
           required
         />
       </div>
-
-      {/* Grid alanları */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm text-gray-600 mb-1">Kitap adı *</label>
@@ -135,7 +125,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             onChange={(e) => setAuthor(e.target.value)}
           />
         </div>
-
         <div>
           <label className="block text-sm text-gray-600 mb-1">Çevirmen</label>
           <input
@@ -144,7 +133,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             onChange={(e) => setTranslator(e.target.value)}
           />
         </div>
-
         <div>
           <label className="block text-sm text-gray-600 mb-1">Sayfa sayısı</label>
           <input
@@ -154,7 +142,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             onChange={(e) => setPages(e.target.value.replace(/[^\d]/g, ''))}
           />
         </div>
-
         <div className="md:col-span-2">
           <label className="block text-sm text-gray-600 mb-1">Kapak yükle / URL</label>
           <div className="flex items-center gap-3">
@@ -181,7 +168,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             />
           </div>
         </div>
-
         <div>
           <label className="block text-sm text-gray-600 mb-1">ISBN</label>
           <input
@@ -190,7 +176,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             onChange={(e) => setIsbn(e.target.value)}
           />
         </div>
-
         <div className="md:col-span-2">
           <label className="block text-sm text-gray-600 mb-1">Açıklama / Not</label>
           <textarea
@@ -200,7 +185,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
-
         <div className="md:col-span-2">
           <label className="block text-sm text-gray-600 mb-1">Arka kapak</label>
           <textarea
@@ -211,8 +195,6 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
           />
         </div>
       </div>
-
-      {/* Bildirimler */}
       {err && (
         <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-sm">
           {err}
@@ -223,16 +205,11 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
           {ok}
         </div>
       )}
-
-      {/* Aksiyonlar */}
       <div className="flex items-center justify-end gap-3">
         <button
           type="button"
           className="px-4 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-sm"
-          onClick={() => {
-            // modal kapatma fonksiyonun varsa burada tetikle
-            setErr(null); setOk(null)
-          }}
+          onClick={() => { setErr(null); setOk(null) }}
         >
           İptal
         </button>

@@ -20,6 +20,13 @@ type Program = {
   }
 }
 
+function toISOZ(v: string) {
+  if (!v) return ''
+  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(v)) return v
+  const d = new Date(v)
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString()
+}
+
 export default function ProgramEditor({
   clubId,
   initialPrograms,
@@ -47,17 +54,53 @@ export default function ProgramEditor({
       alert('Kitap adı gerekli.')
       return
     }
-    const res = await fetch(`/api/admin/clubs/${clubId}/programs`, {
+    const iso = toISOZ(startsAt)
+    if (!iso) {
+      alert('Geçerli bir tarih/saat girin.')
+      return
+    }
+    const payload = {
+      startsAt: iso,
+      book: {
+        title: draft.book.title.trim(),
+        author: draft.book.author?.trim() || null,
+        translator: draft.book.translator?.trim() || null,
+        pages: draft.book.pageCount != null ? Number(draft.book.pageCount) : null,
+        coverUrl: draft.book.coverUrl || null,
+        isbn: draft.book.isbn?.trim() || null,
+        backText: draft.book.blurb?.trim() || null,
+      },
+      note: draft.note?.trim() || null,
+    }
+    const res = await fetch(`/api/admin/clubs/${clubId}/program`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ draft, startsAt }),
+      body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      alert('Program eklenemedi.')
+      try {
+        const j = await res.json()
+        alert(j?.error || 'Program eklenemedi.')
+      } catch {
+        alert('Program eklenemedi.')
+      }
       return
     }
     const data = await res.json()
-    setPrograms([data.program, ...programs])
+    const newProgram: Program = {
+      id: data?.pick?.id,
+      note: payload.note || '',
+      book: {
+        title: payload.book.title,
+        author: payload.book.author || '',
+        translator: payload.book.translator || undefined,
+        pageCount: payload.book.pages,
+        isbn: payload.book.isbn || undefined,
+        blurb: payload.book.backText || undefined,
+        coverUrl: payload.book.coverUrl || undefined,
+      },
+    }
+    setPrograms([newProgram, ...programs])
     setDraft({ note: '', book: { title: '', author: '', coverUrl: '' } })
   }
 
@@ -94,7 +137,6 @@ export default function ProgramEditor({
     <div className="rounded-2xl bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-lg font-semibold">Aylık Programlar</h2>
 
-      {/* Yeni program */}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-3">
           <label className="block text-sm text-gray-600 mb-1">Oturum tarihi & saati</label>

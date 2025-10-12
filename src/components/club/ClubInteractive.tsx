@@ -3,7 +3,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileInfoModal from '@/components/modals/ProfileInfoModal'
 import ContractModal from '@/components/modals/ContractModal'
@@ -91,8 +90,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const pendingKey = `paytr_pending_${initial.club.id}`
   const [pending, setPending] = useState<Pending>(null)
 
-  const search = useSearchParams()
-
   function readPending(): Pending {
     try {
       const raw = localStorage.getItem(pendingKey)
@@ -153,16 +150,24 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
       } catch {}
     }
 
-    const paidOk = search?.get('payment') === 'ok'
+    // useSearchParams kullanmadan, sadece tarayıcıda oku
+    let paidOk = false
+    try {
+      if (typeof window !== 'undefined') {
+        const qs = new URLSearchParams(window.location.search)
+        paidOk = qs.get('payment') === 'ok'
+      }
+    } catch {}
+
     if (paidOk) refreshMembership('payment-ok')
     else if (!isMember) refreshMembership('not-member')
 
     return () => {
       cancelled = true
     }
-    // isMember'ı bilinçli eklemiyoruz: ilk giriş/ödeme anında çalışsın
+    // isMember'ı bilinçli eklemiyoruz
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, initial.club.id])
+  }, [initial.club.id])
 
   const onSubscribe = async () => {
     if (busy) return
