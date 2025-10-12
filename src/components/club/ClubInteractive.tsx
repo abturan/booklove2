@@ -1,8 +1,10 @@
+// src/components/club/ClubInteractive.tsx
 'use client'
 
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileInfoModal from '@/components/modals/ProfileInfoModal'
 import ContractModal from '@/components/modals/ContractModal'
@@ -36,7 +38,7 @@ type Initial = {
     chatRoomId: string | null
     currentPick: { title: string; author: string; coverUrl: string } | null
     nextEvent: { title: string; startsAt: string } | null
-    members: { id: string; name: string; avatarUrl: string | null }[]
+    members: { id: string; name: string; username?: string | null; avatarUrl: string | null }[]
   }
 }
 
@@ -89,6 +91,8 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   const [paytrUrl, setPaytrUrl] = useState<string | null>(null)
   const pendingKey = `paytr_pending_${initial.club.id}`
   const [pending, setPending] = useState<Pending>(null)
+
+  const search = useSearchParams()
 
   function readPending(): Pending {
     try {
@@ -150,15 +154,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
       } catch {}
     }
 
-    // useSearchParams kullanmadan, sadece tarayıcıda oku
-    let paidOk = false
-    try {
-      if (typeof window !== 'undefined') {
-        const qs = new URLSearchParams(window.location.search)
-        paidOk = qs.get('payment') === 'ok'
-      }
-    } catch {}
-
+    const paidOk = search?.get('payment') === 'ok'
     if (paidOk) refreshMembership('payment-ok')
     else if (!isMember) refreshMembership('not-member')
 
@@ -167,7 +163,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     }
     // isMember'ı bilinçli eklemiyoruz
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initial.club.id])
+  }, [search, initial.club.id])
 
   const onSubscribe = async () => {
     if (busy) return
@@ -245,8 +241,16 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           <div className="text-sm text-gray-600">Moderatör</div>
           <div className="mt-1 flex items-center gap-3">
             {initial.club.moderatorAvatarUrl ? (
-              <Link href={userPath(undefined, initial.club.moderatorName)} className="inline-block">
-                <Avatar src={initial.club.moderatorAvatarUrl} size={80} alt={initial.club.moderatorName} className="ring-2 ring-white shadow" />
+              <Link
+                href={userPath(initial.club.moderatorUsername, initial.club.moderatorName)}
+                className="inline-block"
+              >
+                <Avatar
+                  src={initial.club.moderatorAvatarUrl}
+                  size={80}
+                  alt={initial.club.moderatorName}
+                  className="ring-2 ring-white shadow"
+                />
               </Link>
             ) : (
               <span className="inline-grid place-items-center w-20 h-20 rounded-full bg-gray-100 text-gray-500 ring-2 ring-white shadow">
@@ -270,7 +274,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           <div className="mt-3 flex flex-wrap gap-2 items-center">
             {membersPreview.map((m) => (
               <div key={m.id} className="relative group">
-                <Link href={userPath(undefined, m.name)} className="block">
+                <Link href={userPath(m.username, m.name)} className="block">
                   <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white shadow">
                     <Avatar src={m.avatarUrl} size={36} alt={m.name} />
                   </div>

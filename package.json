@@ -9,8 +9,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
-    "q": "node scripts/queue-files.mjs"
-
+    "q": "node scripts/queue-files.mjs",
+    "patch": "node scripts/patch-apply.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
