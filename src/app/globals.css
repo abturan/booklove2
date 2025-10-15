@@ -1,3 +1,4 @@
+/* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,7 +32,7 @@ body {
 }
 
 .hero-fixed {
-  @apply h-[320px] sm:h-[320px] lg:h-[320px];
+  @apply h-[200px] sm:h-[320px] lg:h-[320px];
 }
 
 .h-41{
@@ -62,3 +63,9 @@ body {
 .legal-content strong { font-weight: 700; }
 .legal-content em { font-style: italic; }
 .legal-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
+
+
+
+
+
+

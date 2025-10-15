@@ -1,5 +1,4 @@
 // src/components/SearchFilters.tsx
-
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -27,21 +26,18 @@ export default function SearchFilters() {
   const [sort, setSort] = useState<SortKey>(initialSort)
   const debouncedQ = useDebounce(q, 250)
 
-  // URL’i güncelle (scroll bozmadan)
   useEffect(() => {
     const s = new URLSearchParams(params.toString())
     debouncedQ ? s.set('q', debouncedQ) : s.delete('q')
     sort ? s.set('sort', sort) : s.delete('sort')
     router.replace(`${pathname}?${s.toString()}`, { scroll: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQ, sort])
+  }, [debouncedQ, sort]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className=" top-[72px] z-20">
       <div className="rounded-2xl border border-gray-100 bg-white/70 backdrop-blur p-3 shadow-sm">
         <div className="flex items-center gap-3">
-          {/* geniş arama */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 w-full">
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -72,8 +68,7 @@ export default function SearchFilters() {
             )}
           </div>
 
-          {/* kısa sıralama */}
-          <div className="w-[260px]">
+          <div className="hidden md:block w-[260px]">
             <Select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}

@@ -117,13 +117,13 @@ export default function Header() {
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm rounded-full bg-gray-900 text-white whitespace-nowrap leading-none"
+              className="inline-flex h-9 items-center rounded-full bg-gray-900 px-4 text-sm font-semibold text-white whitespace-nowrap"
             >
               Giriş yap
             </Link>
             <Link
               href="/register"
-              className="px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm rounded-full bg-rose-600 text-white whitespace-nowrap leading-none"
+              className="inline-flex h-9 items-center rounded-full bg-rose-600 px-4 text-sm font-semibold text-white whitespace-nowrap"
             >
               Kayıt ol
             </Link>
@@ -133,10 +133,3 @@ export default function Header() {
     </header>
   )
 }
-
-
-
-
-
-
-
