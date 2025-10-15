@@ -1,12 +1,20 @@
 // src/app/reset-password/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="max-w-md mx-auto p-6 mt-8">Yükleniyor…</div>}>
+      <ResetPasswordInner />
+    </Suspense>
+  )
+}
+
+function ResetPasswordInner() {
   const sp = useSearchParams()
   const router = useRouter()
   const token = sp.get('token') || ''
@@ -95,3 +103,9 @@ export default function ResetPasswordPage() {
     </div>
   )
 }
+
+
+
+
+
+
