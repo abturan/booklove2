@@ -31,14 +31,28 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'Giriş gerekli.' }, { status: 401 })
   }
 
-  const room = await prisma.chatRoom.findFirst({ where: { clubId: params.clubId } })
-  if (!room) return NextResponse.json({ ok: false, error: 'Sohbet yok.' }, { status: 404 })
+  const room = await prisma.chatRoom.upsert({
+    where: { clubId: params.clubId },
+    update: {},
+    create: { clubId: params.clubId },
+  })
 
   const membership = await prisma.membership.findUnique({
     where: { userId_clubId: { userId: session.user.id, clubId: params.clubId } },
     select: { isActive: true }
   })
-  if (!membership?.isActive) {
+
+  let canPost = !!membership?.isActive
+  if (!canPost) {
+    const club = await prisma.club.findUnique({
+      where: { id: params.clubId },
+      select: { moderatorId: true }
+    })
+    if (club?.moderatorId === session.user.id) {
+      canPost = true
+    }
+  }
+  if (!canPost) {
     return NextResponse.json({ ok: false, error: 'Abonelik gerekli.' }, { status: 403 })
   }
 

@@ -26,6 +26,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       description: true,
       bannerUrl: true,
       priceTRY: true,
+      moderatorId: true,
       moderator: { select: { name: true, avatarUrl: true, username: true } },
     },
   })
@@ -59,9 +60,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
 
   const now = new Date()
 
-  // Yaklaşan oturumu belirle:
-  // 1) Eğer güncel seçkinin ayı içinde (ve gelecekte) bir etkinlik varsa onu al
-  // 2) Yoksa kulübün en yakın gelecekteki etkinliğini al
+  // Yaklaşan oturumu belirle
   let nextEvent: { id: string; title: string | null; startsAt: Date } | null = null
 
   if (currentPick?.monthKey) {
@@ -114,6 +113,16 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     if (m?.isActive) myMembership = { since: m.joinedAt.toISOString() }
   }
 
+  const isModerator = !!(session?.user?.id && club.moderatorId === session.user.id)
+  const isMember = !!myMembership || isModerator
+
+  const fallbackBanner =
+    'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1600&auto=format&fit=crop'
+  const safeBannerUrl =
+    typeof club.bannerUrl === 'string' && club.bannerUrl.trim().length > 0
+      ? club.bannerUrl
+      : fallbackBanner
+
   const initial = {
     me: {
       id: me?.id ?? null,
@@ -129,15 +138,13 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       slug: club.slug,
       name: club.name,
       description: club.description,
-      bannerUrl:
-        club.bannerUrl ??
-        'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1600&auto=format&fit=crop',
+      bannerUrl: safeBannerUrl,
       priceTRY: club.priceTRY,
       moderatorName: club.moderator?.name ?? '—',
       moderatorAvatarUrl: club.moderator?.avatarUrl ?? null,
       moderatorUsername: club.moderator?.username ?? null,
       memberCount,
-      isMember: !!myMembership,
+      isMember,
       memberSince: myMembership?.since ?? null,
       chatRoomId: room?.id ?? null,
       currentPick: currentPick
