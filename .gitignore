@@ -42,6 +42,8 @@ coverage/
 # (örnek dosyayı repo’da tut)
 # =========================
 .env
+.env.dev
+.env.prod
 .env.*.local
 .env.local
 !.env.example

@@ -29,7 +29,7 @@ export default function LoginForm() {
       const res = await signIn('credentials', {
         email,
         password,
-        redirect: false, // hatada yönlendirme yok
+        redirect: false,
       })
       if (!res) {
         setError('Beklenmeyen hata.')
@@ -86,6 +86,11 @@ export default function LoginForm() {
             placeholder="••••••••"
             autoComplete="current-password"
           />
+          <div className="mt-2 text-right">
+            <Link href="/forgot-password" className="text-sm text-rose-600 hover:underline">
+              Şifremi unuttum
+            </Link>
+          </div>
         </div>
 
         <button

@@ -10,13 +10,13 @@ datasource db {
 }
 
 model User {
-  id                     String          @id @default(cuid())
-  email                  String          @unique
+  id                     String               @id @default(cuid())
+  email                  String               @unique
   passwordHash           String
   name                   String
-  username               String?         @unique
-  slug                   String?         @unique
-  role                   String          @default("USER")
+  username               String?              @unique
+  slug                   String?              @unique
+  role                   String               @default("USER")
   avatarUrl              String?
   city                   String?
   bannerUrl              String?
@@ -27,22 +27,23 @@ model User {
   website                String?
   location               String?
   lastSeenAt             DateTime?
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
   ChatMessage            ChatMessage[]
-  Club                   Club?           @relation("ClubModerator")
-  comments               Comment[]       @relation("UserComments")
-  sentFriendRequests     FriendRequest[] @relation("SentRequests")
-  receivedFriendRequests FriendRequest[] @relation("ReceivedRequests")
-  likes                  Like[]          @relation("UserLikes")
+  Club                   Club?                @relation("ClubModerator")
+  comments               Comment[]            @relation("UserComments")
+  sentFriendRequests     FriendRequest[]      @relation("SentRequests")
+  receivedFriendRequests FriendRequest[]      @relation("ReceivedRequests")
+  likes                  Like[]               @relation("UserLikes")
   Memberships            Membership[]
   Notifications          Notification[]
   PaymentIntent          PaymentIntent[]
-  posts                  Post[]          @relation("UserPosts")
+  posts                  Post[]               @relation("UserPosts")
   Subscriptions          Subscription[]
-  dmMessagesAuthored     DmMessage[]     @relation("DmMessageAuthor")
-  dmThreadsAsA           DmThread[]      @relation("DmThreadUserA")
-  dmThreadsAsB           DmThread[]      @relation("DmThreadUserB")
+  dmMessagesAuthored     DmMessage[]          @relation("DmMessageAuthor")
+  dmThreadsAsA           DmThread[]           @relation("DmThreadUserA")
+  dmThreadsAsB           DmThread[]           @relation("DmThreadUserB")
+  PasswordResetTokens    PasswordResetToken[]
 }
 
 model Notification {
@@ -106,15 +107,15 @@ model Subscription {
 }
 
 model PaymentIntent {
-  id        String   @id @default(cuid())
-  userId    String
-  clubId    String
-  amountTRY Int
-  status    String   @default("REQUIRES_PAYMENT")
-  createdAt DateTime @default(now())
-  merchantOid String @unique
-  club      Club     @relation(fields: [clubId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  id          String   @id @default(cuid())
+  userId      String
+  clubId      String
+  amountTRY   Int
+  status      String   @default("REQUIRES_PAYMENT")
+  createdAt   DateTime @default(now())
+  merchantOid String   @unique
+  club        Club     @relation(fields: [clubId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([createdAt])
 }
@@ -267,4 +268,15 @@ model DmMessage {
   author    User     @relation("DmMessageAuthor", fields: [authorId], references: [id])
 
   @@index([threadId, createdAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, expiresAt])
 }
