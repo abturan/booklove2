@@ -24,12 +24,10 @@ export default function RegisterPage() {
     e.preventDefault()
     setErr(null)
     setMsg(null)
-
     if (!agreeKvkk || !agreeTerms) {
       setErr('Kayıt için “Kullanım Koşulları” ve “Kişisel Veriler Kanunu” metinlerini onaylamanız gerekir.')
       return
     }
-
     setSubmitting(true)
     try {
       const res = await fetch('/api/auth/register', {
@@ -75,6 +73,8 @@ export default function RegisterPage() {
             className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
             placeholder="Ad Soyad"
             autoComplete="name"
+            spellCheck={false}
+            enterKeyHint="next"
           />
         </div>
         <div>
@@ -85,13 +85,17 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onInvalid={(e) => {
-              // required + typeMismatch durumlarında tek mesaj
               e.currentTarget.setCustomValidity('Geçerli bir e-posta girin (ör. ornek@boook.love).')
             }}
             onInput={(e) => e.currentTarget.setCustomValidity('')}
             className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
             placeholder="ornek@boook.love"
             autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="next"
           />
         </div>
         <div>
@@ -104,7 +108,6 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             onInvalid={(e) => {
               const el = e.currentTarget
-              // minlength veya boş olma
               if (el.validity.valueMissing) {
                 el.setCustomValidity('Lütfen bir şifre belirleyin.')
               } else if (el.validity.tooShort) {
@@ -117,6 +120,10 @@ export default function RegisterPage() {
             className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
             placeholder="En az 6 karakter"
             autoComplete="new-password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="done"
           />
         </div>
 
@@ -170,7 +177,6 @@ export default function RegisterPage() {
           </label>
         </div>
 
-        {/* Başarı bildirimi: buton görünümünde, submit butonunun ÜSTÜNDE */}
         {msg && !err && (
           <Link
             href="/login"
@@ -196,7 +202,6 @@ export default function RegisterPage() {
         )}
       </form>
 
-      {/* KVKK Modal */}
       <Modal open={openKvkk} onClose={() => setOpenKvkk(false)} title="Kişisel Veriler Kanunu (KVKK)">
         <article
           className="legal-content text-sm leading-relaxed text-gray-800"
@@ -204,41 +209,12 @@ export default function RegisterPage() {
         />
       </Modal>
 
-      {/* Terms Modal */}
       <Modal open={openTerms} onClose={() => setOpenTerms(false)} title="Kullanım Koşulları">
         <article
           className="legal-content text-sm leading-relaxed text-gray-800"
           dangerouslySetInnerHTML={{ __html: TERMS_HTML }}
         />
       </Modal>
-
-      {/* Sayfaya özel küçük tipografi dokunuşu */}
-      <style jsx global>{`
-        .legal-content h2 {
-          font-size: 1.25rem;
-          line-height: 1.4;
-          font-weight: 800;
-          margin: 0 0 0.75rem 0;
-        }
-        .legal-content h3 {
-          font-size: 1.05rem;
-          line-height: 1.5;
-          font-weight: 700;
-          margin: 1rem 0 0.5rem 0;
-        }
-        .legal-content p {
-          margin: 0.5rem 0;
-        }
-        .legal-content ul, .legal-content ol {
-          margin: 0.5rem 0 0.75rem 1.25rem;
-          padding-left: 1rem;
-        }
-        .legal-content li { margin: 0.25rem 0; }
-        .legal-content a { text-decoration: underline; }
-        .legal-content strong { font-weight: 700; }
-        .legal-content em { font-style: italic; }
-        .legal-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
-      `}</style>
     </div>
   )
 }
