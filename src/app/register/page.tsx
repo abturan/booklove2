@@ -1,7 +1,7 @@
 // src/app/register/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Modal from '@/components/ui/modal'
 import { TERMS_HTML } from '@/content/legal/terms'
@@ -19,6 +19,9 @@ export default function RegisterPage() {
 
   const [openTerms, setOpenTerms] = useState(false)
   const [openKvkk, setOpenKvkk] = useState(false)
+
+  const kvkkHTML = useMemo(() => ({ __html: KVKK_HTML }), [])
+  const termsHTML = useMemo(() => ({ __html: TERMS_HTML }), [])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -202,19 +205,17 @@ export default function RegisterPage() {
         )}
       </form>
 
-      <Modal open={openKvkk} onClose={() => setOpenKvkk(false)} title="Kişisel Veriler Kanunu (KVKK)">
-        <article
-          className="legal-content text-sm leading-relaxed text-gray-800"
-          dangerouslySetInnerHTML={{ __html: KVKK_HTML }}
-        />
-      </Modal>
+      {openKvkk && (
+        <Modal open={openKvkk} onClose={() => setOpenKvkk(false)} title="Kişisel Veriler Kanunu (KVKK)">
+          <article className="legal-content text-sm leading-relaxed text-gray-800" dangerouslySetInnerHTML={kvkkHTML} />
+        </Modal>
+      )}
 
-      <Modal open={openTerms} onClose={() => setOpenTerms(false)} title="Kullanım Koşulları">
-        <article
-          className="legal-content text-sm leading-relaxed text-gray-800"
-          dangerouslySetInnerHTML={{ __html: TERMS_HTML }}
-        />
-      </Modal>
+      {openTerms && (
+        <Modal open={openTerms} onClose={() => setOpenTerms(false)} title="Kullanım Koşulları">
+          <article className="legal-content text-sm leading-relaxed text-gray-800" dangerouslySetInnerHTML={termsHTML} />
+        </Modal>
+      )}
     </div>
   )
 }
