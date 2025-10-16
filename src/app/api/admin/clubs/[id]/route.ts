@@ -1,3 +1,4 @@
+// src/app/api/admin/clubs/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -23,16 +24,11 @@ export async function GET(
       priceTRY: true,
       published: true,
       moderatorId: true,
+      capacity: true,
       moderator: { select: { id: true, name: true, email: true } },
       _count: { select: { memberships: { where: { isActive: true } as any } } },
-      picks: {
-        orderBy: { monthKey: 'desc' },
-        include: { book: true },
-      },
-      events: {
-        orderBy: { startsAt: 'desc' },
-        take: 1,
-      },
+      picks: { orderBy: { monthKey: 'desc' }, include: { book: true } },
+      events: { orderBy: { startsAt: 'desc' }, take: 1 },
     },
   })
 
@@ -59,9 +55,17 @@ export async function PUT(
   const bannerUrl: string = body.bannerUrl || ''
   const moderatorId: string | undefined = body.moderatorId
   const forceTransfer: boolean = !!body.forceTransfer
+  const capacityRaw = body.capacity
+  const capacity: number | null =
+    capacityRaw === null || capacityRaw === '' || capacityRaw === undefined
+      ? null
+      : Number(capacityRaw)
 
   if (!name) return NextResponse.json('Kulüp adı zorunlu', { status: 400 })
   if (!moderatorId) return NextResponse.json('Moderatör seçin', { status: 400 })
+  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 0)) {
+    return NextResponse.json('Kapasite 0 veya pozitif tam sayı olmalı (boş = sınırsız).', { status: 400 })
+  }
 
   const current = await prisma.club.findUnique({
     where: { id: params.id },
@@ -86,7 +90,6 @@ export async function PUT(
       }
 
       const updated = await prisma.$transaction(async (tx) => {
-        // Diğer kulübün moderatörünü, bu kulübün eski moderatörüne ata (null yerine swap)
         if (!current.moderatorId) {
           throw new Error('Mevcut kulübün eski moderatörü bulunamadı.')
         }
@@ -109,6 +112,7 @@ export async function PUT(
             priceTRY,
             bannerUrl,
             moderatorId,
+            capacity,
           },
           select: { id: true, slug: true },
         })
@@ -132,6 +136,7 @@ export async function PUT(
         priceTRY,
         bannerUrl,
         moderatorId,
+        capacity,
       },
       select: { id: true, slug: true },
     })

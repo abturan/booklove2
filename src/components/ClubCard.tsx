@@ -17,6 +17,7 @@ type ClubItem = {
   moderator?: { id: string; name: string; avatarUrl?: string | null; username?: string | null } | null
   memberCount: number
   pickCount: number
+  capacity?: number | null
 }
 
 export default function ClubCard({ club }: { club: ClubItem }) {
@@ -25,6 +26,10 @@ export default function ClubCard({ club }: { club: ClubItem }) {
   const cover =
     club.bannerUrl ??
     'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1200&auto=format&fit=crop'
+
+  const isSoldOut = typeof club.capacity === 'number' && club.capacity >= 0
+    ? club.memberCount >= (club.capacity ?? 0)
+    : false
 
   return (
     <div
@@ -67,6 +72,12 @@ export default function ClubCard({ club }: { club: ClubItem }) {
         <div className="mt-3 flex items-center gap-3 text-sm text-gray-700">
           <span>👥 {club.memberCount} abone</span>
           <span>📚 {club.pickCount} seçki</span>
+          {typeof club.capacity === 'number' && (
+            <span className={clsx('ml-auto text-xs rounded-full px-2 py-0.5 border',
+              isSoldOut ? 'border-amber-500 text-amber-700 bg-amber-50' : 'border-gray-200 text-gray-500')}>
+              {isSoldOut ? 'Tükendi' : `Limit: ${club.capacity || '—'}`}
+            </span>
+          )}
         </div>
 
         <div className="mt-4 flex items-center gap-2">
@@ -76,12 +87,23 @@ export default function ClubCard({ club }: { club: ClubItem }) {
           >
             İncele
           </Link>
-          <Link
-            href={`/clubs/${club.slug}#subscribe`}
-            className="inline-flex h-9 items-center rounded-full bg-rose-500 px-3 text-sm font-medium text-white hover:bg-rose-600"
-          >
-            Abone ol
-          </Link>
+
+          {isSoldOut ? (
+            <span
+              className="inline-flex h-9 items-center rounded-full px-3 text-sm font-semibold tracking-wide
+                         bg-black text-white ring-2 ring-amber-400 shadow-sm select-none"
+            >
+              Tükendi
+            </span>
+          ) : (
+            <Link
+              href={`/clubs/${club.slug}#subscribe`}
+              className="inline-flex h-9 items-center rounded-full bg-rose-500 px-3 text-sm font-medium text-white hover:bg-rose-600"
+            >
+              Abone ol
+            </Link>
+          )}
+
           <div className="ml-auto text-xs text-gray-500">₺{club.priceTRY}</div>
         </div>
       </div>

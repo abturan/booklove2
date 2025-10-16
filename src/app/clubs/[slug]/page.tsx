@@ -6,7 +6,6 @@ import ClubInteractive from '@/components/club/ClubInteractive'
 
 export const dynamic = 'force-dynamic'
 
-// Verilen monthKey (YYYY-MM) için UTC ay başlangıç/bitiş aralığı
 function monthRangeUTC(monthKey: string) {
   const [y, m] = monthKey.split('-').map((n) => parseInt(n, 10))
   const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0))
@@ -27,6 +26,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       bannerUrl: true,
       priceTRY: true,
       moderatorId: true,
+      capacity: true,
       moderator: { select: { name: true, avatarUrl: true, username: true } },
     },
   })
@@ -47,7 +47,6 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     },
   })
 
-  // Güncel seçki (kitap)
   const currentPick = await prisma.clubPick.findFirst({
     where: { clubId: club.id, isCurrent: true },
     select: {
@@ -60,7 +59,6 @@ export default async function ClubPage({ params }: { params: { slug: string } })
 
   const now = new Date()
 
-  // Yaklaşan oturumu belirle
   let nextEvent: { id: string; title: string | null; startsAt: Date } | null = null
 
   if (currentPick?.monthKey) {
@@ -123,6 +121,10 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       ? club.bannerUrl
       : fallbackBanner
 
+  const isSoldOut = typeof club.capacity === 'number' && club.capacity >= 0
+    ? memberCount >= (club.capacity ?? 0)
+    : false
+
   const initial = {
     me: {
       id: me?.id ?? null,
@@ -165,6 +167,8 @@ export default async function ClubPage({ params }: { params: { slug: string } })
         username: m.user.username ?? null,
         avatarUrl: m.user.avatarUrl ?? null,
       })),
+      capacity: club.capacity ?? null,
+      isSoldOut,
     },
   }
 

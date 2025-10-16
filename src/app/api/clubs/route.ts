@@ -10,14 +10,12 @@ export async function GET(req: Request) {
 
   const where: any = { published: true }
 
-  // Arama: tokenlara böl, her token için (name OR moderator.name) contains (case-insensitive)
   if (q) {
     const tokens = q.split(/\s+/).filter(Boolean)
     if (tokens.length > 0) {
       where.AND = tokens.map((tok) => ({
         OR: [
           { name: { contains: tok, mode: 'insensitive' } as any },
-          // İlişkili alan: mevcut projede bu kullanım çalışıyor; davranışı bozmayalım.
           { moderator: { name: { contains: tok, mode: 'insensitive' } as any } },
         ],
       }))
@@ -41,9 +39,9 @@ export async function GET(req: Request) {
       description: true,
       bannerUrl: true,
       priceTRY: true,
-      // Moderatör adı + id + avatar
+      capacity: true,
       moderator: { select: { id: true, name: true, avatarUrl: true } },
-      _count: { select: { memberships: { where: { isActive: true } as any } } },
+      _count: { select: { memberships: { where: { isActive: true } as any }, picks: true } },
     },
   })
 
@@ -56,7 +54,8 @@ export async function GET(req: Request) {
       bannerUrl: c.bannerUrl,
       priceTRY: c.priceTRY,
       memberCount: (c._count as any).memberships,
-      // Kartların okuyacağı yapı (gerçek avatar DB’de neyse o)
+      pickCount: (c._count as any).picks ?? 0,
+      capacity: c.capacity ?? null,
       moderator: {
         id: c.moderator?.id ?? '',
         name: c.moderator?.name ?? '—',

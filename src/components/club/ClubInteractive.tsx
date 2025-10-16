@@ -39,6 +39,8 @@ type Initial = {
     currentPick: { title: string; author: string; coverUrl: string } | null
     nextEvent: { title: string; startsAt: string } | null
     members: { id: string; name: string; username?: string | null; avatarUrl: string | null }[]
+    capacity: number | null
+    isSoldOut: boolean
   }
 }
 
@@ -125,7 +127,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     setPending(readPending())
   }, [])
 
-  // Ödeme dönüşünde veya üye değilken açılışta üyelik durumunu canlı doğrula
   useEffect(() => {
     let cancelled = false
 
@@ -161,13 +162,21 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     return () => {
       cancelled = true
     }
-    // isMember'ı bilinçli eklemiyoruz
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, initial.club.id])
+
+  const soldOut = typeof initial.club.capacity === 'number' && initial.club.capacity >= 0
+    ? memberCount >= (initial.club.capacity ?? 0)
+    : false
 
   const onSubscribe = async () => {
     if (busy) return
     setUiError(null)
+
+    if (soldOut) {
+      showError('Kontenjan dolu. Bu kulüp şu an yeni abonelik kabul etmiyor.')
+      return
+    }
 
     if (!initial.me.id) {
       const cb = `/clubs/${initial.club.slug}#subscribe`
@@ -322,6 +331,11 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
               <div className="mt-2 text-gray-600 text-sm">Planlanmadı</div>
             )}
             <div className="mt-2 text-sm text-gray-600">Üye sayısı: {memberCount}</div>
+            {typeof initial.club.capacity === 'number' && (
+              <div className="mt-1 text-xs text-gray-500">
+                Limit: {initial.club.capacity || '—'}
+              </div>
+            )}
           </div>
         </div>
 
@@ -348,40 +362,58 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
 
           {!isMember ? (
             <>
-              {pending && !busy && (
-                <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                  Bekleyen abonelik işleminiz var.
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => resumePending(pending)}
-                      className="rounded-full bg-amber-600 text-white px-3 py-1.5 text-sm hover:bg-amber-700"
-                    >
-                      Devam et
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => clearPending(pending)}
-                      className="rounded-full bg-white text-amber-900 border border-amber-300 px-3 py-1.5 text-sm hover:bg-amber-100"
-                    >
-                      İptal et
-                    </button>
-                  </div>
-                  <div className="mt-1 text-xs text-amber-800">
-                    30 dk içinde tamamlanmayan işlemler otomatik olarak sıfırlanır.
-                  </div>
+              {soldOut ? (
+                <div className="mt-4 flex items-center justify-between">
+                  <span
+                    className="inline-flex h-11 items-center rounded-full px-4 text-sm font-semibold tracking-wide
+                               bg-black text-white ring-2 ring-amber-400 shadow-sm select-none"
+                  >
+                    Tükendi
+                  </span>
+                  {typeof initial.club.capacity === 'number' && (
+                    <span className="text-xs text-gray-500">
+                      Limit: {initial.club.capacity}
+                    </span>
+                  )}
                 </div>
+              ) : (
+                <>
+                  {pending && !busy && (
+                    <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                      Bekleyen abonelik işleminiz var.
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => resumePending(pending)}
+                          className="rounded-full bg-amber-600 text-white px-3 py-1.5 text-sm hover:bg-amber-700"
+                        >
+                          Devam et
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => clearPending(pending)}
+                          className="rounded-full bg-white text-amber-900 border border-amber-300 px-3 py-1.5 text-sm hover:bg-amber-100"
+                        >
+                          İptal et
+                        </button>
+                      </div>
+                      <div className="mt-1 text-xs text-amber-800">
+                        30 dk içinde tamamlanmayan işlemler otomatik olarak sıfırlanır.
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={onSubscribe}
+                    disabled={busy}
+                    className="mt-4 w-full rounded-full h-11 bg-rose-600 text-white font-medium hover:bg-rose-700 transition disabled:opacity-60"
+                  >
+                    {busy ? 'Abone olunuyor…' : `Abone ol (₺${initial.club.priceTRY})`}
+                  </button>
+                </>
               )}
 
-              <button
-                onClick={onSubscribe}
-                disabled={busy}
-                className="mt-4 w-full rounded-full h-11 bg-rose-600 text-white font-medium hover:bg-rose-700 transition disabled:opacity-60"
-              >
-                {busy ? 'Abone olunuyor…' : `Abone ol (₺${initial.club.priceTRY})`}
-              </button>
-
-              {profileMissing && (
+              {profileMissing && !soldOut && (
                 <div className="mt-3 text-sm text-amber-900 bg-amber-50 rounded-xl p-3">
                   Eksik bilgiler var, lütfen doldurun.{' '}
                   <button
@@ -394,7 +426,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
                 </div>
               )}
 
-              {!profileMissing && needContractUI && (
+              {!profileMissing && !soldOut && (
                 <div className="mt-4 space-y-2">
                   <label className="inline-flex items-start gap-2 text-sm">
                     <input

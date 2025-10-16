@@ -78,6 +78,8 @@ model Club {
   memberships    Membership[]
   paymentIntents PaymentIntent[]
   subscriptions  Subscription[]
+
+  capacity       Int?            // Abone limiti (null => sınırsız)
 }
 
 model Membership {

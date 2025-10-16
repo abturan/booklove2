@@ -14,6 +14,7 @@ type InitialClub = {
   bannerUrl: string
   priceTRY: number
   moderator: ModeratorLite | null
+  capacity?: number | null
 }
 
 type ProgramLite = {
@@ -86,9 +87,16 @@ export default function ClubEditorForm({
   const [bannerUrl, setBannerUrl] = React.useState(initialClub.bannerUrl ?? '')
   const [bannerFile, setBannerFile] = React.useState<File | null>(null)
 
+  const [capacity, setCapacity] = React.useState<string>(
+    typeof initialClub.capacity === 'number' && initialClub.capacity >= 0
+      ? String(initialClub.capacity)
+      : ''
+  )
+
   const [saving, setSaving] = React.useState(false)
   const [nameErr, setNameErr] = React.useState<string | null>(null)
   const [priceErr, setPriceErr] = React.useState<string | null>(null)
+  const [capacityErr, setCapacityErr] = React.useState<string | null>(null)
   const [moderatorErr, setModeratorErr] = React.useState<string | null>(null)
   const [serverErr, setServerErr] = React.useState<string | null>(null)
 
@@ -192,6 +200,16 @@ export default function ClubEditorForm({
       ok = false
     } else setModeratorErr(null)
 
+    if (capacity.trim() !== '') {
+      const n = Number(capacity)
+      if (!Number.isInteger(n) || n < 0) {
+        setCapacityErr('Abone limiti 0 veya pozitif tam sayı olmalı (boş = sınırsız).')
+        ok = false
+      } else setCapacityErr(null)
+    } else {
+      setCapacityErr(null)
+    }
+
     return ok
   }
 
@@ -216,6 +234,7 @@ export default function ClubEditorForm({
           description: description.trim(),
           bannerUrl: bannerToUse || null,
           moderatorId: moderator?.id || null,
+          capacity: capacity.trim() === '' ? null : Number(capacity),
         }),
       })
       const j = await res.json()
@@ -590,23 +609,46 @@ export default function ClubEditorForm({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Aylık ücret (₺)</label>
-            <input
-              type="number"
-              min={0}
-              step="1"
-              className="w-40 rounded-2xl border px-3 py-2"
-              value={priceTRY}
-              onChange={(e) => setPriceTRY(e.target.value)}
-              onBlur={() => {
-                const money = moneyToNumber(priceTRY)
-                if (Number.isNaN(money) || money < 0)
-                  setPriceErr('Geçerli bir ücret girin (negatif olamaz).')
-                else setPriceErr(null)
-              }}
-            />
-            {priceErr && <div className="mt-1 text-xs text-rose-600">{priceErr}</div>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Aylık ücret (₺)</label>
+              <input
+                type="number"
+                min={0}
+                step="1"
+                className="w-full md:w-40 rounded-2xl border px-3 py-2"
+                value={priceTRY}
+                onChange={(e) => setPriceTRY(e.target.value)}
+                onBlur={() => {
+                  const money = moneyToNumber(priceTRY)
+                  if (Number.isNaN(money) || money < 0)
+                    setPriceErr('Geçerli bir ücret girin (negatif olamaz).')
+                  else setPriceErr(null)
+                }}
+              />
+              {priceErr && <div className="mt-1 text-xs text-rose-600">{priceErr}</div>}
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Abone limiti (opsiyonel)</label>
+              <input
+                type="number"
+                min={0}
+                step="1"
+                className="w-full md:w-40 rounded-2xl border px-3 py-2"
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+                onBlur={() => {
+                  if (capacity.trim() === '') { setCapacityErr(null); return }
+                  const n = Number(capacity)
+                  if (!Number.isInteger(n) || n < 0)
+                    setCapacityErr('0 veya pozitif tam sayı girin (boş = sınırsız).')
+                  else setCapacityErr(null)
+                }}
+                placeholder="Boş bırak: sınırsız"
+              />
+              {capacityErr && <div className="mt-1 text-xs text-rose-600">{capacityErr}</div>}
+            </div>
           </div>
 
           <div>

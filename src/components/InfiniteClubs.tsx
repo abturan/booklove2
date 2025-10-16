@@ -16,9 +16,9 @@ type Club = {
   moderator: { id: string; name: string; avatarUrl?: string | null } | null
   memberCount: number
   pickCount: number
+  capacity?: number | null
 }
 
-/** API’den gelen veriyi güvenli Club tipine dönüştürür. Uymayanları eler. */
 function normalizeClub(x: RawClub, fallbackKey: string): Club | null {
   if (!x || typeof x !== 'object') return null
   const id = (x.id ?? x._id ?? '').toString()
@@ -57,11 +57,18 @@ function normalizeClub(x: RawClub, fallbackKey: string): Club | null {
         ? x.pickCount
         : Array.isArray(x.picks)
         ? x.picks.length
+        : typeof x._count?.picks === 'number'
+        ? x._count.picks
         : 0,
+    capacity:
+      typeof x.capacity === 'number'
+        ? x.capacity
+        : x.capacity == null
+        ? null
+        : undefined,
   }
 }
 
-/** API response farklı şekillerde olabilir: [], {items:[]}, {clubs:[]}, {data:[]} */
 function extractList(payload: any): any[] {
   if (Array.isArray(payload)) return payload
   if (payload && typeof payload === 'object') {
@@ -86,11 +93,9 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
   const sentinelRef = React.useRef<HTMLDivElement | null>(null)
   const queryRef = React.useRef(initialQuery)
 
-  // İlk yükleme veya query değişince reset
   React.useEffect(() => {
     queryRef.current = initialQuery
     resetAndLoad()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(initialQuery)])
 
   async function resetAndLoad() {
@@ -121,7 +126,6 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
         .map((x: any, idx: number) => normalizeClub(x, `${Date.now()}-${idx}`))
         .filter(Boolean) as Club[]
 
-      // duplicates’ı engelle (id bazlı)
       setItems((prev) => {
         const seen = new Set(prev.map((c) => c.id))
         const merged = [...prev]
@@ -134,23 +138,20 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
         return merged
       })
 
-      // nextCursor varsa kullan, yoksa uzunluğa göre karar ver
-      if (data?.nextCursor) {
-        setCursor(String(data.nextCursor))
+      if ((data as any)?.nextCursor) {
+        setCursor(String((data as any).nextCursor))
         setHasMore(true)
       } else {
         if (normalized.length < pageSize) setHasMore(false)
       }
     } catch (e: any) {
       setError(e?.message || 'Liste yüklenemedi.')
-      // Hata anında yüklemeyi durdur ama sayfayı kırma
       setHasMore(false)
     } finally {
       setLoading(false)
     }
   }
 
-  // Sonsuz kaydırma
   React.useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -163,7 +164,6 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
     )
     io.observe(el)
     return () => io.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sentinelRef.current, cursor, hasMore, loading])
 
   const safeItems = items.filter(Boolean)
@@ -182,7 +182,6 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {safeItems.map((club, i) => {
-          // Key için güvenli fallback
           const key = club.id || `${club.slug || 'club'}-${i}`
           return <ClubCard key={key} club={club} />
         })}
@@ -199,9 +198,3 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
     </div>
   )
 }
-
-
-
-
-
-

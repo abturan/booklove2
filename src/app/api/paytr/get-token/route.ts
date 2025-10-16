@@ -46,6 +46,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Eksik alan' }, { status: 400 })
     }
 
+    // Kapasite kontrolü (sunucu tarafında kesin kontrol)
+    const club = await prisma.club.findUnique({
+      where: { id: String(clubId) },
+      select: { id: true, capacity: true },
+    })
+    if (!club) {
+      return NextResponse.json({ error: 'Kulüp bulunamadı' }, { status: 404 })
+    }
+    if (typeof club.capacity === 'number' && club.capacity >= 0) {
+      const activeCount = await prisma.membership.count({
+        where: { clubId: club.id, isActive: true },
+      })
+      if (activeCount >= (club.capacity ?? 0)) {
+        return NextResponse.json({ error: 'Kontenjan dolu' }, { status: 422 })
+      }
+    }
+
     const userIp = getClientIp(req.headers)
     const merchant_oid = makeMerchantOid(String(clubId))
     const payment_amount = amountToKurus(amount)

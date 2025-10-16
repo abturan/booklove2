@@ -24,6 +24,7 @@ export default async function EditClubPage({ params }: { params: { id: string } 
       description: true,
       bannerUrl: true,
       priceTRY: true,
+      capacity: true,
       moderator: { select: { id: true, name: true, email: true } },
       picks: {
         orderBy: { monthKey: 'desc' },
@@ -82,6 +83,7 @@ export default async function EditClubPage({ params }: { params: { id: string } 
           moderator: club.moderator
             ? { id: club.moderator.id, name: club.moderator.name || '—', email: club.moderator.email }
             : null,
+          capacity: club.capacity ?? null,
         }}
         initialPrograms={club.picks.map(p => ({
           id: p.id,
@@ -102,3 +104,9 @@ export default async function EditClubPage({ params }: { params: { id: string } 
     </div>
   )
 }
+
+
+
+
+
+
