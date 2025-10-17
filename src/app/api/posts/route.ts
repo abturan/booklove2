@@ -3,11 +3,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
-/**
- * GET /api/posts?scope=friends|self
- * friends: kullanıcının ve arkadaşlarının postları
- * self: sadece kullanıcının postları
- */
 export async function GET(req: Request) {
   try {
     const session = await auth()
@@ -19,24 +14,31 @@ export async function GET(req: Request) {
     const limit = Math.min(Number(searchParams.get('limit') || '12'), 30)
     const cursor = searchParams.get('cursor') || undefined
 
-    let friendIds = new Set<string>([meId])
-    try {
-      const accepted = await prisma.friendRequest.findMany({
-        where: { status: 'ACCEPTED', OR: [{ fromId: meId }, { toId: meId }] },
-        select: { fromId: true, toId: true }
-      })
-      for (const fr of accepted) {
-        if (fr.fromId !== meId) friendIds.add(fr.fromId)
-        if (fr.toId !== meId) friendIds.add(fr.toId)
+    let ownerFilter: any
+
+    if (scope === 'global') {
+      ownerFilter = undefined
+    } else if (scope === 'self') {
+      ownerFilter = { in: [meId] }
+    } else {
+      let friendIds = new Set<string>([meId])
+      try {
+        const accepted = await prisma.friendRequest.findMany({
+          where: { status: 'ACCEPTED', OR: [{ fromId: meId }, { toId: meId }] },
+          select: { fromId: true, toId: true }
+        })
+        for (const fr of accepted) {
+          if (fr.fromId !== meId) friendIds.add(fr.fromId)
+          if (fr.toId !== meId) friendIds.add(fr.toId)
+        }
+      } catch {
+        friendIds = new Set<string>([meId])
       }
-    } catch {
-      friendIds = new Set<string>([meId])
+      ownerFilter = { in: Array.from(friendIds) }
     }
 
-    const ownerFilter = scope === 'self' ? { in: [meId] } : { in: Array.from(friendIds) }
-
     const posts = await prisma.post.findMany({
-      where: { ownerId: ownerFilter },
+      where: ownerFilter ? { ownerId: ownerFilter } : undefined,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
@@ -60,14 +62,6 @@ export async function GET(req: Request) {
   }
 }
 
-/**
- * POST /api/posts
- * body: { body: string, images?: { url:string, width?:number, height?:number }[], clientToken?: string }
- *
- * Not: Şema migration’ı uygulanmamış ortamlarda da 500 patlamasın diye
- * upsert’a güvenmeden yazılım-taraflı idempotency uygularız:
- *  - Son 30 saniyede aynı owner + aynı metin + aynı görsel seti varsa onu döndür.
- */
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -84,9 +78,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Metin veya görsel ekleyin' }, { status: 400 })
   }
 
-  // --- Yazılım-taraflı idempotency (migration gerektirmez) ---
   const now = Date.now()
-  const since = new Date(now - 30_000) // 30 saniye
+  const since = new Date(now - 30_000)
   const incomingUrls = images.map((x: any) => String(x?.url || '')).filter(Boolean).sort()
 
   try {
@@ -99,15 +92,11 @@ export async function POST(req: Request) {
     if (last) {
       const lastUrls = (last.images || []).map((i) => i.url).filter(Boolean).sort()
       if (incomingUrls.join('|') === lastUrls.join('|')) {
-        // Aynı içerik → yeni kayıt açma, mevcut id’yi döndür
         return NextResponse.json({ ok: true, id: last.id })
       }
     }
-  } catch {
-    // tablo erişiminde hata olsa bile devam edip create deneriz
-  }
+  } catch {}
 
-  // --- Normal create ---
   const post = await prisma.post.create({
     data: {
       ownerId: meId,

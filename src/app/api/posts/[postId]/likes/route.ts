@@ -9,7 +9,6 @@ export async function POST(_req: Request, { params }: { params: { postId: string
   const meId = session.user.id
   const { postId } = params
 
-  // toggle like
   const existing = await prisma.like.findUnique({
     where: { postId_userId: { postId, userId: meId } }
   }).catch(() => null)

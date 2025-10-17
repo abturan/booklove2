@@ -3,6 +3,7 @@
 
 import * as React from 'react'
 import ClubCard from '@/components/ClubCard'
+import GlobalFeed from '@/components/feed/GlobalFeed'
 
 type RawClub = any
 
@@ -123,8 +124,8 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
 
       const raw = extractList(data)
       const normalized: Club[] = raw
-        .map((x: any, idx: number) => normalizeClub(x, `${Date.now()}-${idx}`))
-        .filter(Boolean) as Club[]
+      .map((x: any, idx: number) => normalizeClub(x, `${Date.now()}-${idx}`))
+      .filter(Boolean) as Club[]
 
       setItems((prev) => {
         const seen = new Set(prev.map((c) => c.id))
@@ -180,11 +181,19 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
         <div className="text-sm text-gray-600">Kulüp bulunamadı.</div>
       )}
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {safeItems.map((club, i) => {
-          const key = club.id || `${club.slug || 'club'}-${i}`
-          return <ClubCard key={key} club={club} />
-        })}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {safeItems.map((club, i) => {
+              const key = club.id || `${club.slug || 'club'}-${i}`
+              return <ClubCard key={key} club={club} />
+            })}
+          </div>
+        </div>
+
+        <div className="hidden lg:block">
+          <GlobalFeed />
+        </div>
       </div>
 
       <div ref={sentinelRef} />
