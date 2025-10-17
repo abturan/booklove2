@@ -27,9 +27,10 @@ export default function ClubCard({ club }: { club: ClubItem }) {
     club.bannerUrl ??
     'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1200&auto=format&fit=crop'
 
-  const isSoldOut = typeof club.capacity === 'number' && club.capacity >= 0
-    ? club.memberCount >= (club.capacity ?? 0)
-    : false
+  const hasCapacity = typeof club.capacity === 'number' && club.capacity >= 0
+  const remaining = hasCapacity ? Math.max((club.capacity ?? 0) - club.memberCount, 0) : null
+  const isSoldOut = hasCapacity ? (remaining ?? 0) <= 0 : false
+  const lowStock = hasCapacity && (remaining ?? 0) > 0 && (remaining as number) <= 10
 
   return (
     <div
@@ -69,14 +70,27 @@ export default function ClubCard({ club }: { club: ClubItem }) {
           )}
         </div>
 
-        <div className="mt-3 flex items-center gap-3 text-sm text-gray-700">
+        <div className="mt-3 flex items-start gap-3 text-sm text-gray-700">
           <span>👥 {club.memberCount} abone</span>
           <span>📚 {club.pickCount} seçki</span>
-          {typeof club.capacity === 'number' && (
-            <span className={clsx('ml-auto text-xs rounded-full px-2 py-0.5 border',
-              isSoldOut ? 'border-amber-500 text-amber-700 bg-amber-50' : 'border-gray-200 text-gray-500')}>
-              {isSoldOut ? 'Tükendi' : `Limit: ${club.capacity || '—'}`}
-            </span>
+
+          {hasCapacity && (
+            <div className="ml-auto flex flex-col items-end gap-1">
+              <span
+                className={clsx(
+                  'text-xs rounded-full px-2 py-0.5 border',
+                  isSoldOut ? 'border-amber-500 text-amber-700 bg-amber-50' : 'border-gray-200 text-gray-500'
+                )}
+              >
+                {isSoldOut ? 'Tükendi' : `Kontenjan: ${club.capacity || '—'}`}
+              </span>
+
+              {lowStock && (
+                <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                  Son {remaining} koltuk
+                </span>
+              )}
+            </div>
           )}
         </div>
 
@@ -110,3 +124,9 @@ export default function ClubCard({ club }: { club: ClubItem }) {
     </div>
   )
 }
+
+
+
+
+
+

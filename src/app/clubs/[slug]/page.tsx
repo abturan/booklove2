@@ -13,6 +13,10 @@ function monthRangeUTC(monthKey: string) {
   return { start, end }
 }
 
+function monthKeyUTC(d = new Date()) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
 export default async function ClubPage({ params }: { params: { slug: string } }) {
   const session = await auth()
 
@@ -47,22 +51,81 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     },
   })
 
-  const currentPick = await prisma.clubPick.findFirst({
-    where: { clubId: club.id, isCurrent: true },
+  // "Bu ayın seçkisi": bugünden itibaren en yakın gelecek ay (>= this month),
+  // yoksa en yakın geçmiş ay.
+  const thisMonth = monthKeyUTC()
+
+  const futureNearest = await prisma.clubPick.findFirst({
+    where: { clubId: club.id, monthKey: { gte: thisMonth } },
+    orderBy: { monthKey: 'asc' },
     select: {
       id: true,
       monthKey: true,
-      isCurrent: true,
-      book: { select: { title: true, author: true, coverUrl: true } },
+      note: true,
+      book: {
+        select: {
+          title: true,
+          author: true,
+          translator: true,
+          pages: true,
+          coverUrl: true,
+          isbn: true,
+        },
+      },
     },
   })
+
+  const pastNearest = futureNearest
+    ? null
+    : await prisma.clubPick.findFirst({
+        where: { clubId: club.id, monthKey: { lte: thisMonth } },
+        orderBy: { monthKey: 'desc' },
+        select: {
+          id: true,
+          monthKey: true,
+          note: true,
+          book: {
+            select: {
+              title: true,
+              author: true,
+              translator: true,
+              pages: true,
+              coverUrl: true,
+              isbn: true,
+            },
+          },
+        },
+      })
+
+  const anchorPick = futureNearest ?? pastNearest
+
+  let prevPick: any = null
+  let nextPick: any = null
+  if (anchorPick?.monthKey) {
+    prevPick = await prisma.clubPick.findFirst({
+      where: { clubId: club.id, monthKey: { lt: anchorPick.monthKey } },
+      orderBy: { monthKey: 'desc' },
+      select: {
+        monthKey: true,
+        book: { select: { title: true, author: true, coverUrl: true } },
+      },
+    })
+    nextPick = await prisma.clubPick.findFirst({
+      where: { clubId: club.id, monthKey: { gt: anchorPick.monthKey } },
+      orderBy: { monthKey: 'asc' },
+      select: {
+        monthKey: true,
+        book: { select: { title: true, author: true, coverUrl: true } },
+      },
+    })
+  }
 
   const now = new Date()
 
   let nextEvent: { id: string; title: string | null; startsAt: Date } | null = null
 
-  if (currentPick?.monthKey) {
-    const { start, end } = monthRangeUTC(currentPick.monthKey)
+  if (anchorPick?.monthKey) {
+    const { start, end } = monthRangeUTC(anchorPick.monthKey)
     const eventInPickMonth = await prisma.clubEvent.findFirst({
       where: { clubId: club.id, startsAt: { gte: start, lt: end } },
       orderBy: { startsAt: 'asc' },
@@ -121,9 +184,10 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       ? club.bannerUrl
       : fallbackBanner
 
-  const isSoldOut = typeof club.capacity === 'number' && club.capacity >= 0
-    ? memberCount >= (club.capacity ?? 0)
-    : false
+  const isSoldOut =
+    typeof club.capacity === 'number' && club.capacity >= 0
+      ? memberCount >= (club.capacity ?? 0)
+      : false
 
   const initial = {
     me: {
@@ -149,12 +213,37 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       isMember,
       memberSince: myMembership?.since ?? null,
       chatRoomId: room?.id ?? null,
-      currentPick: currentPick
+      currentPick: anchorPick
         ? {
-            title: currentPick.book.title,
-            author: currentPick.book.author,
+            title: anchorPick.book.title,
+            author: anchorPick.book.author,
+            translator: anchorPick.book.translator || null,
+            pages: anchorPick.book.pages ?? null,
+            isbn: anchorPick.book.isbn || null,
             coverUrl:
-              currentPick.book.coverUrl ??
+              anchorPick.book.coverUrl ??
+              'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop',
+            note: anchorPick.note || null,
+            monthKey: anchorPick.monthKey,
+          }
+        : null,
+      prevPick: prevPick
+        ? {
+            monthKey: prevPick.monthKey,
+            title: prevPick.book.title,
+            author: prevPick.book.author,
+            coverUrl:
+              prevPick.book.coverUrl ??
+              'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop',
+          }
+        : null,
+      nextPick: nextPick
+        ? {
+            monthKey: nextPick.monthKey,
+            title: nextPick.book.title,
+            author: nextPick.book.author,
+            coverUrl:
+              nextPick.book.coverUrl ??
               'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop',
           }
         : null,
