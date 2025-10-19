@@ -23,19 +23,19 @@ export default async function FriendsPage() {
   const [pendingIn, pendingOut, accepted] = await Promise.all([
     prisma.friendRequest.findMany({
       where: { toId: meId, status: 'PENDING', respondedAt: null },
-      include: { from: { select: { id: true, name: true, username: true, avatarUrl: true } } },
+      include: { from: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.friendRequest.findMany({
       where: { fromId: meId, status: 'PENDING' },
-      include: { to: { select: { id: true, name: true, username: true, avatarUrl: true } } },
+      include: { to: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.friendRequest.findMany({
       where: { status: 'ACCEPTED', OR: [{ fromId: meId }, { toId: meId }] },
       include: {
-        from: { select: { id: true, name: true, username: true, avatarUrl: true } },
-        to: { select: { id: true, name: true, username: true, avatarUrl: true } },
+        from: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+        to: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
       },
       orderBy: { createdAt: 'desc' },
     }),
@@ -46,7 +46,7 @@ export default async function FriendsPage() {
       <ProfileBanner src={me?.bannerUrl} canEdit />
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div>
+        <div className="hidden lg:block">
           <LeftSidebar />
         </div>
 
@@ -61,7 +61,10 @@ export default async function FriendsPage() {
                   const other = fr.from.id === meId ? fr.to : fr.from
                   return (
                     <li key={fr.id} className="py-3 flex items-center gap-3">
-                      <Link href={userPath(other.username, other.name)} className="flex items-center gap-3">
+                      <Link
+                        href={userPath(other.username, other.name, other.slug)}
+                        className="flex items-center gap-3"
+                      >
                         <Avatar src={other.avatarUrl ?? null} size={40} alt={other.name || 'Kullanıcı'} />
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">{other.name || 'Kullanıcı'}</div>
@@ -98,7 +101,7 @@ export default async function FriendsPage() {
                   const u = fr.to
                   return (
                     <li key={fr.id} className="py-3 flex items-center gap-3">
-                      <Link href={userPath(u.username, u.name)} className="flex items-center gap-3">
+                      <Link href={userPath(u.username, u.name, u.slug)} className="flex items-center gap-3">
                         <Avatar src={u.avatarUrl ?? null} size={36} alt={u.name || 'Kullanıcı'} />
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">{u.name || 'Kullanıcı'}</div>

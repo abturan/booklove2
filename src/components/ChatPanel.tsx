@@ -58,7 +58,7 @@ export default function ChatPanel({
         )}
         {items.map((m) => (
           <div key={m.id} className="flex gap-2 items-start p-2">
-            <Link href={userPath(m.author?.username, m.author?.name)} className="relative w-8 h-8 inline-block rounded-full overflow-hidden bg-gray-100">
+            <Link href={userPath(m.author?.username, m.author?.name, m.author?.slug)} className="relative w-8 h-8 inline-block rounded-full overflow-hidden bg-gray-100">
               <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} />
             </Link>
             <div>

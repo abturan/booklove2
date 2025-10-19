@@ -11,8 +11,8 @@ export async function GET() {
   const rows = await prisma.dmThread.findMany({
     where: { OR: [{ userAId: me }, { userBId: me }] },
     include: {
-      userA: { select: { id: true, name: true, username: true, avatarUrl: true } },
-      userB: { select: { id: true, name: true, username: true, avatarUrl: true } },
+      userA: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+      userB: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
     },
     orderBy: { lastMessage: 'desc' },
   })

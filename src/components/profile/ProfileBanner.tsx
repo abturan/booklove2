@@ -14,8 +14,8 @@ export default function ProfileBanner({ src, canEdit = false }: { src?: string |
   }, [src])
 
   return (
-    <div className="relative h-40 rounded-3xl overflow-hidden">
-      <Image src={current} alt="" fill className="object-cover" />
+    <div className="relative hero-fixed rounded-3xl overflow-hidden">
+      <Image src={current} alt="" fill className="object-cover" priority />
       {canEdit && <BannerEditor initialUrl={src || undefined} onSaved={(url) => setCurrent(url || fallback)} />}
     </div>
   )

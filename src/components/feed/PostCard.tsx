@@ -11,9 +11,9 @@ export type Post = {
   id: string
   body: string
   createdAt: string
-  owner: { id: string; name: string; username: string | null; avatarUrl: string | null }
+  owner: { id: string; name: string; username: string | null; slug: string | null; avatarUrl: string | null }
   images: { url: string; width: number | null; height: number | null }[]
-  counts: { likes: number; comments: number }
+  counts?: { likes?: number; comments?: number }
 }
 
 function timeAgo(iso: string) {
@@ -35,9 +35,9 @@ function linkify(text: string) {
   const parts = text.split(/(\B@[a-zA-Z0-9_]+)/g)
   return parts.map((p, i) => {
     if (p.startsWith('@') && p.length > 1) {
-      const slug = p.slice(1)
+      const handle = p.slice(1)
       return (
-        <Link key={i} href={userPath(slug, slug)} className="text-rose-600 hover:underline">
+        <Link key={i} href={userPath(handle, handle, handle)} className="text-rose-600 hover:underline">
           {p}
         </Link>
       )
@@ -59,8 +59,16 @@ export default function PostCard({
   const meId = data?.user?.id
   const isOwner = meId && meId === post.owner.id
 
+  const safeCounts = useMemo(
+    () => ({
+      likes: typeof post?.counts?.likes === 'number' ? post.counts!.likes : 0,
+      comments: typeof post?.counts?.comments === 'number' ? post.counts!.comments : 0,
+    }),
+    [post?.counts?.likes, post?.counts?.comments]
+  )
+
   const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(post.counts.likes)
+  const [likeCount, setLikeCount] = useState(safeCounts.likes)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
@@ -74,6 +82,10 @@ export default function PostCard({
   const fileRef = useRef<HTMLInputElement | null>(null)
   const maxPreview = 300
   const maxImages = 5
+
+  useEffect(() => {
+    setLikeCount(safeCounts.likes)
+  }, [safeCounts.likes])
 
   async function toggleLike() {
     try {
@@ -109,6 +121,7 @@ export default function PostCard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body }),
       })
+      const data = await res.json()
       if (res.ok) {
         setCommentText('')
         await loadComments()
@@ -181,7 +194,7 @@ export default function PostCard({
         <Avatar src={post.owner.avatarUrl || undefined} size={36} alt={post.owner.name} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Link href={userPath(post.owner.username, post.owner.name)} className="font-medium hover:underline">
+            <Link href={userPath(post.owner.username, post.owner.name, post.owner.slug)} className="font-medium hover:underline">
               {post.owner.name}
             </Link>
             {post.owner.username && <span className="text-xs text-gray-500">@{post.owner.username}</span>}
@@ -236,7 +249,6 @@ export default function PostCard({
               {post.images.length > 0 && (
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   {post.images.map((img, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img key={i} src={img.url} alt="" className="rounded-2xl object-cover w-full h-36" />
                   ))}
                 </div>
@@ -247,7 +259,7 @@ export default function PostCard({
                   ❤️ {likeCount}
                 </button>
                 <button type="button" onClick={() => setCommentsOpen((v) => !v)} className="hover:text-rose-600">
-                  💬 {post.counts.comments}
+                  💬 {safeCounts.comments}
                 </button>
               </div>
             </>
@@ -264,7 +276,6 @@ export default function PostCard({
                   <div className="grid grid-cols-2 gap-2">
                     {editImages.map((img, i) => (
                       <div key={i} className="relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={img.url} alt="" className="rounded-xl object-cover w-full h-28" />
                         <button
                           type="button"
@@ -328,7 +339,7 @@ export default function PostCard({
                   {comments.map((c) => (
                     <div key={c.id} className="rounded-2xl bg-gray-50 p-2">
                       <div className="text-xs text-gray-500">
-                        <Link href={userPath(c.user?.username, c.user?.name)} className="font-medium hover:underline">
+                        <Link href={userPath(c.user?.username, c.user?.name, c.user?.slug)} className="font-medium hover:underline">
                           {c.user?.name || 'Kullanıcı'}
                         </Link>{' '}
                         · {timeAgo(c.createdAt)}

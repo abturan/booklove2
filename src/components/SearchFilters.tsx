@@ -21,20 +21,23 @@ export default function SearchFilters() {
 
   const initialQ = params.get('q') ?? ''
   const initialSort = (params.get('sort') as SortKey) || 'members_desc'
+  const initialSubscribed = params.get('subscribed') === '1'
 
   const [q, setQ] = useState(initialQ)
   const [sort, setSort] = useState<SortKey>(initialSort)
+  const [onlySubs, setOnlySubs] = useState<boolean>(initialSubscribed)
   const debouncedQ = useDebounce(q, 250)
 
   useEffect(() => {
     const s = new URLSearchParams(params.toString())
     debouncedQ ? s.set('q', debouncedQ) : s.delete('q')
     sort ? s.set('sort', sort) : s.delete('sort')
+    onlySubs ? s.set('subscribed', '1') : s.delete('subscribed')
     router.replace(`${pathname}?${s.toString()}`, { scroll: false })
-  }, [debouncedQ, sort]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedQ, sort, onlySubs]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className=" top-[72px] z-20">
+    <div className="top-[72px] z-20">
       <div className="rounded-2xl border border-gray-100 bg-white/70 backdrop-blur p-3 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="relative flex-1 w-full">
@@ -56,19 +59,9 @@ export default function SearchFilters() {
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-3.6-3.6" />
             </svg>
-            {q && (
-              <button
-                type="button"
-                onClick={() => setQ('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                aria-label="Temizle"
-              >
-                ✕
-              </button>
-            )}
           </div>
 
-          <div className="hidden md:block w-[260px]">
+          <div className="hidden md:block w-[240px]">
             <Select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
@@ -81,7 +74,23 @@ export default function SearchFilters() {
             </Select>
           </div>
         </div>
+
+        <div className="mt-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => setOnlySubs((v) => !v)}
+            className="text-sm text-primary underline"
+          >
+            {onlySubs ? 'Tüm kulüpleri göster' : 'Kendi kulüplerim'}
+          </button>
+        </div>
       </div>
     </div>
   )
 }
+
+
+
+
+
+

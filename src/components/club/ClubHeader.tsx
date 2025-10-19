@@ -9,6 +9,7 @@ type Props = {
   moderatorName: string
   moderatorAvatarUrl?: string | null
   moderatorUsername?: string | null
+  moderatorSlug?: string | null
   clubName: string
   description?: string | null
 }
@@ -17,6 +18,7 @@ export default function ClubHeader({
   moderatorName,
   moderatorAvatarUrl,
   moderatorUsername,
+  moderatorSlug,
   clubName,
   description,
 }: Props) {
@@ -25,7 +27,7 @@ export default function ClubHeader({
       <div className="text-sm text-gray-600">Moderatör</div>
       <div className="mt-1 flex items-center gap-3">
         {moderatorAvatarUrl ? (
-          <Link href={userPath(moderatorUsername, moderatorName)} className="inline-block">
+          <Link href={userPath(moderatorUsername, moderatorName, moderatorSlug)} className="inline-block">
             <Avatar src={moderatorAvatarUrl} size={80} alt={moderatorName} className="ring-2 ring-white shadow" />
           </Link>
         ) : (

@@ -14,7 +14,7 @@ type ClubItem = {
   description: string | null
   bannerUrl: string | null
   priceTRY: number
-  moderator?: { id: string; name: string; avatarUrl?: string | null; username?: string | null } | null
+  moderator?: { id: string; name: string; avatarUrl?: string | null; username?: string | null; slug?: string | null } | null
   memberCount: number
   pickCount: number
   capacity?: number | null
@@ -61,7 +61,7 @@ export default function ClubCard({ club }: { club: ClubItem }) {
 
         <div className="mt-1 text-sm text-gray-600 line-clamp-1 flex items-center gap-2">
           {moderatorAvatar ? (
-            <Link href={userPath(club.moderator?.username, moderatorName)} className="inline-flex items-center gap-2">
+            <Link href={userPath(club.moderator?.username, moderatorName, club.moderator?.slug)} className="inline-flex items-center gap-2">
               <Avatar src={moderatorAvatar} size={20} alt={moderatorName} />
               <span className="truncate">{moderatorName}</span>
             </Link>
@@ -112,7 +112,7 @@ export default function ClubCard({ club }: { club: ClubItem }) {
           ) : (
             <Link
               href={`/clubs/${club.slug}#subscribe`}
-              className="inline-flex h-9 items-center rounded-full bg-rose-500 px-3 text-sm font-medium text-white hover:bg-rose-600"
+              className="inline-flex h-9 items-center rounded-full bg-primary px-3 text-sm font-medium text-white hover:bg-primary/90"
             >
               Abone ol
             </Link>
@@ -124,9 +124,3 @@ export default function ClubCard({ club }: { club: ClubItem }) {
     </div>
   )
 }
-
-
-
-
-
-

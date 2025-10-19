@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Avatar from '@/components/Avatar'
 import { userPath } from '@/lib/userPath'
 
-type Peer = { id: string; name: string | null; username: string | null; avatarUrl: string | null }
+type Peer = { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
 type Item = { threadId: string; peer: Peer; last?: { body: string; createdAt: string; authorId: string } }
 
 export default function ThreadList({ activePeerId }: { activePeerId?: string }) {
@@ -47,14 +47,14 @@ export default function ThreadList({ activePeerId }: { activePeerId?: string }) 
           items.map((it) => (
             <li key={it.threadId}>
               <Link
-                href={`/messages/${it.peer.id}`}
+                href={`/messages/${it.threadId}`}
                 className={`flex items-center gap-3 px-3 py-3 hover:bg-gray-50 ${activePeerId === it.peer.id ? 'bg-gray-50' : ''}`}
               >
                 <Avatar src={it.peer.avatarUrl ?? null} size={36} alt={it.peer.name || 'Kullanıcı'} />
                 <div className="min-w-0">
                   <div className="text-sm font-medium truncate">{it.peer.name || 'Kullanıcı'}</div>
                   <div className="text-xs text-gray-600 truncate">
-                    {it.last?.body ? it.last.body : it.peer.username ? `@${it.peer.username}` : userPath(it.peer.username ?? undefined, it.peer.name ?? undefined)}
+                    {it.last?.body ? it.last.body : it.peer.username ? `@${it.peer.username}` : userPath(it.peer.username ?? undefined, it.peer.name ?? undefined, it.peer.slug ?? undefined)}
                   </div>
                 </div>
               </Link>
@@ -65,5 +65,3 @@ export default function ThreadList({ activePeerId }: { activePeerId?: string }) 
     </div>
   )
 }
-    
-

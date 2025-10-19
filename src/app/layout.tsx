@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Providers from '@/components/Providers'
+import MobileAppFooter from '@/components/mobile/MobileAppFooter'
+import ShareModal from '@/components/modals/ShareModal'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,8 +26,12 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <Providers>
           <Header />
-          <main className="container mx-auto px-4 py-6 flex-1">{children}</main>
+          <main className="container mx-auto px-4 py-6 flex-1 pb-24 sm:pb-6">{children}</main>
           <Footer />
+          <div className="md:hidden">
+            <MobileAppFooter />
+          </div>
+          <ShareModal />
           {modals}
         </Providers>
       </body>

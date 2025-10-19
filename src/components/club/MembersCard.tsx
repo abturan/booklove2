@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Avatar from '@/components/Avatar'
 import { userPath } from '@/lib/userPath'
 
-type Member = { id: string; name: string; username?: string | null; avatarUrl: string | null }
+type Member = { id: string; name: string; username?: string | null; slug?: string | null; avatarUrl: string | null }
 
 export default function MembersCard({ members, total }: { members: Member[]; total: number }) {
   const preview = members.slice(0, 30)
@@ -18,7 +18,7 @@ export default function MembersCard({ members, total }: { members: Member[]; tot
       <div className="mt-3 flex flex-wrap gap-2 items-center">
         {preview.map((m) => (
           <div key={m.id} className="relative group">
-            <Link href={userPath(m.username, m.name)} className="block">
+            <Link href={userPath(m.username, m.name, m.slug)} className="block">
               <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white shadow">
                 <Avatar src={m.avatarUrl} size={36} alt={m.name} />
               </div>

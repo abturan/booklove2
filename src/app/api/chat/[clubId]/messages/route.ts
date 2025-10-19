@@ -16,7 +16,7 @@ export async function GET(
     where: { roomId: room.id },
     orderBy: { createdAt: 'asc' },
     take: 200,
-    include: { author: { select: { id: true, name: true, username: true, avatarUrl: true } } }
+    include: { author: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } } }
   })
 
   return NextResponse.json({ items })
@@ -63,7 +63,7 @@ export async function POST(
 
   const msg = await prisma.chatMessage.create({
     data: { roomId: room.id, authorId: session.user.id, body: body.trim() },
-    include: { author: { select: { id: true, name: true, username: true, avatarUrl: true } } }
+    include: { author: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } } }
   })
 
   return NextResponse.json({ ok: true, item: msg })

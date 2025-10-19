@@ -34,6 +34,7 @@ type Initial = {
     moderatorName: string
     moderatorAvatarUrl?: string | null
     moderatorUsername?: string | null
+    moderatorSlug?: string | null
     memberCount: number
     isMember: boolean
     memberSince: string | null
@@ -42,7 +43,7 @@ type Initial = {
     prevPick: { monthKey: string; title: string; author: string; coverUrl: string } | null
     nextPick: { monthKey: string; title: string; author: string; coverUrl: string } | null
     nextEvent: { title: string; startsAt: string } | null
-    members: { id: string; name: string; username?: string | null; avatarUrl: string | null }[]
+    members: { id: string; name: string; username?: string | null; slug?: string | null; avatarUrl: string | null }[]
     capacity: number | null
     isSoldOut: boolean
   }
@@ -217,6 +218,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           moderatorName={initial.club.moderatorName}
           moderatorAvatarUrl={initial.club.moderatorAvatarUrl}
           moderatorUsername={initial.club.moderatorUsername}
+          moderatorSlug={initial.club.moderatorSlug}
           clubName={initial.club.name}
           description={initial.club.description}
         />

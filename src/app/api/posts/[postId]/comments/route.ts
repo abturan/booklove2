@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: { params: { postId: string }
     take: limit,
     select: {
       id: true, body: true, createdAt: true,
-      user: { select: { id: true, name: true, username: true, avatarUrl: true } }
+      user: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } }
     }
   })
   return NextResponse.json({ items: comments })

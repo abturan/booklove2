@@ -1,10 +1,11 @@
 // src/components/sidebars/PublicProfileSidebar.tsx
-import Image from 'next/image'
-import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import Avatar from '@/components/Avatar'
-import RequestButton from '@/components/friends/RequestButton'
+import HeaderSection from '@/components/sidebars/profile/HeaderSection'
+import FriendAction from '@/components/sidebars/profile/FriendAction'
+import ModeratorClubCard from '@/components/sidebars/profile/ModeratorClubCard'
+import MemberClubList from '@/components/sidebars/profile/MemberClubList'
+import FriendCloud from '@/components/sidebars/profile/FriendCloud'
 
 export default async function PublicProfileSidebar({ userId }: { userId: string }) {
   const session = await auth()
@@ -13,121 +14,113 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      id: true, name: true, email: true, username: true, avatarUrl: true,
+      id: true,
+      name: true,
+      username: true,
+      avatarUrl: true,
+      bio: true,
+      Club: {
+        select: {
+          slug: true,
+          name: true,
+          bannerUrl: true,
+          _count: { select: { memberships: true, picks: true, events: true } },
+        },
+      },
       Memberships: {
-        where: { isActive: true },
-        include: { club: { select: { slug: true, name: true, bannerUrl: true } } }
+        include: {
+          club: {
+            select: {
+              slug: true,
+              name: true,
+              bannerUrl: true,
+              _count: { select: { memberships: true, picks: true, events: true } },
+              moderatorId: true,
+            },
+          },
+        },
+        orderBy: { joinedAt: 'desc' },
+        take: 50,
       },
     },
   })
   if (!user) return null
 
-  let isFriend = false
-  let showSentFromMe = false
-  let showInfoFromThemPending = false
-  let showInfoFromThemDeclinedByMe = false
-  let canSendFromMe = false
-
+  // arkadaşlık durumu
+  let mode: 'none' | 'message' | 'sent' | 'pending' | 'canSend' = 'none'
   if (meId && meId !== user.id) {
     const pairs = await prisma.friendRequest.findMany({
-      where: {
-        OR: [
-          { fromId: meId, toId: user.id },
-          { fromId: user.id, toId: meId },
-        ],
-      },
+      where: { OR: [{ fromId: meId, toId: user.id }, { fromId: user.id, toId: meId }] },
       select: { fromId: true, toId: true, status: true, respondedAt: true },
       orderBy: { createdAt: 'desc' },
     })
-
-    isFriend = pairs.some(p => p.status === 'ACCEPTED')
-    const mine = pairs.find(p => p.fromId === meId && p.toId === user.id)
-    const theirs = pairs.find(p => p.fromId === user.id && p.toId === meId)
-
-    if (!isFriend) {
-      if (mine) {
-        if (mine.status === 'PENDING') {
-          showSentFromMe = true
-        }
-      } else if (theirs) {
-        if (theirs.status === 'PENDING' && !theirs.respondedAt) {
-          showInfoFromThemPending = true
-        } else if (theirs.status === 'PENDING' && theirs.respondedAt) {
-          showInfoFromThemDeclinedByMe = true
-          canSendFromMe = true
-        }
-      } else {
-        canSendFromMe = true
-      }
+    if (pairs.some((p) => p.status === 'ACCEPTED')) mode = 'message'
+    else {
+      const mine = pairs.find((p) => p.fromId === meId && p.toId === user.id)
+      const theirs = pairs.find((p) => p.fromId === user.id && p.toId === meId)
+      mode =
+        mine?.status === 'PENDING'
+          ? 'sent'
+          : theirs?.status === 'PENDING' && !theirs.respondedAt
+          ? 'pending'
+          : 'canSend'
     }
   }
 
+  // Arkadaş bulutu için veriler
+  const friends = await prisma.friendRequest.findMany({
+    where: { status: 'ACCEPTED', OR: [{ fromId: user.id }, { toId: user.id }] },
+    orderBy: { respondedAt: 'desc' },
+    take: 48,
+    select: { fromId: true, toId: true },
+  })
+  const friendIds = Array.from(new Set(friends.map((f) => (f.fromId === user.id ? f.toId : f.fromId))))
+  const friendUsers = friendIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: friendIds } },
+        select: { id: true, username: true, slug: true, avatarUrl: true, name: true },
+        take: 48,
+      })
+    : []
+
+  // Üye olduğu kulüpler (moderatör olduğu kulüp hariç)
+  const memberClubs =
+    user.Memberships?.map((m) => m.club)
+      .filter((c) => !!c && c.moderatorId !== user.id)
+      .map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        bannerUrl: c.bannerUrl,
+        counts: {
+          memberships: c._count?.memberships ?? 0,
+          picks: c._count?.picks ?? 0,
+          events: c._count?.events ?? 0,
+        },
+      })) ?? []
+
   return (
-    <div className="space-y-3">
-      <div className="card p-4">
-        <div className="flex items-center gap-3">
-          <Avatar src={user.avatarUrl ?? null} size={48} alt={user.name || user.username || 'Profil'} />
-          <div className="min-w-0">
-            <div className="font-medium truncate">{user.name ?? ''}</div>
-            <div className="text-sm text-gray-600 truncate">{user.username ? `@${user.username}` : ''}</div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <HeaderSection avatarUrl={user.avatarUrl} name={user.name} username={user.username}>
+        <FriendAction mode={mode} userId={user.id} />
+      </HeaderSection>
 
-      <div className="card p-4">
-        <h4 className="font-semibold mb-2">Kulüpler</h4>
-        <div className="space-y-3">
-          {user.Memberships.length === 0 && <div className="text-sm text-gray-600">Hiç kulüp yok.</div>}
-          {user.Memberships.map((m) => (
-            <Link key={m.club.slug} href={`/clubs/${m.club.slug}`} className="flex items-center gap-3 group">
-              <div className="relative w-12 h-12 rounded-lg overflow-hidden ring-1 ring-black/5 bg-gray-100">
-                <Image
-                  src={
-                    m.club.bannerUrl ||
-                    'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop'
-                  }
-                  alt=""
-                  fill
-                  className="object-cover group-hover:scale-[1.02] transition"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-medium truncate">{m.club.name}</div>
-                <div className="text-xs text-gray-600 truncate">Kulüp sayfasına git →</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {user.Club && (
+        <ModeratorClubCard
+          name={user.Club.name}
+          slug={user.Club.slug}
+          bannerUrl={user.Club.bannerUrl}
+          ownerName={user.name || ''}
+          ownerUsername={user.username || ''}
+          counts={{
+            memberships: user.Club._count?.memberships ?? 0,
+            picks: user.Club._count?.picks ?? 0,
+            events: user.Club._count?.events ?? 0,
+          }}
+        />
+      )}
 
-      <div className="card p-4 space-y-2">
-        {!meId || meId === user.id ? null : isFriend ? (
-          <>
-            <div className="text-sm font-medium text-green-700">Arkadaşsınız ✔︎</div>
-            <Link href={`/messages/${user.id}`} className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm inline-flex">
-              Mesaj gönder
-            </Link>
-          </>
-        ) : showSentFromMe ? (
-          <RequestButton toUserId={user.id} initialState="sent" />
-        ) : showInfoFromThemPending ? (
-          <div className="text-sm text-gray-600">Bu kullanıcı size istek gönderdi.</div>
-        ) : showInfoFromThemDeclinedByMe ? (
-          <div className="space-y-2">
-            <div className="text-sm text-gray-700">
-              Bu kullanıcı size istek gönderdi ve <b>siz reddettiniz</b>. Eğer bağlantı kurmak istiyorsanız
-              siz ona istek gönderebilirsiniz.
-            </div>
-            <RequestButton toUserId={user.id} initialState="idle" />
-          </div>
-        ) : canSendFromMe ? (
-          <RequestButton toUserId={user.id} initialState="idle" />
-        ) : null}
-      </div>
-
-      <div className="card p-4 text-sm text-gray-600">
-        Yorum yapmak için arkadaş olun. Arkadaşlık isteği kabul edilince yorum yazabilirsiniz.
-      </div>
+      <FriendCloud users={friendUsers} />
+      <MemberClubList items={memberClubs} />
     </div>
   )
 }

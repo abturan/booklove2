@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Avatar from '@/components/Avatar'
 import { userPath } from '@/lib/userPath'
 
-type U = { id: string; name: string | null; username: string | null; avatarUrl: string | null }
+type U = { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
 
 export default function IncomingItem({ requestId, user }: { requestId: string; user: U }) {
   const [gone, setGone] = useState(false)
@@ -37,7 +37,10 @@ export default function IncomingItem({ requestId, user }: { requestId: string; u
 
   return (
     <li className="py-3 flex items-center justify-between gap-3">
-      <Link href={userPath(user.username ?? undefined, user.name ?? undefined)} className="flex items-center gap-3">
+      <Link
+        href={userPath(user.username ?? undefined, user.name ?? undefined, user.slug ?? undefined)}
+        className="flex items-center gap-3"
+      >
         <Avatar src={user.avatarUrl ?? null} size={36} alt={user.name || 'Kullanıcı'} />
         <div className="min-w-0">
           <div className="text-sm font-medium truncate">{user.name || 'Kullanıcı'}</div>
@@ -52,7 +55,6 @@ export default function IncomingItem({ requestId, user }: { requestId: string; u
         >
           {busy === 'ACCEPT' ? 'Onaylanıyor…' : 'Onayla'}
         </button>
-       
         <button
           onClick={() => act('DECLINE')}
           disabled={busy !== null}

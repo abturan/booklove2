@@ -1,3 +1,4 @@
+// tailwind.config.ts
 import type { Config } from 'tailwindcss'
 
 export default {
@@ -8,6 +9,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: '#db3d3a',
         blush: {
           50: '#fff1f5',
           100: '#ffe4ec',

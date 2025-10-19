@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from 'react'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard, { type Post } from '@/components/feed/PostCard'
 
-export default function GlobalFeed() {
+export default function GlobalFeed({
+  ownerId,
+  hideTopBar = false,
+}: {
+  ownerId?: string
+  hideTopBar?: boolean
+}) {
   const [items, setItems] = useState<Post[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
@@ -16,7 +22,8 @@ export default function GlobalFeed() {
 
   useEffect(() => {
     resetAndLoad()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerId])
 
   async function resetAndLoad() {
     setItems([])
@@ -25,15 +32,26 @@ export default function GlobalFeed() {
     await loadMore(true)
   }
 
+  function buildQuery(limit = '10', extra?: string) {
+    const q = new URLSearchParams()
+    // Sadece bu profilin gönderileri gerekiyorsa
+    if (ownerId) {
+      q.set('scope', 'owner')
+      q.set('ownerId', ownerId)
+    } else {
+      q.set('scope', 'global')
+    }
+    q.set('limit', limit)
+    if (extra) q.set('cursor', extra)
+    return q
+  }
+
   async function loadMore(isFirst = false) {
     if (loading || !hasMore) return
     setLoading(true)
     setError(null)
     try {
-      const q = new URLSearchParams()
-      q.set('scope', 'global')
-      q.set('limit', '10')
-      if (!isFirst && cursor) q.set('cursor', cursor)
+      const q = buildQuery('10', !isFirst && cursor ? cursor : undefined)
       const res = await fetch(`/api/posts?${q.toString()}`, { cache: 'no-store' })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Akış yüklenemedi')
@@ -48,7 +66,8 @@ export default function GlobalFeed() {
       setCursor(nextCursor)
       setHasMore(!!nextCursor)
     } catch (e: any) {
-      setError(e?.message || 'Akış yüklenemedi')
+      // Profil akışında “hata alert’i” istemiyoruz: sadece sessizce düş
+      setError(ownerId ? null : (e?.message || 'Akış yüklenemedi'))
       setHasMore(false)
     } finally {
       setLoading(false)
@@ -74,9 +93,7 @@ export default function GlobalFeed() {
       if (items.length === 0) return
       ;(async () => {
         try {
-          const q = new URLSearchParams()
-          q.set('scope', 'global')
-          q.set('limit', '5')
+          const q = buildQuery('5')
           const res = await fetch(`/api/posts?${q.toString()}`, { cache: 'no-store' })
           const data = await res.json()
           if (!res.ok) return
@@ -97,39 +114,48 @@ export default function GlobalFeed() {
     return () => clearInterval(t)
   }, [items])
 
-  function onPosted(createdId: string) {
-    ;(async () => {
-      try {
-        const res = await fetch(`/api/posts?scope=self&limit=1`, { cache: 'no-store' })
-        const data = await res.json()
-        const newest: Post[] = (data?.items || []).map((p: any) => normalizePost(p))
-        if (newest[0]) setItems((prev) => [newest[0], ...prev])
-      } catch {}
-    })()
+  function onPosted() {
+    resetAndLoad()
   }
-
   function onUpdated(updated: Post) {
     setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
   }
-
   function onDeleted(id: string) {
     setItems((prev) => prev.filter((p) => p.id !== id))
   }
 
   return (
-    <aside className="sticky top-4 space-y-4">
-      <div className="flex items-end justify-between">
-        <div className="text-2xl font-extrabold tracking-tight">Bookie!</div>
-        <button
-          type="button"
-          onClick={() => setOpenComposer((v) => !v)}
-          className="rounded-full bg-rose-600 text-white px-4 py-1.5 text-sm font-medium hover:bg-rose-700"
-        >
-          {openComposer ? 'Kapat' : 'Paylaş'}
-        </button>
-      </div>
-      <div className="h-1 w-full rounded-full bg-rose-500" />
-      {openComposer && <PostComposer onPosted={onPosted} />}
+    <aside className="space-y-4">
+      {!hideTopBar && (
+        <div className="flex items-end justify-between">
+          <div className="text-2xl font-extrabold tracking-tight">Bookie!</div>
+          {!openComposer ? (
+            <button
+              type="button"
+              onClick={() => setOpenComposer(true)}
+              className="rounded-full bg-primary text-white px-4 py-1.5 text-sm font-medium hover:bg-primary/90"
+              aria-label="Paylaşım yap"
+            >
+              Paylaş
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpenComposer(false)}
+              className="h-8 w-8 grid place-content-center rounded-full bg-primary text-white hover:bg-primary/90"
+              aria-label="Kapat"
+              title="Kapat"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Profil görünümünde üst çizgi İSTENMİYOR → gizledik */}
+      {!hideTopBar && <div className="h-1 w-full rounded-full bg-primary" />}
+
+      {openComposer && !ownerId && <PostComposer onPosted={onPosted} />}
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">

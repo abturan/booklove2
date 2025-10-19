@@ -31,7 +31,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       priceTRY: true,
       moderatorId: true,
       capacity: true,
-      moderator: { select: { name: true, avatarUrl: true, username: true } },
+      moderator: { select: { name: true, avatarUrl: true, username: true, slug: true } },
     },
   })
   if (!club) {
@@ -47,12 +47,10 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     orderBy: { joinedAt: 'desc' },
     take: 30,
     select: {
-      user: { select: { id: true, name: true, username: true, avatarUrl: true } },
+      user: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
     },
   })
 
-  // "Bu ayın seçkisi": bugünden itibaren en yakın gelecek ay (>= this month),
-  // yoksa en yakın geçmiş ay.
   const thisMonth = monthKeyUTC()
 
   const futureNearest = await prisma.clubPick.findFirst({
@@ -209,6 +207,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
       moderatorName: club.moderator?.name ?? '—',
       moderatorAvatarUrl: club.moderator?.avatarUrl ?? null,
       moderatorUsername: club.moderator?.username ?? null,
+      moderatorSlug: club.moderator?.slug ?? null,
       memberCount,
       isMember,
       memberSince: myMembership?.since ?? null,
@@ -254,6 +253,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
         id: m.user.id,
         name: m.user.name ?? 'Üye',
         username: m.user.username ?? null,
+        slug: m.user.slug ?? null,
         avatarUrl: m.user.avatarUrl ?? null,
       })),
       capacity: club.capacity ?? null,

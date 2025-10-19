@@ -10,7 +10,7 @@ type Post = {
   id: string
   body: string
   createdAt: string
-  owner: { id: string; name: string | null; username: string | null; avatarUrl: string | null }
+  owner: { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
   images: { url: string; width?: number | null; height?: number | null }[]
   _count: { likes: number; comments: number }
 }
@@ -22,8 +22,6 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const sentRef = useRef<HTMLDivElement | null>(null)
-
-  // ⬇️ Görülen id’ler: aynı post iki kere eklenmesin
   const seenIdsRef = useRef<Set<string>>(new Set())
 
   async function load(first = false) {
@@ -55,7 +53,6 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
       const j = await res.json().catch(() => ({}))
       const rows: Post[] = Array.isArray(j.items) ? j.items : []
 
-      // ⬇️ DUP FİLTRESİ
       const filtered = rows.filter((p) => !seenIdsRef.current.has(p.id))
       filtered.forEach((p) => seenIdsRef.current.add(p.id))
       if (filtered.length) setItems((prev) => [...prev, ...filtered])
@@ -70,11 +67,9 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
   }
 
   useEffect(() => {
-    // scope değişince resetle
     setItems([]); setCursor(null); setHasMore(true); setLoading(false)
     seenIdsRef.current.clear()
     load(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope])
 
   useEffect(() => {
@@ -88,7 +83,6 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
     )
     io.observe(el)
     return () => io.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sentRef.current, cursor, hasMore, loading])
 
   return (
@@ -97,7 +91,7 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
         <div className="rounded-xl border border-gray-200 bg-gray-50 text-gray-700 px-3 py-2 text-sm">{error}</div>
       )}
       {items.map((p) => (
-        <PostCard key={p.id} post={p} />
+        <PostCard key={p.id} post={p as any} />
       ))}
       <div ref={sentRef} />
       <div className="flex justify-center py-3 text-sm text-gray-600">
@@ -106,8 +100,3 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
     </div>
   )
 }
-
-
-
-
-
