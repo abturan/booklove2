@@ -6,35 +6,41 @@ import { auth } from '@/lib/auth'
 export async function GET(req: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const meId = session.user.id
+    const meId = session?.user?.id || null
 
     const { searchParams } = new URL(req.url)
-    const scope = searchParams.get('scope') || 'friends'
+    const scope = searchParams.get('scope') || (meId ? 'friends' : 'global')
+    const ownerIdParam = searchParams.get('ownerId') || undefined
     const limit = Math.min(Number(searchParams.get('limit') || '12'), 30)
     const cursor = searchParams.get('cursor') || undefined
 
     let ownerFilter: any
 
-    if (scope === 'global') {
-      ownerFilter = undefined
-    } else if (scope === 'self') {
+    if (scope === 'owner' && ownerIdParam) {
+      ownerFilter = { in: [ownerIdParam] }
+    } else if (scope === 'self' && meId) {
       ownerFilter = { in: [meId] }
+    } else if (scope === 'global') {
+      ownerFilter = undefined
     } else {
-      let friendIds = new Set<string>([meId])
-      try {
-        const accepted = await prisma.friendRequest.findMany({
-          where: { status: 'ACCEPTED', OR: [{ fromId: meId }, { toId: meId }] },
-          select: { fromId: true, toId: true }
-        })
-        for (const fr of accepted) {
-          if (fr.fromId !== meId) friendIds.add(fr.fromId)
-          if (fr.toId !== meId) friendIds.add(fr.toId)
+      if (!meId) {
+        ownerFilter = undefined
+      } else {
+        let friendIds = new Set<string>([meId])
+        try {
+          const accepted = await prisma.friendRequest.findMany({
+            where: { status: 'ACCEPTED', OR: [{ fromId: meId }, { toId: meId }] },
+            select: { fromId: true, toId: true }
+          })
+          for (const fr of accepted) {
+            if (fr.fromId !== meId) friendIds.add(fr.fromId)
+            if (fr.toId !== meId) friendIds.add(fr.toId)
+          }
+        } catch {
+          friendIds = new Set<string>([meId])
         }
-      } catch {
-        friendIds = new Set<string>([meId])
+        ownerFilter = { in: Array.from(friendIds) }
       }
-      ownerFilter = { in: Array.from(friendIds) }
     }
 
     const posts = await prisma.post.findMany({

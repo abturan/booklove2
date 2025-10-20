@@ -5,10 +5,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const items = [
-  { href: '/', label: 'Ana akış', icon: '🏠' },
   { href: '/profile/settings', label: 'Profil ayarları', icon: '⚙️' },
   { href: '/subscriptions', label: 'Aboneliklerim', icon: '📚' },
-  { href: '/friends', label: 'Book Buddy', icon: '🧑‍🤝‍🧑' }, // <- burada “Book Buddy”
+  { href: '/friends', label: 'Book Buddy', icon: '🧑‍🤝‍🧑' },
   { href: '/messages', label: 'Mesajlar', icon: '💬' },
 ]
 
@@ -23,9 +22,8 @@ export default function ShortcutCard() {
             <Link
               key={it.href}
               href={it.href}
-              className={`flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition ${
-                active ? 'bg-gray-50' : ''
-              }`}
+              scroll={false}
+              className={`flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition ${active ? 'bg-gray-50' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <span className="text-lg leading-none">{it.icon}</span>

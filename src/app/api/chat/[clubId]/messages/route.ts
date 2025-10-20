@@ -37,12 +37,16 @@ export async function POST(
     create: { clubId: params.clubId },
   })
 
-  const membership = await prisma.membership.findUnique({
-    where: { userId_clubId: { userId: session.user.id, clubId: params.clubId } },
-    select: { isActive: true }
-  })
+  let canPost = session.user.role === 'ADMIN'
 
-  let canPost = !!membership?.isActive
+  if (!canPost) {
+    const membership = await prisma.membership.findUnique({
+      where: { userId_clubId: { userId: session.user.id, clubId: params.clubId } },
+      select: { isActive: true }
+    })
+    canPost = !!membership?.isActive
+  }
+
   if (!canPost) {
     const club = await prisma.club.findUnique({
       where: { id: params.clubId },
@@ -52,6 +56,7 @@ export async function POST(
       canPost = true
     }
   }
+
   if (!canPost) {
     return NextResponse.json({ ok: false, error: 'Abonelik gerekli.' }, { status: 403 })
   }

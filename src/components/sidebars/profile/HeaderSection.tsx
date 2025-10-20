@@ -1,20 +1,38 @@
 // src/components/sidebars/profile/HeaderSection.tsx
-import Avatar from '@/components/Avatar'
+import Image from 'next/image'
+import clsx from 'clsx'
+
 export default function HeaderSection({
-  avatarUrl, name, username, children,
-}: { avatarUrl: string|null|undefined; name: string|null; username: string|null; children?: React.ReactNode }) {
+  name,
+  username,
+  avatarUrl,
+  showAvatar = true,
+  children,
+  className,
+}: {
+  name?: string | null
+  username?: string | null
+  avatarUrl?: string | null
+  showAvatar?: boolean
+  children?: React.ReactNode
+  className?: string
+}) {
+  const hasAvatar = !!(avatarUrl && avatarUrl.trim().length > 0)
+
   return (
-    <section>
-      <div className="card p-5">
-        <div className="flex items-start gap-4">
-          <Avatar src={avatarUrl ?? null} size={72} alt={name || username || 'Profil'} className="ring-4 ring-white shadow-xl" />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold leading-tight break-words">{name ?? ''}</h1>
-            {username && <p className="text-sm text-gray-600 leading-snug break-all">@{username}</p>}
-            {children && <div className="mt-3 flex sm:justify-end">{children}</div>}
-          </div>
+    <section className={clsx('rounded-3xl bg-white/80 backdrop-blur p-5 shadow-soft ring-1 ring-black/5 flex items-center gap-4', className)}>
+      {showAvatar && hasAvatar && (
+        <div className="relative shrink-0">
+          <Image src={avatarUrl as string} alt="" width={64} height={64} className="h-16 w-16 rounded-full object-cover ring-4 ring-white shadow" />
         </div>
+      )}
+
+      <div className="min-w-0">
+        <div className="text-xl font-extrabold leading-tight break-words">{name || '—'}</div>
+        {username && <div className="text-sm text-gray-500 break-words">@{username}</div>}
       </div>
+
+      {children ? <div className="ml-auto">{children}</div> : null}
     </section>
   )
 }

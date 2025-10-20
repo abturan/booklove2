@@ -14,7 +14,7 @@ export default function ChatSection({ enabled, clubId, isMember }: { enabled: bo
       </div>
       {!isMember && (
         <div className="px-4 pb-4 text-xs text-gray-600">
-          Yalnızca aboneler mesaj görebilir ve yazabilir. Birini <code>@isim</code> ile etiketlediğinde bildirim oluşturulur.
+          Mesajlar herkese görünür; yalnızca aboneler yazabilir. Birini <code>@isim</code> ile etiketlediğinde bildirim oluşturulur.
         </div>
       )}
     </div>

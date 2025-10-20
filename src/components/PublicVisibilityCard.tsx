@@ -2,6 +2,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { LinkIcon, EyeIcon } from 'lucide-react'
 
 export default function PublicVisibilityCard({ username }: { username?: string | null }) {
@@ -37,13 +38,14 @@ export default function PublicVisibilityCard({ username }: { username?: string |
           <div className="text-gray-600">
             Public profil adresin için önce bir <strong>kullanıcı adı</strong> belirlemelisin.
           </div>
-          <a
+          <Link
             href="/profile/settings#username"
+            scroll={false}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2 text-white hover:bg-gray-800"
           >
             <LinkIcon className="w-4 h-4" />
             Kullanıcı adı belirle
-          </a>
+          </Link>
         </>
       ) : (
         <>
@@ -52,13 +54,14 @@ export default function PublicVisibilityCard({ username }: { username?: string |
           </div>
 
           <div className="flex items-center gap-2">
-            <a
+            <Link
               href={publicPath!}
+              scroll={false}
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-white hover:bg-rose-500"
             >
               <EyeIcon className="w-4 h-4" />
               Profili görüntüle
-            </a>
+            </Link>
             <button
               onClick={copyUrl}
               className="inline-flex items-center gap-2 rounded-xl border px-3 py-2"

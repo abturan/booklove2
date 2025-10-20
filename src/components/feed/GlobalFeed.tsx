@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard, { type Post } from '@/components/feed/PostCard'
 
@@ -12,6 +13,9 @@ export default function GlobalFeed({
   ownerId?: string
   hideTopBar?: boolean
 }) {
+  const { data } = useSession()
+  const loggedIn = !!data?.user?.id
+
   const [items, setItems] = useState<Post[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
@@ -22,7 +26,6 @@ export default function GlobalFeed({
 
   useEffect(() => {
     resetAndLoad()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownerId])
 
   async function resetAndLoad() {
@@ -34,7 +37,6 @@ export default function GlobalFeed({
 
   function buildQuery(limit = '10', extra?: string) {
     const q = new URLSearchParams()
-    // Sadece bu profilin gönderileri gerekiyorsa
     if (ownerId) {
       q.set('scope', 'owner')
       q.set('ownerId', ownerId)
@@ -66,7 +68,6 @@ export default function GlobalFeed({
       setCursor(nextCursor)
       setHasMore(!!nextCursor)
     } catch (e: any) {
-      // Profil akışında “hata alert’i” istemiyoruz: sadece sessizce düş
       setError(ownerId ? null : (e?.message || 'Akış yüklenemedi'))
       setHasMore(false)
     } finally {
@@ -129,7 +130,7 @@ export default function GlobalFeed({
       {!hideTopBar && (
         <div className="flex items-end justify-between">
           <div className="text-2xl font-extrabold tracking-tight">Bookie!</div>
-          {!openComposer ? (
+          {loggedIn && !openComposer ? (
             <button
               type="button"
               onClick={() => setOpenComposer(true)}
@@ -138,7 +139,8 @@ export default function GlobalFeed({
             >
               Paylaş
             </button>
-          ) : (
+          ) : null}
+          {loggedIn && openComposer ? (
             <button
               type="button"
               onClick={() => setOpenComposer(false)}
@@ -148,14 +150,13 @@ export default function GlobalFeed({
             >
               ✕
             </button>
-          )}
+          ) : null}
         </div>
       )}
 
-      {/* Profil görünümünde üst çizgi İSTENMİYOR → gizledik */}
       {!hideTopBar && <div className="h-1 w-full rounded-full bg-primary" />}
 
-      {openComposer && !ownerId && <PostComposer onPosted={onPosted} />}
+      {openComposer && !ownerId && loggedIn && <PostComposer onPosted={onPosted} />}
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
@@ -187,6 +188,7 @@ function normalizePost(p: any): Post {
       id: p.owner?.id || '',
       name: p.owner?.name || 'Kullanıcı',
       username: p.owner?.username || null,
+      slug: p.owner?.slug || null,
       avatarUrl: p.owner?.avatarUrl || null,
     },
     images: Array.isArray(p.images)

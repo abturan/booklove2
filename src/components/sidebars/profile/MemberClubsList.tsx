@@ -1,45 +1,48 @@
-// //src/components/sidebars/profile/MemberClubList.tsx
-// import Link from 'next/link'
+// src/components/sidebars/profile/MemberClubsList.tsx
+import Link from 'next/link'
 
-// type Item = {
-//   slug: string
-//   name: string
-//   bannerUrl: string | null
-//   counts: { memberships: number; picks: number; events: number }
-// }
-
-// export default function MemberClubList({ items }: { items: Item[] }) {
-//   if (!items?.length) return null
-
-//   return (
-//     <section className="card p-4 space-y-3">
-//       <h3 className="text-sm font-semibold text-gray-700">Üye Olduğu Kulüpler</h3>
-//       <ul className="space-y-2">
-//         {items.map((c) => (
-//           <li key={c.slug} className="group">
-//             <Link
-//               href={`/clubs/${c.slug}`}
-//               className="flex items-center justify-between gap-3 rounded-xl p-2 hover:bg-gray-50 transition"
-//             >
-//               <div className="min-w-0">
-//                 <div className="truncate font-medium">{c.name}</div>
-//                 <div className="mt-0.5 flex flex-wrap gap-1.5 text-[11px] text-gray-600">
-//                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-//                     👥 <b className="font-semibold">{c.counts.memberships}</b> Üye
-//                   </span>
-//                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5">
-//                     📚 <b className="font-semibold">{c.counts.picks}</b> Seçki
-//                   </span>
-//                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-//                     🗓️ <b className="font-semibold">{c.counts.events}</b> Oturum
-//                   </span>
-//                 </div>
-//               </div>
-//               <span className="text-xs text-gray-400 group-hover:text-gray-600">→</span>
-//             </Link>
-//           </li>
-//         ))}
-//       </ul>
-//     </section>
-//   )
-// }
+export default function MemberClubsList({
+  items,
+}: {
+  items: Array<{
+    slug: string
+    name: string
+    bannerUrl: string | null
+    _count?: { memberships?: number | null; picks?: number | null; events?: number | null }
+  }>
+}) {
+  if (!items || items.length === 0) return null
+  return (
+    <section className="card p-5">
+      <h3 className="text-lg font-semibold text-slate-700 mb-4">Üye Olduğu Kulüpler</h3>
+      <ul className="space-y-3">
+        {items.map((c) => (
+          <li key={c.slug}>
+            <Link
+              href={`/clubs/${c.slug}`}
+              className="group flex items-center gap-3 rounded-xl p-3 hover:bg-slate-50 transition"
+            >
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 ring-1 ring-slate-200">
+                {/* küçük kapak */}
+                {/* @ts-ignore */}
+                <img
+                  src={(c.bannerUrl || '').trim() || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=200&auto=format&fit=crop'}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-slate-800 truncate">{c.name}</div>
+                <div className="text-xs text-slate-500">
+                  👥 {(c._count?.memberships ?? 0)} · 📚 {(c._count?.picks ?? 0)} · 🗓️ {(c._count?.events ?? 0)}
+                </div>
+              </div>
+              <span className="ml-auto text-sm text-primary opacity-0 group-hover:opacity-100 transition">Git →</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

@@ -14,20 +14,15 @@ export default async function MessagesPage() {
     <div className="space-y-6">
       <ProfileBanner src={me?.bannerUrl ?? null} canEdit />
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="hidden lg:block">
+        <div>
           <LeftSidebar />
         </div>
-        <div className="lg:col-span-2">
-          <div className="block lg:hidden">
+        <div className="lg:col-span-2 grid grid-cols-3 gap-4">
+          <div className="col-span-1">
             <ThreadList />
           </div>
-          <div className="hidden lg:grid grid-cols-3 gap-4">
-            <div className="col-span-1">
-              <ThreadList />
-            </div>
-            <div className="col-span-2">
-              <div className="card p-6 text-sm text-gray-600">Bir sohbet seçin.</div>
-            </div>
+          <div className="col-span-2">
+            <div className="card p-6 text-sm text-gray-600">Bir sohbet seçin.</div>
           </div>
         </div>
       </div>

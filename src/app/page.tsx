@@ -2,7 +2,7 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import HeroSlider from '@/components/HeroSlider'
 import SearchFilters from '@/components/SearchFilters'
 import InfiniteClubs from '@/components/InfiniteClubs'
@@ -25,15 +25,9 @@ export default function Home() {
     return obj
   }, [params])
 
-  const tab = (params.get('tab') || 'clubs') as 'clubs' | 'bookie'
+  const initialTab = (params.get('tab') || 'clubs') as 'clubs' | 'bookie'
+  const [mobileTab, setMobileTab] = useState<'clubs' | 'bookie'>(initialTab)
   const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1)
-
-  function onTabChange(next: 'clubs' | 'bookie') {
-    const s = new URLSearchParams(params.toString())
-    s.set('tab', next)
-    if (next === 'clubs') s.set('page', '1')
-    router.replace(`/?${s.toString()}`, { scroll: false })
-  }
 
   function onPageChange(nextPage: number) {
     const s = new URLSearchParams(params.toString())
@@ -48,15 +42,15 @@ export default function Home() {
 
       <div className="md:hidden space-y-4">
         <Tabs
-          value={tab}
-          onValueChange={(v) => onTabChange(v as 'clubs' | 'bookie')}
+          value={mobileTab}
+          onValueChange={(v) => setMobileTab(v as 'clubs' | 'bookie')}
           tabs={[
             { value: 'clubs', label: 'Klüpler' },
             { value: 'bookie', label: 'Bookie!' },
           ]}
         />
 
-        {tab === 'clubs' ? (
+        {mobileTab === 'clubs' ? (
           <>
             <SearchFilters />
             <PaginatedClubs

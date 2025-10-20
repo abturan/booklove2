@@ -1,3 +1,4 @@
+// src/app/api/me/is-member/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -10,6 +11,11 @@ export async function GET(req: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ isMember: false }, { status: 200 })
   }
+
+  if (session.user.role === 'ADMIN') {
+    return NextResponse.json({ isMember: true, memberSince: null }, { status: 200 })
+  }
+
   const clubId = req.nextUrl.searchParams.get('clubId') || ''
   if (!clubId) return NextResponse.json({ isMember: false }, { status: 200 })
 

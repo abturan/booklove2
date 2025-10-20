@@ -30,7 +30,7 @@ export default async function ProfilePage() {
       <ProfileBanner src={me.bannerUrl} canEdit />
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="hidden lg:block">
+        <div>
           <LeftSidebar />
         </div>
 
@@ -50,3 +50,10 @@ export default async function ProfilePage() {
     </div>
   )
 }
+
+
+
+
+
+
+

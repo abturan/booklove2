@@ -48,6 +48,7 @@ export default function ThreadList({ activePeerId }: { activePeerId?: string }) 
             <li key={it.threadId}>
               <Link
                 href={`/messages/${it.threadId}`}
+                scroll={false}
                 className={`flex items-center gap-3 px-3 py-3 hover:bg-gray-50 ${activePeerId === it.peer.id ? 'bg-gray-50' : ''}`}
               >
                 <Avatar src={it.peer.avatarUrl ?? null} size={36} alt={it.peer.name || 'Kullanıcı'} />

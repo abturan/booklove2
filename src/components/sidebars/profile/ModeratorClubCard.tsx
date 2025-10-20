@@ -1,3 +1,4 @@
+// src/components/sidebars/profile/ModeratorClubCard.tsx
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -37,15 +38,21 @@ export default function ModeratorClubCard({
             {ownerUsername && <div className="truncate">@{ownerUsername}</div>}
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 text-white text-sm">
-              👥 <span className="font-semibold">{counts.memberships}</span> <span className="opacity-90">Üye</span>
+          <div className="mt-4 flex flex-wrap gap-2 relative z-10">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-gray-900 text-sm ring-1 ring-black/10 shadow-sm">
+              <span aria-hidden>👥</span>
+              <span className="font-semibold tabular-nums">{counts.memberships}</span>
+              <span className="text-gray-700">Üye</span>
             </span>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/90 text-white text-sm">
-              📚 <span className="font-semibold">{counts.picks}</span> <span className="opacity-90">Seçki</span>
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-gray-900 text-sm ring-1 ring-black/10 shadow-sm">
+              <span aria-hidden>📚</span>
+              <span className="font-semibold tabular-nums">{counts.picks}</span>
+              <span className="text-gray-700">Seçki</span>
             </span>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 text-white text-sm">
-              🗓️ <span className="font-semibold">{counts.events}</span> <span className="opacity-90">Oturum</span>
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-gray-900 text-sm ring-1 ring-black/10 shadow-sm">
+              <span aria-hidden>🗓️</span>
+              <span className="font-semibold tabular-nums">{counts.events}</span>
+              <span className="text-gray-700">Oturum</span>
             </span>
           </div>
 

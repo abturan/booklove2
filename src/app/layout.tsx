@@ -27,7 +27,9 @@ export default function RootLayout({
         <Providers>
           <Header />
           <main className="container mx-auto px-4 py-6 flex-1 pb-24 sm:pb-6">{children}</main>
-          <Footer />
+          <div className="hidden md:block">
+            <Footer />
+          </div>
           <div className="md:hidden">
             <MobileAppFooter />
           </div>
@@ -38,3 +40,9 @@ export default function RootLayout({
     </html>
   )
 }
+
+
+
+
+
+
