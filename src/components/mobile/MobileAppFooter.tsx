@@ -3,6 +3,8 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import NotificationBadge from '@/components/NotificationBadge'
 import Avatar from '@/components/Avatar'
 
@@ -15,11 +17,13 @@ function ISubscriptions() { return (<svg width="26" height="26" viewBox="0 0 24 
 function ICreateClub() { return (<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 6h10a3 3 0 0 1 3 3v9H5z" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M12 12v4M10 14h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>) }
 
 export default function MobileAppFooter() {
+  const router = useRouter()
   const [openSettings, setOpenSettings] = useState(false)
   const [profileHref, setProfileHref] = useState<string>('/profile/settings')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string>('Profil')
   const [dmUnread, setDmUnread] = useState(0)
+  const [signingOut, setSigningOut] = useState(false)
 
   useEffect(() => {
     ;(async () => {
@@ -65,6 +69,19 @@ export default function MobileAppFooter() {
     window.dispatchEvent(new CustomEvent('share:open'))
   }
 
+  async function handleSignOut() {
+    if (signingOut) return
+    setSigningOut(true)
+    try {
+      await signOut({ redirect: false })
+      setOpenSettings(false)
+      router.push('/', { scroll: false })
+      router.refresh()
+    } finally {
+      setSigningOut(false)
+    }
+  }
+
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t">
@@ -81,8 +98,6 @@ export default function MobileAppFooter() {
             <IBuddy />
             <NotificationBadge placement="absolute -top-1 -right-1" />
           </Link>
-
-         
 
           <button
             type="button"
@@ -105,7 +120,6 @@ export default function MobileAppFooter() {
             )}
           </Link>
 
-          {/* 🔁 Yer değiştirme: Footer’da artık Abonelikler */}
           <Link href="/subscriptions" scroll={false} className="grid place-content-center h-12">
             <ISubscriptions />
           </Link>
@@ -131,7 +145,6 @@ export default function MobileAppFooter() {
                 <Avatar src={avatarUrl} size={24} alt={displayName} />
                 <span>Profil</span>
               </Link>
-              {/* 🔁 Yer değiştirme: Mini menüde artık Kulüp Kur */}
               <Link href="/clubs/create" scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
                 <ICreateClub />
                 <span>Kulüp Kur</span>
@@ -140,10 +153,15 @@ export default function MobileAppFooter() {
                 <svg width="24" height="24" viewBox="0 0 24 24" className="text-primary"><path d="M12 8a4 4 0 1 0 0 8" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>
                 <span>Ayarlar</span>
               </Link>
-              <a href="/api/auth/signout" className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50 disabled:opacity-60"
+              >
                 <svg width="24" height="24" viewBox="0 0 24 24" className="text-primary"><path d="M9 5h6v14H9" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M13 12H3m0 0 3-3m-3 3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
-                <span>Çıkış yap</span>
-              </a>
+                <span>{signingOut ? 'Çıkış yapılıyor…' : 'Çıkış yap'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -151,3 +169,9 @@ export default function MobileAppFooter() {
     </>
   )
 }
+
+
+
+
+
+
