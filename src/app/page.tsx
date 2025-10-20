@@ -1,8 +1,8 @@
 // src/app/page.tsx
 'use client'
 
+import { Suspense, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
 import HeroSlider from '@/components/HeroSlider'
 import SearchFilters from '@/components/SearchFilters'
 import InfiniteClubs from '@/components/InfiniteClubs'
@@ -11,6 +11,14 @@ import PaginatedClubs from '@/components/PaginatedClubs'
 import GlobalFeed from '@/components/feed/GlobalFeed'
 
 export default function Home() {
+  return (
+    <Suspense fallback={<div className="p-6">Yükleniyor…</div>}>
+      <HomeBody />
+    </Suspense>
+  )
+}
+
+function HomeBody() {
   const params = useSearchParams()
   const router = useRouter()
 
@@ -25,9 +33,15 @@ export default function Home() {
     return obj
   }, [params])
 
-  const initialTab = (params.get('tab') || 'clubs') as 'clubs' | 'bookie'
-  const [mobileTab, setMobileTab] = useState<'clubs' | 'bookie'>(initialTab)
+  const tab = (params.get('tab') as 'clubs' | 'bookie') ?? 'clubs'
   const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1)
+
+  function setTab(next: 'clubs' | 'bookie') {
+    const s = new URLSearchParams(params.toString())
+    s.set('tab', next)
+    s.delete('page')
+    router.replace(`/?${s.toString()}`, { scroll: true })
+  }
 
   function onPageChange(nextPage: number) {
     const s = new URLSearchParams(params.toString())
@@ -42,15 +56,15 @@ export default function Home() {
 
       <div className="md:hidden space-y-4">
         <Tabs
-          value={mobileTab}
-          onValueChange={(v) => setMobileTab(v as 'clubs' | 'bookie')}
+          value={tab}
+          onValueChange={(v) => setTab(v as 'clubs' | 'bookie')}
           tabs={[
             { value: 'clubs', label: 'Klüpler' },
             { value: 'bookie', label: 'Bookie!' },
           ]}
         />
 
-        {mobileTab === 'clubs' ? (
+        {tab === 'clubs' ? (
           <>
             <SearchFilters />
             <PaginatedClubs

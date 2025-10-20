@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --bg: 255 255 255; }
+:root { --bg: 255 255 255; --primary-red: #d74532; --app-footer: 64px; }
 
 body { @apply bg-gradient-to-br from-primary/10 via-white to-sky-50 text-gray-900; }
 
@@ -12,16 +12,12 @@ body { @apply bg-gradient-to-br from-primary/10 via-white to-sky-50 text-gray-90
 .header-buttons-container{ min-width: 180px; }
 
 .logo-header { @apply h-8 sm:h-9 lg:h-9 w-auto select-none; }
-/* mobilde yukarı yapışmasın */
-@media (max-width: 640px) {
-  .logo-header { margin-top: 8px; }
-}
+@media (max-width: 640px) { .logo-header { margin-top: 8px; } }
 
 .logo-hero { @apply w-[112px] sm:w-[128px] h-auto select-none; }
 .hero-fixed { @apply h-[200px] sm:h-[320px] lg:h-[320px]; }
 .h-41{ height: 11rem; }
 
-/* legal */
 .legal-content h2 { font-size: 1.25rem; line-height: 1.4; font-weight: 800; margin: 0 0 0.75rem 0; }
 .legal-content h3 { font-size: 1.05rem; line-height: 1.5; font-weight: 700; margin: 1rem 0 0.5rem 0; }
 .legal-content p { margin: 0.5rem 0; }
@@ -31,3 +27,14 @@ body { @apply bg-gradient-to-br from-primary/10 via-white to-sky-50 text-gray-90
 .legal-content strong { font-weight: 700; }
 .legal-content em { font-style: italic; }
 .legal-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
+
+.bg-primary { background-color: #fa3d30 !important; }
+.primaryRed{ color: #fa3d30 !important; }
+
+.chat-window { height: var(--chat-h, 70vh); max-height: var(--chat-h, 70vh); }
+
+
+
+
+
+

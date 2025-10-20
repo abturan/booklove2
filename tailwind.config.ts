@@ -9,12 +9,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#db3d3a',
+        primary: '#d74532',
+        primaryRed: '#d74532',
         blush: {
           50: '#fff1f5',
           100: '#ffe4ec',
           500: '#ff6482',
           600: '#e74b6b'
+        },
+        rose: {
+          50: '#fdecec',
+          100: '#fad9d6',
+          200: '#f6b6ae',
+          300: '#f19286',
+          400: '#ea6e5d',
+          500: '#d74532',
+          600: '#d74532',
+          700: '#d74532',
+          800: '#b13a2b',
+          900: '#8c2f23'
         }
       },
       boxShadow: {

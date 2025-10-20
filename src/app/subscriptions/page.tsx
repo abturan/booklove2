@@ -1,65 +1,72 @@
 // src/app/subscriptions/page.tsx
-import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import LeftSidebar from '@/components/sidebars/LeftSidebar'
-import Image from 'next/image'
 import ProfileBanner from '@/components/profile/ProfileBanner'
+import SubscribedClubCard from '@/components/subscriptions/SubscribedClubCard'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SubscriptionsPage() {
   const session = await auth()
-  if (!session?.user?.email) return <div className="p-6">Lütfen giriş yapın.</div>
+  if (!session?.user?.id) return <div className="p-6">Lütfen giriş yapın.</div>
+  const meId = session.user.id
 
-  const me = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: {
-      id: true,
-      bannerUrl: true,
-      Subscriptions: {
-        where: { active: true },
-        select: { club: { select: { id: true, slug: true, name: true, bannerUrl: true } } },
+  const [me, subs] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: meId },
+      select: { bannerUrl: true },
+    }),
+    prisma.subscription.findMany({
+      where: { userId: meId, active: true },
+      orderBy: { startedAt: 'desc' },
+      include: {
+        club: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            description: true,
+            bannerUrl: true,
+            priceTRY: true,
+            capacity: true,
+            moderator: { select: { id: true, name: true, username: true, avatarUrl: true } },
+            _count: { select: { memberships: true, picks: true, events: true } },
+          },
+        },
       },
-    },
-  })
-
-  if (!me) return <div className="p-6">Bulunamadı</div>
-
-  const subs = me.Subscriptions
+    }),
+  ])
 
   return (
     <div className="space-y-6">
-      <ProfileBanner src={me.bannerUrl} canEdit />
-      <div className="grid lg:grid-cols-3 gap-6">
+      {/* Mobil başlık (banner yok) */}
+      <div className="md:hidden pt-2 text-center">
+        <div className="text-3xl font-extrabold tracking-tight primaryRed">Kulüplerim</div>
+      </div>
+
+      {/* Desktop’ta banner kalsın */}
+      <div className="hidden md:block">
+        <ProfileBanner src={me?.bannerUrl ?? null} canEdit />
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Sol menü desktop’ta */}
         <div className="hidden md:block">
           <LeftSidebar />
         </div>
-        <div className="lg:col-span-2 space-y-6">
-          <div className="card p-6">
-            <h1 className="text-2xl font-semibold mb-4">Aboneliklerim</h1>
-            <div className="grid md:grid-cols-3 gap-4">
-              {subs.map((s, i) => (
-                <div key={s.club.id ?? i} className="card p-3">
-                  <div className="relative h-24 rounded-xl overflow-hidden">
-                    <Image
-                      src={s.club.bannerUrl || 'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop'}
-                      alt=""
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="mt-3 font-medium">{s.club.name}</div>
-                  <div className="mt-2 flex gap-2">
-                    <Link href={`/clubs/${s.club.slug}`} scroll={false} className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm">
-                      İncele
-                    </Link>
-                  </div>
-                </div>
+
+        {/* İçerik */}
+        <div className="md:col-span-2 space-y-4">
+          {subs.length === 0 ? (
+            <div className="card p-6 text-sm text-gray-700">Henüz bir kulübe abone değilsiniz.</div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {subs.map((s) => (
+                <SubscribedClubCard key={s.club.id} club={s.club as any} />
               ))}
-              {!subs.length && <div className="text-sm text-gray-600">Aktif aboneliğiniz yok.</div>}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

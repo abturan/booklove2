@@ -37,8 +37,6 @@ export default async function PublicProfilePage({ params, searchParams }: Props)
   else {
     let posts = 0
     try {
-      // Şema farklıysa hata bastırılır; bu durumda posts=0 kalır
-      // En yaygın ad: post.authorId
       // @ts-ignore
       posts = await prisma.post.count({ where: { authorId: user.id } })
     } catch {}
@@ -51,5 +49,10 @@ export default async function PublicProfilePage({ params, searchParams }: Props)
     redirect(`/u/${canonical}${activeTab ? `?tab=${encodeURIComponent(activeTab)}` : ''}`)
   }
 
-  return <ProfileLayout user={user} canonical={canonical} activeTab={activeTab} />
+  const modClub = await prisma.club.findFirst({
+    where: { moderatorId: user.id, published: true },
+    select: { id: true, name: true, slug: true, bannerUrl: true },
+  })
+
+  return <ProfileLayout user={user} canonical={canonical} activeTab={activeTab} modClub={modClub} />
 }

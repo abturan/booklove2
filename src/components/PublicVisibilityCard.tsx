@@ -27,17 +27,14 @@ export default function PublicVisibilityCard({ username }: { username?: string |
     }
   }
 
-  const title = hasUsername ? 'Profiliniz şu an herkese açık' : 'Profilini herkese görünür yap'
 
   return (
     <div className="card p-4 space-y-3 text-sm">
-      <div className="font-medium">{title}</div>
 
       {!hasUsername ? (
         <>
-          <div className="text-gray-600">
-            Public profil adresin için önce bir <strong>kullanıcı adı</strong> belirlemelisin.
-          </div>
+        Kullanıcı adı belirleyerek profilini daha kolay erişilebilir yapabilirsin
+        <br></br>
           <Link
             href="/profile/settings#username"
             scroll={false}
@@ -50,16 +47,16 @@ export default function PublicVisibilityCard({ username }: { username?: string |
       ) : (
         <>
           <div className="text-gray-600">
-            Public profilin: <span className="font-medium">{publicPath}</span>
+            Profil Adresin: <span className="font-medium">{publicPath}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <Link
               href={publicPath!}
               scroll={false}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-white hover:bg-rose-500"
+              className="bg-primary flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-white hover:bg-rose-500"
             >
-              <EyeIcon className="w-4 h-4" />
+              <EyeIcon className="w-4 h-4 " />
               Profili görüntüle
             </Link>
             <button

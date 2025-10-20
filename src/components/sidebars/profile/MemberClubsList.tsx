@@ -13,7 +13,7 @@ export default function MemberClubsList({
 }) {
   if (!items || items.length === 0) return null
   return (
-    <section className="card p-5">
+    <section className="card p-5 hidden md:block">
       <h3 className="text-lg font-semibold text-slate-700 mb-4">Üye Olduğu Kulüpler</h3>
       <ul className="space-y-3">
         {items.map((c) => (
@@ -23,8 +23,6 @@ export default function MemberClubsList({
               className="group flex items-center gap-3 rounded-xl p-3 hover:bg-slate-50 transition"
             >
               <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 ring-1 ring-slate-200">
-                {/* küçük kapak */}
-                {/* @ts-ignore */}
                 <img
                   src={(c.bannerUrl || '').trim() || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=200&auto=format&fit=crop'}
                   alt=""
@@ -46,3 +44,8 @@ export default function MemberClubsList({
     </section>
   )
 }
+
+
+
+
+

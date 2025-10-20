@@ -26,7 +26,14 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
 
   return (
     <div className="card p-3">
-      <PostHeader post={post} isOwner={!!isOwner} editing={ed.editing} onEdit={()=>{ed.setEditText(post.body); ed.setEditImages(post.images||[]); ed.setEditing(true)}} onDelete={ed.del} />
+      <PostHeader
+        post={post}
+        isOwner={!!isOwner}
+        isAdmin={!!isAdmin}
+        editing={ed.editing}
+        onEdit={() => { ed.setEditText(post.body); ed.setEditImages(post.images || []); ed.setEditing(true) }}
+        onDelete={() => { void ed.del() }}
+      />
       {!ed.editing && (
         <>
           <PostBody text={post.body} />

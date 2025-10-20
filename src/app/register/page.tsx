@@ -1,7 +1,7 @@
 // src/app/register/page.tsx
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Link from 'next/link'
 import Modal from '@/components/ui/modal'
 import { TERMS_HTML } from '@/content/legal/terms'
@@ -9,6 +9,11 @@ import { KVKK_HTML } from '@/content/legal/kvkk'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
+  const [uLoading, setULoading] = useState(false)
+  const [uErr, setUErr] = useState<string | null>(null)
+  const [uOk, setUOk] = useState<boolean | null>(null)
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
@@ -23,6 +28,51 @@ export default function RegisterPage() {
   const kvkkHTML = useMemo(() => ({ __html: KVKK_HTML }), [])
   const termsHTML = useMemo(() => ({ __html: TERMS_HTML }), [])
 
+  useEffect(() => {
+    if (!username) {
+      setUOk(null)
+      setUErr('Kullanıcı adı zorunludur.')
+      return
+    }
+    const uname = username.toLowerCase().trim()
+    const valid = /^[a-z0-9_]{3,20}$/.test(uname)
+    if (!valid) {
+      setUOk(false)
+      setUErr('3–20 karakter, sadece küçük harf, rakam ve alt çizgi kullanılabilir.')
+      return
+    }
+    let abort = false
+    setULoading(true)
+    setUErr(null)
+    const ac = new AbortController()
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/username/check?username=${encodeURIComponent(uname)}`, { cache: 'no-store', signal: ac.signal })
+        const j = await res.json()
+        if (abort) return
+        if (!res.ok || !j?.ok) {
+          setUOk(false)
+          setUErr(j?.message || 'Kontrol sırasında bir hata oluştu.')
+        } else {
+          setUOk(Boolean(j.available))
+          setUErr(j.available ? null : 'Bu kullanıcı adı alınmış.')
+        }
+      } catch {
+        if (!abort) {
+          setUOk(false)
+          setUErr('Ağ hatası: kontrol edilemedi.')
+        }
+      } finally {
+        if (!abort) setULoading(false)
+      }
+    }, 300)
+    return () => {
+      abort = true
+      ac.abort()
+      clearTimeout(t)
+    }
+  }, [username])
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErr(null)
@@ -31,12 +81,17 @@ export default function RegisterPage() {
       setErr('Kayıt için “Kullanım Koşulları” ve “Kişisel Veriler Kanunu” metinlerini onaylamanız gerekir.')
       return
     }
+    const uname = username.toLowerCase().trim()
+    if (!uname || uLoading || uOk === false) {
+      setErr('Geçerli ve benzersiz bir kullanıcı adı seçmelisiniz.')
+      return
+    }
     setSubmitting(true)
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, username: uname }),
       })
       const j = await res.json()
       if (!res.ok || !j?.ok) {
@@ -80,6 +135,33 @@ export default function RegisterPage() {
             enterKeyHint="next"
           />
         </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Kullanıcı adı</label>
+          <input
+            type="text"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            pattern="[a-z0-9_]{3,20}"
+            title="3–20 karakter, sadece küçük harf, rakam ve alt çizgi."
+            onInvalid={(e) => {
+              e.currentTarget.setCustomValidity('Geçerli bir kullanıcı adı girin (küçük harf, rakam, alt çizgi; 3–20).')
+            }}
+            onInput={(e) => e.currentTarget.setCustomValidity('')}
+            className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+            placeholder="kullaniciniz"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="next"
+          />
+          <div className="mt-1 text-xs">
+            {uLoading ? <span className="text-gray-600">Kontrol ediliyor…</span> : uErr ? <span className="text-red-600">{uErr}</span> : uOk ? <span className="text-green-600">Kullanılabilir.</span> : null}
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">E-posta</label>
           <input
@@ -101,6 +183,7 @@ export default function RegisterPage() {
             enterKeyHint="next"
           />
         </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">Şifre</label>
           <input
@@ -213,7 +296,7 @@ export default function RegisterPage() {
 
       {openTerms && (
         <Modal open={openTerms} onClose={() => setOpenTerms(false)} title="Kullanım Koşulları">
-          <article className="legal-content text-sm leading-relaxed text-gray-800" dangerouslySetInnerHTML={termsHTML} />
+        <article className="legal-content text-sm leading-relaxed text-gray-800" dangerouslySetInnerHTML={termsHTML} />
         </Modal>
       )}
     </div>
