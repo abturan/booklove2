@@ -35,7 +35,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     },
   })
   if (!club) {
-    return <div className="container mx-auto px-4 py-10">Kulüp bulunamadı.</div>
+    return <div className="py-10">Kulüp bulunamadı.</div>
   }
 
   const memberCount = await prisma.membership.count({
@@ -262,7 +262,7 @@ export default async function ClubPage({ params }: { params: { slug: string } })
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="space-y-6">
       <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden">
         <Image src={initial.club.bannerUrl} alt="" fill className="object-cover" priority />
       </div>
@@ -270,3 +270,9 @@ export default async function ClubPage({ params }: { params: { slug: string } })
     </div>
   )
 }
+
+
+
+
+
+

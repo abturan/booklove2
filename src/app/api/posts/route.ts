@@ -3,16 +3,24 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
+type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN'
+
 export async function GET(req: Request) {
   try {
     const session = await auth()
     const meId = session?.user?.id || null
+    const role = session?.user?.role || 'USER'
 
     const { searchParams } = new URL(req.url)
     const scope = searchParams.get('scope') || (meId ? 'friends' : 'global')
     const ownerIdParam = searchParams.get('ownerId') || undefined
     const limit = Math.min(Number(searchParams.get('limit') || '12'), 30)
     const cursor = searchParams.get('cursor') || undefined
+    const rawStatus = (searchParams.get('status') || '').toUpperCase() as Status | ''
+    const status: Status | null =
+      rawStatus === 'PUBLISHED' || rawStatus === 'PENDING' || rawStatus === 'HIDDEN'
+        ? rawStatus
+        : null
 
     let ownerFilter: any
 
@@ -43,13 +51,29 @@ export async function GET(req: Request) {
       }
     }
 
+    const where: any = {}
+    if (ownerFilter) where.ownerId = ownerFilter
+
+    if (status) {
+      where.status = status
+    } else {
+      if (scope === 'global') {
+        where.status = 'PUBLISHED'
+      } else {
+        where.status = 'PUBLISHED'
+      }
+    }
+
     const posts = await prisma.post.findMany({
-      where: ownerFilter ? { ownerId: ownerFilter } : undefined,
+      where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
       select: {
-        id: true, body: true, createdAt: true,
+        id: true,
+        body: true,
+        createdAt: true,
+        status: true,
         owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
         images: { select: { url: true, width: true, height: true } },
         _count: { select: { likes: true, comments: true } },

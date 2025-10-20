@@ -8,6 +8,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [images, setImages] = useState<{ url: string; width?: number; height?: number }[]>([])
+  const [okMsg, setOkMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const maxImages = 5
 
@@ -41,6 +42,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
     }
     setBusy(true)
     setError(null)
+    setOkMsg(null)
     try {
       const res = await fetch('/api/posts', {
         method: 'POST',
@@ -51,6 +53,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
       if (!res.ok) throw new Error(data?.error || 'Gönderilemedi')
       setText('')
       setImages([])
+      setOkMsg('Gönderin alındı. Yönetici onayından sonra yayınlanacak.')
       onPosted(String(data.id))
     } catch (e: any) {
       setError(e?.message || 'Gönderilemedi')
@@ -73,7 +76,6 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
         <div className="mt-2 grid grid-cols-2 gap-2">
           {images.map((img, i) => (
             <div key={i} className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={img.url} alt="" className="rounded-xl object-cover w-full h-28" />
               <button
                 type="button"
@@ -88,6 +90,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
         </div>
       )}
       {error && <div className="mt-2 text-xs text-red-600">{error}</div>}
+      {okMsg && <div className="mt-2 text-xs text-green-700">{okMsg}</div>}
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <input

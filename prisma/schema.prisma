@@ -9,6 +9,12 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum PostStatus {
+  PUBLISHED
+  PENDING
+  HIDDEN
+}
+
 model User {
   id                     String               @id @default(cuid())
   email                  String               @unique
@@ -79,7 +85,7 @@ model Club {
   paymentIntents PaymentIntent[]
   subscriptions  Subscription[]
 
-  capacity       Int?            // Abone limiti (null => sınırsız)
+  capacity       Int?
 }
 
 model Membership {
@@ -182,12 +188,14 @@ model Post {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   clientToken String?     @unique
+  images      PostImage[]
   comments    Comment[]
   likes       Like[]
   owner       User        @relation("UserPosts", fields: [ownerId], references: [id])
-  images      PostImage[]
+  status      PostStatus  @default(PENDING)
 
   @@index([ownerId, createdAt])
+  @@index([status, createdAt])
 }
 
 model PostImage {

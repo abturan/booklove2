@@ -3,8 +3,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import Tabs from '@/components/ui/Tabs'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard, { type Post } from '@/components/feed/PostCard'
+
+type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN'
 
 export default function GlobalFeed({
   ownerId,
@@ -15,6 +18,7 @@ export default function GlobalFeed({
 }) {
   const { data } = useSession()
   const loggedIn = !!data?.user?.id
+  const isAdmin = (data?.user as any)?.role === 'ADMIN'
 
   const [items, setItems] = useState<Post[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
@@ -22,11 +26,12 @@ export default function GlobalFeed({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [openComposer, setOpenComposer] = useState(false)
+  const [status, setStatus] = useState<Status>('PUBLISHED')
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     resetAndLoad()
-  }, [ownerId])
+  }, [ownerId, status])
 
   async function resetAndLoad() {
     setItems([])
@@ -44,6 +49,7 @@ export default function GlobalFeed({
       q.set('scope', 'global')
     }
     q.set('limit', limit)
+    q.set('status', status)
     if (extra) q.set('cursor', extra)
     return q
   }
@@ -113,7 +119,7 @@ export default function GlobalFeed({
       })()
     }, 10000)
     return () => clearInterval(t)
-  }, [items])
+  }, [items, status, ownerId])
 
   function onPosted() {
     resetAndLoad()
@@ -156,6 +162,18 @@ export default function GlobalFeed({
 
       {!hideTopBar && <div className="h-1 w-full rounded-full bg-primary" />}
 
+      {isAdmin && (
+        <Tabs
+          value={status}
+          onValueChange={(v) => setStatus(v as Status)}
+          tabs={[
+            { value: 'PUBLISHED', label: 'Yayında' },
+            { value: 'PENDING', label: 'Bekleyen' },
+            { value: 'HIDDEN', label: 'Gizli' },
+          ]}
+        />
+      )}
+
       {openComposer && !ownerId && loggedIn && <PostComposer onPosted={onPosted} />}
 
       {error && (
@@ -173,6 +191,11 @@ export default function GlobalFeed({
       <div ref={sentinelRef} />
       <div className="flex justify-center py-3">
         {loading && <span className="text-xs text-gray-600">Yükleniyor…</span>}
+        {!loading && items.length === 0 && (
+          <span className="text-xs text-gray-500">
+            {isAdmin ? 'Bu sekmede içerik yok.' : 'Henüz paylaşım yok.'}
+          </span>
+        )}
         {!hasMore && items.length > 0 && <span className="text-xs text-gray-500">Bitti</span>}
       </div>
     </aside>
@@ -184,6 +207,7 @@ function normalizePost(p: any): Post {
     id: String(p.id),
     body: String(p.body || ''),
     createdAt: String(p.createdAt || new Date().toISOString()),
+    status: (p.status as any) || 'PUBLISHED',
     owner: {
       id: p.owner?.id || '',
       name: p.owner?.name || 'Kullanıcı',
