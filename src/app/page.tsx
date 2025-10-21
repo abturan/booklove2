@@ -59,7 +59,7 @@ function HomeBody() {
           value={tab}
           onValueChange={(v) => setTab(v as 'clubs' | 'bookie')}
           tabs={[
-            { value: 'clubs', label: 'Klüpler' },
+            { value: 'clubs', label: 'Kulüpler' },
             { value: 'bookie', label: 'Bookie!' },
           ]}
         />
