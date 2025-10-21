@@ -102,8 +102,8 @@ export default function ChatPanel({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => enabled && e.key === 'Enter' && send()}
-          className="flex-1 h-11 px-3 rounded-xl border disabled:opacity-60"
-          placeholder="🙂 gibi emojiler kullanabilirsiniz…"
+          className="flex-1 h-11 rounded-xl border disabled:opacity-60"
+          placeholder=""
           disabled={!enabled}
         />
         <div className="relative">
