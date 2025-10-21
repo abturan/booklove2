@@ -212,8 +212,8 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
   }
 
   return (
-    <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-      <div className="space-y-6">
+    <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
+      <div className="space-y-6 min-w-0">
         <ClubHeader
           moderatorName={initial.club.moderatorName}
           moderatorAvatarUrl={initial.club.moderatorAvatarUrl}
@@ -230,7 +230,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
         <ChatSection enabled={isMember} clubId={initial.club.id} isMember={isMember} />
       </div>
 
-      <aside className="space-y-4">
+      <aside className="space-y-4 min-w-0">
         <SubscriptionCard
           priceTRY={initial.club.priceTRY}
           isMember={isMember}
@@ -247,7 +247,6 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           onClearPending={clearPending}
           profileMissing={profileMissing}
           contractChecked={contractChecked}
-          setContractChecked={setContractChecked}
           onOpenProfile={() => setShowProfileModal(true)}
           onOpenContract={() => setShowContract(true)}
         />

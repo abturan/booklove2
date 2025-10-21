@@ -111,7 +111,7 @@ export default function ChatPanel({
             ref={emojiBtnRef}
             type="button"
             onClick={() => enabled && setEmojiOpen((v) => !v)}
-            className="h-11 px-3 rounded-xl border bg-white disabled:opacity-60"
+            
             aria-label="Emoji seç"
             disabled={!enabled}
           >
