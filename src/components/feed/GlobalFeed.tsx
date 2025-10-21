@@ -141,7 +141,7 @@ export default function GlobalFeed({
               type="button"
               onClick={() => setOpenComposer(true)}
               className="rounded-full bg-primary text-white px-4 py-1.5 text-sm font-medium hover:bg-primary/90"
-              aria-label="Paylaşım yap"
+              aria-label="Bookie! Paylaş"
             >
               Paylaş
             </button>

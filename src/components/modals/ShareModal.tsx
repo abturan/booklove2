@@ -25,7 +25,7 @@ export default function ShareModal() {
       <div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
       <div className="absolute inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 top-10 sm:top-20 sm:w-[560px] bg-white rounded-2xl shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="font-semibold">Paylaşım Yap</div>
+          <div className="font-semibold">Bookie! Paylaş</div>
           <button
             type="button"
             onClick={() => setOpen(false)}

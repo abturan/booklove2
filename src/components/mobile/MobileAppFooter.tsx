@@ -4,7 +4,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import NotificationBadge from '@/components/NotificationBadge'
 import Avatar from '@/components/Avatar'
 
@@ -18,6 +18,9 @@ function ICreateClub() { return (<svg width="24" height="24" viewBox="0 0 24 24"
 
 export default function MobileAppFooter() {
   const router = useRouter()
+  const { status } = useSession()
+  const isAuth = status === 'authenticated'
+
   const [openSettings, setOpenSettings] = useState(false)
   const [profileHref, setProfileHref] = useState<string>('/profile/settings')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -26,6 +29,7 @@ export default function MobileAppFooter() {
   const [signingOut, setSigningOut] = useState(false)
 
   useEffect(() => {
+    if (!isAuth) return
     ;(async () => {
       try {
         const res = await fetch('/api/me', { cache: 'no-store' })
@@ -41,9 +45,10 @@ export default function MobileAppFooter() {
         }
       } catch {}
     })()
-  }, [])
+  }, [isAuth])
 
   useEffect(() => {
+    if (!isAuth) { setDmUnread(0); return }
     let alive = true
     async function loadCounts() {
       try {
@@ -63,7 +68,7 @@ export default function MobileAppFooter() {
       window.removeEventListener('dm:changed', h)
       window.removeEventListener('dm:counts', h)
     }
-  }, [])
+  }, [isAuth])
 
   function openShare() {
     window.dispatchEvent(new CustomEvent('share:open'))
@@ -85,58 +90,62 @@ export default function MobileAppFooter() {
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t">
-        <div className="grid grid-cols-7 items-center px-2 py-2 text-primary">
+        <div className={`${isAuth ? 'grid-cols-7' : 'grid-cols-2'} grid items-center px-2 py-2 text-primary`}>
           <Link href="/?tab=clubs" scroll={false} className="grid place-content-center h-12">
             <IClubs />
           </Link>
 
-           <Link href="/?tab=bookie" scroll={false} className="grid place-content-center h-12">
+          <Link href="/?tab=bookie" scroll={false} className="grid place-content-center h-12">
             <IBookie />
           </Link>
 
-          <Link href="/friends" scroll={false} className="relative grid place-content-center h-12">
-            <IBuddy />
-            <NotificationBadge placement="absolute -top-1 -right-1" />
-          </Link>
+          {isAuth && (
+            <>
+              <Link href="/friends" scroll={false} className="relative grid place-content-center h-12">
+                <IBuddy />
+                <NotificationBadge placement="absolute -top-1 -right-1" />
+              </Link>
 
-          <button
-            type="button"
-            onClick={openShare}
-            className="grid place-content-center -mt-6"
-            aria-label="Paylaşım Yap"
-            title="Paylaşım Yap"
-          >
-            <div className="h-12 w-12 rounded-full bg-primary text-white grid place-content-center shadow">
-              <IPlus />
-            </div>
-          </button>
+              <button
+                type="button"
+                onClick={openShare}
+                className="grid place-content-center -mt-6"
+                aria-label="Paylaşım Yap"
+                title="Paylaşım Yap"
+              >
+                <div className="h-12 w-12 rounded-full bg-primary text-white grid place-content-center shadow">
+                  <IPlus />
+                </div>
+              </button>
 
-          <Link href="/messages" scroll={false} className="relative grid place-content-center h-12">
-            <IMessages />
-            {dmUnread > 0 && (
-              <span className="absolute  -right-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
-                {dmUnread > 99 ? '99+' : dmUnread}
-              </span>
-            )}
-          </Link>
+              <Link href="/messages" scroll={false} className="relative grid place-content-center h-12">
+                <IMessages />
+                {dmUnread > 0 && (
+                  <span className="absolute  -right-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
+                    {dmUnread > 99 ? '99+' : dmUnread}
+                  </span>
+                )}
+              </Link>
 
-          <Link href="/subscriptions" scroll={false} className="grid place-content-center h-12">
-            <ISubscriptions />
-          </Link>
+              <Link href="/subscriptions" scroll={false} className="grid place-content-center h-12">
+                <ISubscriptions />
+              </Link>
 
-          <button
-            type="button"
-            onClick={() => setOpenSettings(true)}
-            className="grid place-content-center h-12"
-            aria-label="Ayarlar"
-            title={displayName}
-          >
-            <Avatar src={avatarUrl} size={28} alt={displayName} />
-          </button>
+              <button
+                type="button"
+                onClick={() => setOpenSettings(true)}
+                className="grid place-content-center h-12"
+                aria-label="Ayarlar"
+                title={displayName}
+              >
+                <Avatar src={avatarUrl} size={28} alt={displayName} />
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
-      {openSettings && (
+      {isAuth && openSettings && (
         <div className="fixed inset-0 z-[60]">
           <div className="absolute inset-0 bg-black/30" onClick={() => setOpenSettings(false)} />
           <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white shadow-xl p-2">
@@ -169,9 +178,3 @@ export default function MobileAppFooter() {
     </>
   )
 }
-
-
-
-
-
-
