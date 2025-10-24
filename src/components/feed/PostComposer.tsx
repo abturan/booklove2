@@ -53,7 +53,12 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
       if (!res.ok) throw new Error(data?.error || 'Gönderilemedi')
       setText('')
       setImages([])
-      setOkMsg('Gönderin alındı. Yönetici onayından sonra yayınlanacak.')
+      const status = String(data?.status || '').toUpperCase()
+      if (status === 'PUBLISHED') {
+        setOkMsg('Gönderiniz yayımlandı.')
+      } else {
+        setOkMsg('Gönderiniz alındı. Yönetici onayından sonra yayınlanacak.')
+      }
       onPosted(String(data.id))
     } catch (e: any) {
       setError(e?.message || 'Gönderilemedi')
@@ -124,3 +129,9 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
     </div>
   )
 }
+
+
+
+
+
+

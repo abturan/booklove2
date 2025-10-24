@@ -116,21 +116,36 @@ export async function POST(req: Request) {
     const last = await prisma.post.findFirst({
       where: { ownerId: meId, createdAt: { gte: since }, body: bodyText },
       orderBy: { createdAt: 'desc' },
-      include: { images: { select: { url: true } } }
+      include: { images: { select: { url: true } }, }
     })
 
     if (last) {
       const lastUrls = (last.images || []).map((i) => i.url).filter(Boolean).sort()
       if (incomingUrls.join('|') === lastUrls.join('|')) {
-        return NextResponse.json({ ok: true, id: last.id })
+        return NextResponse.json({ ok: true, id: last.id, status: (last as any).status || 'PENDING' })
       }
     }
   } catch {}
+
+  let status: Status = 'PENDING'
+  try {
+    const lastAny = await prisma.post.findFirst({
+      where: { ownerId: meId },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true }
+    })
+    const lastTs = lastAny ? new Date(lastAny.createdAt).getTime() : 0
+    const windowMs = 10 * 60 * 1000
+    status = !lastAny || now - lastTs >= windowMs ? 'PUBLISHED' : 'PENDING'
+  } catch {
+    status = 'PENDING'
+  }
 
   const post = await prisma.post.create({
     data: {
       ownerId: meId,
       body: bodyText,
+      status,
       images: {
         create: images
           .filter((x: any) => x && typeof x.url === 'string' && x.url.trim())
@@ -141,8 +156,8 @@ export async function POST(req: Request) {
           })),
       },
     },
-    select: { id: true }
+    select: { id: true, status: true }
   })
 
-  return NextResponse.json({ ok: true, id: post.id })
+  return NextResponse.json({ ok: true, id: post.id, status: post.status })
 }
