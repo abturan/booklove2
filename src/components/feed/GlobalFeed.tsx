@@ -52,6 +52,7 @@ export default function GlobalFeed({
     if (isAdmin) loadCounts()
   }, [isAdmin, status])
 
+  // Hydration-safe cihaz tespiti
   const [clientReady, setClientReady] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function GlobalFeed({
 
   const pagingEnabled = clientReady && isDesktop && !!paginateDesktop
 
+  // Sol kolon yüksekliği (desktop sayfalama)
   const [targetH, setTargetH] = useState<number>(0)
   const listRef = useRef<HTMLDivElement | null>(null)
   const leftElRef = useRef<HTMLElement | null>(null)
@@ -87,6 +89,7 @@ export default function GlobalFeed({
     }
   }, [pagingEnabled, leftColumnSelector])
 
+  // Veri durumu
   const [pages, setPages] = useState<PageBundle[]>([])
   const [pageIndex, setPageIndex] = useState(0)
   const current = pages[pageIndex] || null
@@ -95,14 +98,13 @@ export default function GlobalFeed({
   const [error, setError] = useState<string | null>(null)
   const [openComposer, setOpenComposer] = useState(false)
 
+  // Sonsuz mod (mobil) için
   const [items, setItems] = useState<Post[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  // SCROLL CONTAINER (feed kendi içinde scroll)
-  const scrollRef = useRef<HTMLElement | null>(null)
-
+  // Mod/filtre değişiminde sıfırlama ve ilk yük
   useEffect(() => {
     setLoading(true)
     setHasRequested(false)
@@ -133,6 +135,7 @@ export default function GlobalFeed({
     return q
   }
 
+  // ===== Desktop: Sayfa yükleme =====
   async function loadPage(cursorIn: string | null, replace = false, limitHint = 6) {
     if (!pagingEnabled) return
     setHasRequested(true)
@@ -155,6 +158,7 @@ export default function GlobalFeed({
     }
   }
 
+  // otomatik doldurma için loading'i UI'ya göstermeden ekleme
   async function appendToCurrent(cursorIn: string, atIndex: number, limitHint = 4, silent = true) {
     if (!pagingEnabled) return
     setHasRequested(true)
@@ -192,6 +196,7 @@ export default function GlobalFeed({
     if (pageIndex > 0) setPageIndex(pageIndex - 1)
   }
 
+  // Sağ listeyi sola hizala (yükseklik bazlı ekle/kırp) — thrash engelli
   const fillingRef = useRef(false)
   const lastTrimCountRef = useRef<number | null>(null)
 
@@ -238,6 +243,7 @@ export default function GlobalFeed({
     return () => cancelAnimationFrame(id)
   }, [pages, pageIndex, targetH, pagingEnabled])
 
+  // ===== Mobil/sonsuz =====
   async function loadMore(isFirst = false) {
     setHasRequested(true)
     if (!hasMore) return
@@ -266,18 +272,13 @@ export default function GlobalFeed({
     }
   }
 
-  // SENTINEL → FEED'İN KENDİ SCROLL CONTAINER'INA BAĞLI
   useEffect(() => {
     if (pagingEnabled) return
     const el = sentinelRef.current
-    const rootEl = scrollRef.current // kritik
-    if (!el || !rootEl) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore(false)
-      },
-      { root: rootEl, rootMargin: '400px 0px' }
-    )
+    if (!el) return
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) loadMore(false)
+    }, { rootMargin: '400px 0px' })
     io.observe(el)
     return () => io.disconnect()
   }, [sentinelRef.current, cursor, hasMore, pagingEnabled])
@@ -346,19 +347,12 @@ export default function GlobalFeed({
   const showTopBar = !hideTopBar
   const canPrev = pagingEnabled && pageIndex > 0
   const canNext = pagingEnabled && !!pages[pageIndex]?.cursorOut
+
+  // otomatik doldurma sırasında loading yazısını gizle
   const showLoading = loading && !fillingRef.current
 
   return (
-    <aside
-      ref={scrollRef}
-      className="
-        space-y-4
-        lg:sticky lg:top-6
-        lg:max-h-[calc(100vh-6rem)]
-        lg:overflow-y-auto
-        lg:pr-1
-      "
-    >
+    <aside className="space-y-4">
       {showTopBar && (
         <div className="flex items-end justify-between">
           <div className="text-2xl font-extrabold tracking-tight">Bookie!</div>
@@ -462,9 +456,3 @@ function normalizePost(p: any): Post {
     counts: { likes: Number(p._count?.likes || 0), comments: Number(p._count?.comments || 0) },
   }
 }
-
-
-
-
-
-
