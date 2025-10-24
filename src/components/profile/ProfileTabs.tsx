@@ -16,40 +16,65 @@ type ClubLite = {
 type Membership = { club: ClubLite }
 
 /**
- * Sağ panel sekmeleri (Hakkında / Kulüpler)
- * - Sunucu tarafına fonksiyon taşımaz; yalnızca veri alır
- * - Boş/eksik verilerde güvenli çalışır (defansif)
- * - Sekmeye tıklayınca scroll yapmaz, yalnızca içerik değiştirir
+ * Sağ panel sekmeleri (Gönderiler / Hakkında / Kulüpler)
+ * - Varsayılan aktif sekme kuralı:
+ *   1) postsCount > 0 -> Gönderiler
+ *   2) bio doluysa -> Hakkında
+ *   3) memberships doluysa -> Kulüpler
+ *   4) hiçbiri değilse -> Hakkında
+ * - postsSlot opsiyoneldir; verilmezse Gönderiler sekmesi yine seçilebilir
+ *   (içerik üst düzey bileşenden sağlanabilir).
  */
 export default function ProfileTabs({
+  postsCount,
+  postsSlot,
   bio,
   memberships,
   className,
 }: {
+  postsCount?: number
+  postsSlot?: React.ReactNode
   bio?: string | null
   memberships?: Membership[] | null
   className?: string
 }) {
   const list = Array.isArray(memberships) ? memberships : []
 
+  const hasPosts = (postsCount ?? 0) > 0
   const hasAbout = !!(bio && bio.trim().length > 0)
   const hasClubs = list.length > 0
 
-  // hiç içerik yoksa hiç render etmeyelim
-  if (!hasAbout && !hasClubs) return null
+  // hiç içerik yoksa tamamen gizle
+  if (!hasPosts && !hasAbout && !hasClubs) return null
 
-  const initial = useMemo<'about' | 'clubs'>(() => {
+  type Tab = 'posts' | 'about' | 'clubs'
+
+  const initial = useMemo<Tab>(() => {
+    if (hasPosts) return 'posts'
     if (hasAbout) return 'about'
     if (hasClubs) return 'clubs'
     return 'about'
-  }, [hasAbout, hasClubs])
+  }, [hasPosts, hasAbout, hasClubs])
 
-  const [active, setActive] = useState<'about' | 'clubs'>(initial)
+  const [active, setActive] = useState<Tab>(initial)
 
   return (
     <div className={clsx('w-full space-y-4', className)}>
       {/* Sekme başlıkları */}
-      <div className="w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid grid-cols-2 gap-1">
+      <div className="w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid grid-cols-3 gap-1">
+        <button
+          type="button"
+          onClick={() => setActive('posts')}
+          className={clsx(
+            'h-11 rounded-xl text-sm font-semibold transition',
+            active === 'posts' ? 'bg-primary text-white shadow' : 'text-gray-700 hover:bg-gray-100'
+          )}
+          aria-pressed={active === 'posts'}
+          disabled={!hasPosts}
+          title={hasPosts ? 'Gönderiler' : 'Gönderi yok'}
+        >
+          Gönderiler
+        </button>
         <button
           type="button"
           onClick={() => setActive('about')}
@@ -79,6 +104,12 @@ export default function ProfileTabs({
       </div>
 
       {/* İçerik */}
+      {active === 'posts' && hasPosts && (
+        <div className="space-y-3">
+          {postsSlot ?? null}
+        </div>
+      )}
+
       {active === 'about' && hasAbout && (
         <div className="card p-5 text-gray-800 leading-7">
           {bio}
