@@ -54,6 +54,7 @@ function HomeBody() {
     <div className="space-y-6">
       <HeroSlider />
 
+      {/* MOBİL: DOKUNMADIM */}
       <div className="md:hidden space-y-4">
         <Tabs
           value={tab}
@@ -79,14 +80,15 @@ function HomeBody() {
         )}
       </div>
 
+      {/* DESKTOP: sol kolon + sağ kolon (sağ kolon sayfalı) */}
       <div className="hidden md:block space-y-4">
         <SearchFilters />
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.58fr)]">
-          <div className="sticky bottom-4 self-end">
+          <div id="left-col" className="sticky bottom-4 self-end">
             <InfiniteClubs initialQuery={initialQuery} />
           </div>
           <div>
-            <GlobalFeed />
+            <GlobalFeed paginateDesktop leftColumnSelector="#left-col" />
           </div>
         </div>
       </div>
