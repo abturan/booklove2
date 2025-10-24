@@ -29,7 +29,7 @@ export default async function UserPublicPage({ params }: { params: { slug: strin
 
       {modClub && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold px-1">1Moderatörü Olduğu Kulüp</h3>
+          <h3 className="text-sm font-semibold px-1">Moderatörü Olduğu Kulüp</h3>
           <ModeratorClubCard club={modClub} />
         </div>
       )}
