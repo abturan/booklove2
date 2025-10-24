@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
+import { Prisma } from '@prisma/client' // QueryMode için değer olarak import
 
 export const dynamic = 'force-dynamic'
 
@@ -16,13 +17,14 @@ export default async function AdminMembersPage({
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/')
 
   const q = (searchParams?.q || '').trim()
-  const where =
+
+  const where: Prisma.UserWhereInput =
     q.length > 0
       ? {
           OR: [
-            { email: { contains: q, mode: 'insensitive' } },
-            { name: { contains: q, mode: 'insensitive' } },
-            { username: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: Prisma.QueryMode.insensitive } },
+            { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+            { username: { contains: q, mode: Prisma.QueryMode.insensitive } },
           ],
         }
       : {}
@@ -82,10 +84,12 @@ export default async function AdminMembersPage({
                 </td>
                 <td className="px-4 py-3">
                   <div className="text-xs text-gray-700">
-                    Kulüp üyeliği: <span className="font-medium">{(u._count as any).Memberships}</span>
+                    Kulüp üyeliği:{' '}
+                    <span className="font-medium">{(u._count as any).Memberships}</span>
                   </div>
                   <div className="text-xs text-gray-700">
-                    Abonelik: <span className="font-medium">{(u._count as any).Subscriptions}</span>
+                    Abonelik:{' '}
+                    <span className="font-medium">{(u._count as any).Subscriptions}</span>
                   </div>
                   <div className="text-xs text-gray-700">
                     Post: <span className="font-medium">{(u._count as any).posts}</span>, Yorum:{' '}
@@ -128,3 +132,9 @@ export default async function AdminMembersPage({
     </div>
   )
 }
+
+
+
+
+
+

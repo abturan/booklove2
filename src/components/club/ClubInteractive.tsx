@@ -247,6 +247,7 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
           onClearPending={clearPending}
           profileMissing={profileMissing}
           contractChecked={contractChecked}
+          setContractChecked={setContractChecked}
           onOpenProfile={() => setShowProfileModal(true)}
           onOpenContract={() => setShowContract(true)}
         />
@@ -290,3 +291,9 @@ export default function ClubInteractive({ initial }: { initial: Initial }) {
     </div>
   )
 }
+
+
+
+
+
+
