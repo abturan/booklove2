@@ -31,7 +31,7 @@ export default function ProfileTabs({
       <div className="w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid grid-cols-3 gap-1">
         <Btn k="about" label="Hakkında" />
         <Btn k="clubs" label="Kulüpler" />
-        <Btn k="posts" label="Gönderiler" />
+        <Btn k="posts" label="Bookie!" />
       </div>
       <div className={active==='about'?'block':'hidden'}>{aboutNode}</div>
       <div className={active==='clubs'?'block':'hidden'}>{clubsNode}</div>

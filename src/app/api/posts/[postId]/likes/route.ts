@@ -3,6 +3,20 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
+export async function GET(_req: Request, { params }: { params: { postId: string } }) {
+  const { postId } = params
+  const likes = await prisma.like.findMany({
+    where: { postId },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+    select: {
+      user: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+    },
+  })
+  const items = likes.map(l => l.user)
+  return NextResponse.json({ items })
+}
+
 export async function POST(_req: Request, { params }: { params: { postId: string } }) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

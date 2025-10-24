@@ -3,13 +3,12 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
-type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN'
+type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN' | 'REPORTED'
 
 export async function GET(req: Request) {
   try {
     const session = await auth()
     const meId = session?.user?.id || null
-    const role = session?.user?.role || 'USER'
 
     const { searchParams } = new URL(req.url)
     const scope = searchParams.get('scope') || (meId ? 'friends' : 'global')
@@ -18,12 +17,11 @@ export async function GET(req: Request) {
     const cursor = searchParams.get('cursor') || undefined
     const rawStatus = (searchParams.get('status') || '').toUpperCase() as Status | ''
     const status: Status | null =
-      rawStatus === 'PUBLISHED' || rawStatus === 'PENDING' || rawStatus === 'HIDDEN'
+      rawStatus === 'PUBLISHED' || rawStatus === 'PENDING' || rawStatus === 'HIDDEN' || rawStatus === 'REPORTED'
         ? rawStatus
         : null
 
     let ownerFilter: any
-
     if (scope === 'owner' && ownerIdParam) {
       ownerFilter = { in: [ownerIdParam] }
     } else if (scope === 'self' && meId) {
@@ -51,17 +49,54 @@ export async function GET(req: Request) {
       }
     }
 
+    // ------- REPORTED özel mantık (gizlenmemiş + son şikayet tarihine göre sıralı) -------
+    if (status === 'REPORTED') {
+      const where: any = {
+        reports: { some: {} },
+        NOT: { status: 'HIDDEN' },
+      }
+      if (ownerFilter) where.ownerId = ownerFilter
+
+      // Cursor'ı bu listede sağlıklı kullanmak için karmaşık alt-sorgu gerekir; sade tutuyoruz:
+      // küçük sayılarla çalıştığı için birkaç fazla kayıt alıp bellekte sıralıyoruz.
+      const batch = await prisma.post.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: Math.min(limit + 20, 50),
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          status: true,
+          owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+          images: { select: { url: true, width: true, height: true} },
+          _count: { select: { likes: true, comments: true, reports: true } },
+          reports: {
+            select: { createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      })
+
+      const sorted = batch
+        .map(p => ({...p, __lastReportAt: p.reports[0]?.createdAt ? new Date(p.reports[0].createdAt).getTime() : 0 }))
+        .sort((a,b) => (b.__lastReportAt - a.__lastReportAt))
+        .slice(0, limit)
+        .map(({ reports, __lastReportAt, ...rest }) => rest)
+
+      // bu listede şimdilik sayfalama kapalı
+      return NextResponse.json({ items: sorted, nextCursor: null })
+    }
+
+    // ------- Diğer durumlar: normal akış -------
     const where: any = {}
     if (ownerFilter) where.ownerId = ownerFilter
 
     if (status) {
       where.status = status
     } else {
-      if (scope === 'global') {
-        where.status = 'PUBLISHED'
-      } else {
-        where.status = 'PUBLISHED'
-      }
+      where.status = 'PUBLISHED'
     }
 
     const posts = await prisma.post.findMany({
@@ -76,7 +111,7 @@ export async function GET(req: Request) {
         status: true,
         owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
         images: { select: { url: true, width: true, height: true } },
-        _count: { select: { likes: true, comments: true } },
+        _count: { select: { likes: true, comments: true, reports: true } },
       }
     })
 
@@ -116,7 +151,7 @@ export async function POST(req: Request) {
     const last = await prisma.post.findFirst({
       where: { ownerId: meId, createdAt: { gte: since }, body: bodyText },
       orderBy: { createdAt: 'desc' },
-      include: { images: { select: { url: true } }, }
+      include: { images: { select: { url: true } } }
     })
 
     if (last) {

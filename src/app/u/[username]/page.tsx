@@ -35,11 +35,7 @@ export default async function PublicProfilePage({ params, searchParams }: Props)
   const memberships = await prisma.membership.count({ where: { userId: user.id, isActive: true } })
   if (memberships > 0) defaultTab = 'clubs'
   else {
-    let posts = 0
-    try {
-      // @ts-ignore
-      posts = await prisma.post.count({ where: { authorId: user.id } })
-    } catch {}
+    const posts = await prisma.post.count({ where: { ownerId: user.id, status: { in: ['PUBLISHED','PENDING','HIDDEN','REPORTED'] } } })
     defaultTab = posts > 0 ? 'posts' : 'about'
   }
 

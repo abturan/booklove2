@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import PostCard from './PostCard'
 
 type Scope = 'friends' | 'self' | `user:${string}`
+type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN' | 'REPORTED'
 
 type Post = {
   id: string
@@ -13,9 +14,10 @@ type Post = {
   owner: { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
   images: { url: string; width?: number | null; height?: number | null }[]
   _count: { likes: number; comments: number }
+  status?: Status
 }
 
-export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
+export default function InfiniteFeed({ scope = 'friends', status = 'PUBLISHED' }: { scope?: Scope; status?: Status }) {
   const [items, setItems] = useState<Post[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
@@ -40,6 +42,7 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
       const params = new URLSearchParams()
       params.set('limit', '12')
       if (cursor && !first) params.set('cursor', cursor)
+      if (status && base.startsWith('/api/posts')) params.set('status', status)
 
       const url = `${base}${base.includes('?') ? '&' : '?'}${params.toString()}`
       const res = await fetch(url, { cache: 'no-store' })
@@ -70,7 +73,7 @@ export default function InfiniteFeed({ scope = 'friends' }: { scope?: Scope }) {
     setItems([]); setCursor(null); setHasMore(true); setLoading(false)
     seenIdsRef.current.clear()
     load(true)
-  }, [scope])
+  }, [scope, status])
 
   useEffect(() => {
     const el = sentRef.current

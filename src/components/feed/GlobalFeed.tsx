@@ -7,7 +7,7 @@ import Tabs from '@/components/ui/Tabs'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard, { type Post } from '@/components/feed/PostCard'
 
-type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN'
+type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN' | 'REPORTED'
 type PageBundle = { items: Post[]; cursorIn: string | null; cursorOut: string | null }
 
 export default function GlobalFeed({
@@ -26,7 +26,32 @@ export default function GlobalFeed({
   const isAdmin = (data?.user as any)?.role === 'ADMIN'
   const [status, setStatus] = useState<Status>('PUBLISHED')
 
-  // Hydration-safe cihaz tespiti
+  const [counts, setCounts] = useState<{ published: number; pending: number; hidden: number; reported: number }>({
+    published: 0,
+    pending: 0,
+    hidden: 0,
+    reported: 0,
+  })
+
+  async function loadCounts() {
+    try {
+      const res = await fetch('/api/posts/counts', { cache: 'no-store' })
+      const j = await res.json()
+      if (res.ok) {
+        setCounts({
+          published: Number(j?.published ?? 0),
+          pending: Number(j?.pending ?? 0),
+          hidden: Number(j?.hidden ?? 0),
+          reported: Number(j?.reported ?? 0),
+        })
+      }
+    } catch {}
+  }
+
+  useEffect(() => {
+    if (isAdmin) loadCounts()
+  }, [isAdmin, status])
+
   const [clientReady, setClientReady] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   useEffect(() => {
@@ -40,7 +65,6 @@ export default function GlobalFeed({
 
   const pagingEnabled = clientReady && isDesktop && !!paginateDesktop
 
-  // Sol kolon yüksekliği (desktop sayfalama)
   const [targetH, setTargetH] = useState<number>(0)
   const listRef = useRef<HTMLDivElement | null>(null)
   const leftElRef = useRef<HTMLElement | null>(null)
@@ -63,7 +87,6 @@ export default function GlobalFeed({
     }
   }, [pagingEnabled, leftColumnSelector])
 
-  // Veri durumu
   const [pages, setPages] = useState<PageBundle[]>([])
   const [pageIndex, setPageIndex] = useState(0)
   const current = pages[pageIndex] || null
@@ -72,13 +95,14 @@ export default function GlobalFeed({
   const [error, setError] = useState<string | null>(null)
   const [openComposer, setOpenComposer] = useState(false)
 
-  // Sonsuz mod (mobil) için
   const [items, setItems] = useState<Post[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  // Mod/filtre değişiminde sıfırlama ve ilk yük
+  // SCROLL CONTAINER (feed kendi içinde scroll)
+  const scrollRef = useRef<HTMLElement | null>(null)
+
   useEffect(() => {
     setLoading(true)
     setHasRequested(false)
@@ -109,7 +133,6 @@ export default function GlobalFeed({
     return q
   }
 
-  // ===== Desktop: Sayfa yükleme =====
   async function loadPage(cursorIn: string | null, replace = false, limitHint = 6) {
     if (!pagingEnabled) return
     setHasRequested(true)
@@ -132,7 +155,6 @@ export default function GlobalFeed({
     }
   }
 
-  // otomatik doldurma için loading'i UI'ya göstermeden ekleme
   async function appendToCurrent(cursorIn: string, atIndex: number, limitHint = 4, silent = true) {
     if (!pagingEnabled) return
     setHasRequested(true)
@@ -170,7 +192,6 @@ export default function GlobalFeed({
     if (pageIndex > 0) setPageIndex(pageIndex - 1)
   }
 
-  // Sağ listeyi sola hizala (yükseklik bazlı ekle/kırp) — thrash engelli
   const fillingRef = useRef(false)
   const lastTrimCountRef = useRef<number | null>(null)
 
@@ -183,13 +204,11 @@ export default function GlobalFeed({
     if (!wrap || targetH <= 0) return
     if (fillingRef.current) return
 
-    // ölçümü paint sonrası yap, histerezis ekle
     const id = requestAnimationFrame(async () => {
       const total = wrap.getBoundingClientRect().height
       const low = targetH * 0.98
       const high = targetH * 1.02
 
-      // Az ise: sessiz doldur (loading yazısı gözükmez)
       if (total < low && cur.cursorOut) {
         fillingRef.current = true
         await appendToCurrent(cur.cursorOut, at, 6, true)
@@ -197,11 +216,10 @@ export default function GlobalFeed({
         return
       }
 
-      // Fazlaysa: kaç kart sığar → bir kez kırp
       if (total > high) {
         let acc = 0
         let fit = 0
-        const gap = 12 // .space-y-3
+        const gap = 12
         const children = Array.from(wrap.children) as HTMLElement[]
         for (const el of children) {
           const h = el.getBoundingClientRect().height
@@ -214,14 +232,12 @@ export default function GlobalFeed({
           setPages((prev) => prev.map((b, i) => (i === at ? { ...b, items: b.items.slice(0, fit) } : b)))
         }
       } else {
-        // tam sığdı — bir sonraki ölçümde tekrar kırpmaya çalışma
         lastTrimCountRef.current = null
       }
     })
     return () => cancelAnimationFrame(id)
   }, [pages, pageIndex, targetH, pagingEnabled])
 
-  // ===== Mobil/sonsuz =====
   async function loadMore(isFirst = false) {
     setHasRequested(true)
     if (!hasMore) return
@@ -250,13 +266,18 @@ export default function GlobalFeed({
     }
   }
 
+  // SENTINEL → FEED'İN KENDİ SCROLL CONTAINER'INA BAĞLI
   useEffect(() => {
     if (pagingEnabled) return
     const el = sentinelRef.current
-    if (!el) return
-    const io = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) loadMore(false)
-    }, { rootMargin: '400px 0px' })
+    const rootEl = scrollRef.current // kritik
+    if (!el || !rootEl) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore(false)
+      },
+      { root: rootEl, rootMargin: '400px 0px' }
+    )
     io.observe(el)
     return () => io.disconnect()
   }, [sentinelRef.current, cursor, hasMore, pagingEnabled])
@@ -289,6 +310,7 @@ export default function GlobalFeed({
   }, [items, status, ownerId, pagingEnabled])
 
   function onPosted() {
+    if (isAdmin) loadCounts()
     setLoading(true)
     setHasRequested(false)
     if (pagingEnabled) {
@@ -312,6 +334,7 @@ export default function GlobalFeed({
     }
   }
   function onDeleted(id: string) {
+    if (isAdmin) loadCounts()
     if (pagingEnabled) {
       setPages((prev) => prev.map((b, i) => (i === pageIndex ? { ...b, items: b.items.filter((p) => p.id !== id) } : b)))
     } else {
@@ -323,12 +346,19 @@ export default function GlobalFeed({
   const showTopBar = !hideTopBar
   const canPrev = pagingEnabled && pageIndex > 0
   const canNext = pagingEnabled && !!pages[pageIndex]?.cursorOut
-
-  // otomatik doldurma sırasında loading yazısını gizle
   const showLoading = loading && !fillingRef.current
 
   return (
-    <aside className="space-y-4">
+    <aside
+      ref={scrollRef}
+      className="
+        space-y-4
+        lg:sticky lg:top-6
+        lg:max-h-[calc(100vh-6rem)]
+        lg:overflow-y-auto
+        lg:pr-1
+      "
+    >
       {showTopBar && (
         <div className="flex items-end justify-between">
           <div className="text-2xl font-extrabold tracking-tight">Bookie!</div>
@@ -363,9 +393,10 @@ export default function GlobalFeed({
           value={status}
           onValueChange={(v) => setStatus(v as Status)}
           tabs={[
-            { value: 'PUBLISHED', label: 'Yayında' },
-            { value: 'PENDING', label: 'Bekleyen' },
-            { value: 'HIDDEN', label: 'Gizli' },
+            { value: 'PUBLISHED', label: `Yayında (${counts.published})` },
+            { value: 'PENDING', label: `Bekleyen (${counts.pending})` },
+            { value: 'HIDDEN', label: `Gizli (${counts.hidden})` },
+            { value: 'REPORTED', label: `Şikayet (${counts.reported})` },
           ]}
         />
       )}
@@ -431,3 +462,9 @@ function normalizePost(p: any): Post {
     counts: { likes: Number(p._count?.likes || 0), comments: Number(p._count?.comments || 0) },
   }
 }
+
+
+
+
+
+

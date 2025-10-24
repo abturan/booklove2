@@ -1,3 +1,4 @@
+// src/app/admin/page.tsx
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -23,9 +24,9 @@ export default async function AdminHome() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Kulüpler</h1>
-        <Link href="/admin/clubs/new" className="rounded-full bg-rose-600 text-white px-4 py-2 hover:bg-rose-700">
-          Yeni kulüp oluştur
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/clubs/new" className="rounded-full bg-rose-600 text-white px-4 py-2 hover:bg-rose-700">Yeni kulüp oluştur</Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border">

@@ -1,3 +1,4 @@
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,6 +13,7 @@ enum PostStatus {
   PUBLISHED
   PENDING
   HIDDEN
+  REPORTED
 }
 
 model User {
@@ -50,6 +52,7 @@ model User {
   dmThreadsAsB           DmThread[]           @relation("DmThreadUserB")
   PasswordResetTokens    PasswordResetToken[]
   DmThreadReads          DmThreadRead[]
+  PostReports            PostReport[]         @relation("UserReports")
 }
 
 model Notification {
@@ -193,6 +196,7 @@ model Post {
   likes       Like[]
   owner       User        @relation("UserPosts", fields: [ownerId], references: [id])
   status      PostStatus  @default(PENDING)
+  reports     PostReport[]
 
   @@index([ownerId, createdAt])
   @@index([status, createdAt])
@@ -303,4 +307,18 @@ model PasswordResetToken {
   user      User      @relation(fields: [userId], references: [id])
 
   @@index([userId, expiresAt])
+}
+
+model PostReport {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  reason    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation("UserReports", fields: [userId], references: [id])
+
+  @@index([postId, createdAt])
+  @@index([userId, createdAt])
 }
