@@ -26,7 +26,9 @@ export default function Tabs({ value, onValueChange, tabs, className }: Props) {
       <div className={clsx('w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid gap-1', cols)}>
         {tabs.map((t) => {
           const active = t.value === value
-          const hasBadge = (t.badge ?? 0) > 0
+          const n = t.badge ?? 0
+          const hasBadge = n > 0
+          const big = n > 99
           return (
             <button
               key={t.value}
@@ -42,11 +44,12 @@ export default function Tabs({ value, onValueChange, tabs, className }: Props) {
               {hasBadge && (
                 <span
                   className={clsx(
-                    'inline-flex min-w-[20px] h-5 px-1.5 items-center justify-center rounded-full text-[11px] font-bold',
+                    'inline-flex items-center justify-center text-[11px] font-bold',
+                    big ? 'h-5 min-w-[28px] px-1.5 rounded-full' : 'h-5 w-5 rounded-full',
                     active ? 'bg-white text-primary' : 'bg-primary text-white'
                   )}
                 >
-                  {t.badge! > 99 ? '99+' : t.badge}
+                  {big ? '99+' : n}
                 </span>
               )}
             </button>

@@ -55,10 +55,23 @@ function HomeBody() {
   }, [params])
 
   const tabParam = params.get('tab') as 'clubs' | 'bookie' | 'buddy' | null
-  const tab = tabParam ?? 'clubs'
+  const urlTab = tabParam ?? 'clubs'
   const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1)
 
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const apply = () => setIsDesktop(mq.matches)
+    apply()
+    mq.addEventListener?.('change', apply)
+    return () => mq.removeEventListener?.('change', apply)
+  }, [])
+
+  const [mobileTab, setMobileTab] = useState<'clubs' | 'bookie' | 'buddy'>(urlTab)
+  useEffect(() => { if (isDesktop) return; setMobileTab(urlTab) }, [urlTab, isDesktop])
+
   function setTab(next: 'clubs' | 'bookie' | 'buddy') {
+    if (!isDesktop) { setMobileTab(next); return }
     const s = new URLSearchParams(params.toString())
     s.set('tab', next)
     s.delete('page')
@@ -72,14 +85,15 @@ function HomeBody() {
     router.replace(`/?${s.toString()}`, { scroll: true })
   }
 
+  const activeTab = isDesktop ? urlTab : mobileTab
+
   return (
     <div className="space-y-6">
       <HeroSlider />
 
-      {/* MOBİL */}
       <div className="md:hidden space-y-4">
         <Tabs
-          value={tab}
+          value={activeTab}
           onValueChange={(v) => setTab(v as 'clubs' | 'bookie' | 'buddy')}
           tabs={[
             { value: 'clubs', label: 'Kulüpler' },
@@ -87,19 +101,18 @@ function HomeBody() {
             { value: 'buddy', label: 'Book Buddy', badge: pending },
           ]}
         />
-        {tab === 'clubs' ? (
-          <>
-            <SearchFilters />
-            <PaginatedClubs initialQuery={initialQuery} pageSize={6} page={page} onPageChange={onPageChange} />
-          </>
-        ) : tab === 'bookie' ? (
-          <GlobalFeed />
-        ) : (
-          <BookBuddyTab />
-        )}
+        <div aria-hidden={activeTab !== 'clubs'} className={activeTab === 'clubs' ? 'block' : 'hidden'}>
+          <SearchFilters />
+          <PaginatedClubs initialQuery={initialQuery} pageSize={6} page={page} onPageChange={onPageChange} />
+        </div>
+        <div aria-hidden={activeTab !== 'bookie'} className={activeTab === 'bookie' ? 'block' : 'hidden'}>
+          <GlobalFeed hideTopBar={false} paginateDesktop={false} active={activeTab === 'bookie'} />
+        </div>
+        <div aria-hidden={activeTab !== 'buddy'} className={activeTab === 'buddy' ? 'block' : 'hidden'}>
+          <BookBuddyTab active={activeTab === 'buddy'} />
+        </div>
       </div>
 
-      {/* DESKTOP */}
       <div className="hidden md:block space-y-4">
         <SearchFilters />
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.58fr)]">
@@ -107,8 +120,8 @@ function HomeBody() {
             <InfiniteClubs initialQuery={initialQuery} />
           </div>
           <div className="space-y-4">
-            <BookBuddyPanel />
-            <GlobalFeed paginateDesktop leftColumnSelector="#left-col" />
+            <BookBuddyPanel active />
+            <GlobalFeed paginateDesktop leftColumnSelector="#left-col" active />
           </div>
         </div>
       </div>

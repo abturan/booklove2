@@ -15,11 +15,13 @@ export default function GlobalFeed({
   hideTopBar = false,
   paginateDesktop = false,
   leftColumnSelector,
+  active = true,
 }: {
   ownerId?: string
   hideTopBar?: boolean
   paginateDesktop?: boolean
   leftColumnSelector?: string
+  active?: boolean
 }) {
   const { data } = useSession()
   const loggedIn = !!data?.user?.id
@@ -49,10 +51,9 @@ export default function GlobalFeed({
   }
 
   useEffect(() => {
-    if (isAdmin) loadCounts()
-  }, [isAdmin, status])
+    if (isAdmin && active) loadCounts()
+  }, [isAdmin, status, active])
 
-  // Hydration-safe cihaz tespiti
   const [clientReady, setClientReady] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   useEffect(() => {
@@ -66,7 +67,6 @@ export default function GlobalFeed({
 
   const pagingEnabled = clientReady && isDesktop && !!paginateDesktop
 
-  // Sol kolon yüksekliği (desktop sayfalama)
   const [targetH, setTargetH] = useState<number>(0)
   const listRef = useRef<HTMLDivElement | null>(null)
   const leftElRef = useRef<HTMLElement | null>(null)
@@ -89,7 +89,6 @@ export default function GlobalFeed({
     }
   }, [pagingEnabled, leftColumnSelector])
 
-  // Veri durumu
   const [pages, setPages] = useState<PageBundle[]>([])
   const [pageIndex, setPageIndex] = useState(0)
   const current = pages[pageIndex] || null
@@ -98,14 +97,13 @@ export default function GlobalFeed({
   const [error, setError] = useState<string | null>(null)
   const [openComposer, setOpenComposer] = useState(false)
 
-  // Sonsuz mod (mobil) için
   const [items, setItems] = useState<Post[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  // Mod/filtre değişiminde sıfırlama ve ilk yük
   useEffect(() => {
+    if (!active) return
     setLoading(true)
     setHasRequested(false)
     setError(null)
@@ -119,7 +117,7 @@ export default function GlobalFeed({
       setHasMore(true)
       void loadMore(true)
     }
-  }, [ownerId, status, pagingEnabled])
+  }, [ownerId, status, pagingEnabled, active])
 
   function buildQuery(limit = '10', extra?: string) {
     const q = new URLSearchParams()
@@ -135,9 +133,8 @@ export default function GlobalFeed({
     return q
   }
 
-  // ===== Desktop: Sayfa yükleme =====
   async function loadPage(cursorIn: string | null, replace = false, limitHint = 6) {
-    if (!pagingEnabled) return
+    if (!pagingEnabled || !active) return
     setHasRequested(true)
     setLoading(true)
     setError(null)
@@ -158,9 +155,8 @@ export default function GlobalFeed({
     }
   }
 
-  // otomatik doldurma için loading'i UI'ya göstermeden ekleme
   async function appendToCurrent(cursorIn: string, atIndex: number, limitHint = 4, silent = true) {
-    if (!pagingEnabled) return
+    if (!pagingEnabled || !active) return
     setHasRequested(true)
     if (!silent) setLoading(true)
     setError(null)
@@ -182,7 +178,7 @@ export default function GlobalFeed({
   }
 
   function goNextPage() {
-    if (!pagingEnabled) return
+    if (!pagingEnabled || !active) return
     const cur = pages[pageIndex]
     if (!cur) return
     if (pages[pageIndex + 1]) {
@@ -192,35 +188,31 @@ export default function GlobalFeed({
     if (cur.cursorOut) void loadPage(cur.cursorOut, false, 6)
   }
   function goPrevPage() {
-    if (!pagingEnabled) return
+    if (!pagingEnabled || !active) return
     if (pageIndex > 0) setPageIndex(pageIndex - 1)
   }
 
-  // Sağ listeyi sola hizala (yükseklik bazlı ekle/kırp) — thrash engelli
   const fillingRef = useRef(false)
   const lastTrimCountRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (!pagingEnabled) return
+    if (!pagingEnabled || !active) return
     const at = pageIndex
     const cur = pages[at]
     if (!cur) return
     const wrap = listRef.current
     if (!wrap || targetH <= 0) return
     if (fillingRef.current) return
-
     const id = requestAnimationFrame(async () => {
       const total = wrap.getBoundingClientRect().height
       const low = targetH * 0.98
       const high = targetH * 1.02
-
       if (total < low && cur.cursorOut) {
         fillingRef.current = true
         await appendToCurrent(cur.cursorOut, at, 6, true)
         fillingRef.current = false
         return
       }
-
       if (total > high) {
         let acc = 0
         let fit = 0
@@ -241,10 +233,10 @@ export default function GlobalFeed({
       }
     })
     return () => cancelAnimationFrame(id)
-  }, [pages, pageIndex, targetH, pagingEnabled])
+  }, [pages, pageIndex, targetH, pagingEnabled, active])
 
-  // ===== Mobil/sonsuz =====
   async function loadMore(isFirst = false) {
+    if (!active) return
     setHasRequested(true)
     if (!hasMore) return
     setLoading(true)
@@ -273,7 +265,7 @@ export default function GlobalFeed({
   }
 
   useEffect(() => {
-    if (pagingEnabled) return
+    if (pagingEnabled || !active) return
     const el = sentinelRef.current
     if (!el) return
     const io = new IntersectionObserver((entries) => {
@@ -281,10 +273,10 @@ export default function GlobalFeed({
     }, { rootMargin: '400px 0px' })
     io.observe(el)
     return () => io.disconnect()
-  }, [sentinelRef.current, cursor, hasMore, pagingEnabled])
+  }, [sentinelRef.current, cursor, hasMore, pagingEnabled, active])
 
   useEffect(() => {
-    if (pagingEnabled) return
+    if (pagingEnabled || !active) return
     const t = setInterval(() => {
       if (items.length === 0) return
       ;(async () => {
@@ -308,7 +300,7 @@ export default function GlobalFeed({
       })()
     }, 10000)
     return () => clearInterval(t)
-  }, [items, status, ownerId, pagingEnabled])
+  }, [items, status, ownerId, pagingEnabled, active])
 
   function onPosted() {
     if (isAdmin) loadCounts()
@@ -347,8 +339,6 @@ export default function GlobalFeed({
   const showTopBar = !hideTopBar
   const canPrev = pagingEnabled && pageIndex > 0
   const canNext = pagingEnabled && !!pages[pageIndex]?.cursorOut
-
-  // otomatik doldurma sırasında loading yazısını gizle
   const showLoading = loading && !fillingRef.current
 
   return (

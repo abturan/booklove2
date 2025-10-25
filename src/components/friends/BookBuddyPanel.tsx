@@ -15,7 +15,7 @@ type UserLite = {
 
 type RequestState = 'idle' | 'pending' | 'done' | 'error'
 
-export default function BookBuddyPanel() {
+export default function BookBuddyPanel({ active = true }: { active?: boolean }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<UserLite[]>([])
@@ -53,9 +53,14 @@ export default function BookBuddyPanel() {
   const [pendingCount, setPendingCount] = useState<number>(0)
   const [unreadDm, setUnreadDm] = useState<number>(0)
 
+  const [openIncoming, setOpenIncoming] = useState(false)
+  const [openOutgoing, setOpenOutgoing] = useState(false)
+
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const loadedRef = useRef(false)
 
   useEffect(() => {
+    if (!active) return
     let alive = true
     const fetchCounts = async () => {
       try {
@@ -73,9 +78,10 @@ export default function BookBuddyPanel() {
     fetchCounts()
     const t = setInterval(fetchCounts, 20000)
     return () => { alive = false; clearInterval(t) }
-  }, [])
+  }, [active])
 
   useEffect(() => {
+    if (!active || loadedRef.current) return
     const run = async () => {
       try {
         const res = await fetch('/api/friends/panel', { cache: 'no-store' })
@@ -104,10 +110,31 @@ export default function BookBuddyPanel() {
       } catch {
         setFriends([]); setIncomingList([]); setOutgoingList([])
         setFriendIds(new Set()); setOutgoingIds(new Set()); setIncomingIds(new Set())
+      } finally {
+        loadedRef.current = true
       }
     }
     run()
-  }, [])
+  }, [active])
+
+  useEffect(() => {
+    let ac = new AbortController()
+    const run = async () => {
+      const term = q.trim()
+      if (!term || !active) { setSuggestions([]); setOpen(false); return }
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(term)}&limit=6`, { cache: 'no-store', signal: ac.signal })
+        const j = await res.json()
+        if (res.ok) { setSuggestions(Array.isArray(j.items) ? j.items : []); setOpen(true) }
+        else { setSuggestions([]); setOpen(false) }
+      } catch {
+        if (!ac.signal.aborted) { setSuggestions([]); setOpen(false) }
+      } finally { setLoading(false) }
+    }
+    const t = setTimeout(run, 200)
+    return () => { clearTimeout(t); ac.abort() }
+  }, [q, active])
 
   const visibleFriends = useMemo(() => (expanded ? friends : friends.slice(0, 5)), [friends, expanded])
 
@@ -231,17 +258,55 @@ export default function BookBuddyPanel() {
 
         {expanded && (
           <div className="space-y-6">
+            <section className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setOpenIncoming((v) => !v)}
+                className="w-full flex items-center justify-between rounded-xl px-3 py-2 ring-1 ring-black/5 hover:bg-gray-50"
+                aria-expanded={openIncoming}
+              >
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-semibold text-slate-700">Gelen istekler</h4>
+                  <span className="inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-primary text-white text-[11px] font-bold">
+                    {incomingList.length > 99 ? '99+' : incomingList.length}
+                  </span>
+                </div>
+                <svg className={`text-primary transition-transform ${openIncoming ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24"><path d="M8 10l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              {openIncoming && (
+                <div className="space-y-2">
+                  {incomingList.length === 0 && <EmptyRow text="Bekleyen istek yok." />}
+                  {incomingList.map((u) => <UserRow key={`in-${u.id}`} u={u} badge="Sana istek" />)}
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setOpenOutgoing((v) => !v)}
+                className="w-full flex items-center justify-between rounded-xl px-3 py-2 ring-1 ring-black/5 hover:bg-gray-50"
+                aria-expanded={openOutgoing}
+              >
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-semibold text-slate-700">Gönderilen istekler</h4>
+                  <span className="inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-primary text-white text-[11px] font-bold">
+                    {outgoingList.length > 99 ? '99+' : outgoingList.length}
+                  </span>
+                </div>
+                <svg className={`text-primary transition-transform ${openOutgoing ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24"><path d="M8 10l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              {openOutgoing && (
+                <div className="space-y-2">
+                  {outgoingList.length === 0 && <EmptyRow text="Gönderilmiş istek yok." />}
+                  {outgoingList.map((u) => <UserRow key={`out-${u.id}`} u={u} badge="Beklemede" />)}
+                </div>
+              )}
+            </section>
+
             <Section title="Arkadaşlar">
               {friends.length === 0 && <EmptyRow text="Henüz arkadaş yok." />}
               {friends.map((u) => <UserRow key={`f-${u.id}`} u={u} />)}
-            </Section>
-            <Section title="Gelen istekler">
-              {incomingList.length === 0 && <EmptyRow text="Bekleyen istek yok." />}
-              {incomingList.map((u) => <UserRow key={`in-${u.id}`} u={u} badge="Sana istek" />)}
-            </Section>
-            <Section title="Gönderilen istekler">
-              {outgoingList.length === 0 && <EmptyRow text="Gönderilmiş istek yok." />}
-              {outgoingList.map((u) => <UserRow key={`out-${u.id}`} u={u} badge="Beklemede" />)}
             </Section>
           </div>
         )}
@@ -256,7 +321,7 @@ export default function BookBuddyPanel() {
           <div className="flex items-center gap-2">
             <div className="text-2xl font-extrabold tracking-tight">Book Buddy</div>
             {pendingCount > 0 && (
-              <Link href="/friends" className="inline-flex h-7 min-w-[22px] items-center justify-center rounded-full bg-white text-primary px-2 text-xs font-semibold">
+              <Link href="/friends" className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-white text-primary text-xs font-bold">
                 {pendingCount > 99 ? '99+' : pendingCount}
               </Link>
             )}
@@ -288,7 +353,7 @@ export default function BookBuddyPanel() {
             onBlur={() => setTimeout(() => setOpen(false), 120)}
           />
           {open && (
-            <div className="absolute z-10 mt-1 w-full rounded-xl border border-black/10 bg-white text-gray-900 shadow-lg" onMouseDown={(e) => e.preventDefault()}>
+            <div className="absolute z-10 mt-1 w-full rounded-xl border border-black/10 bg-white text-gray-900 shadow-lg">
               {loading && <div className="px-4 py-3 text-sm text-gray-500">Yükleniyor…</div>}
               {!loading && suggestions.length === 0 && <div className="px-4 py-3 text-sm text-gray-500">Sonuç yok</div>}
               {!loading && suggestions.map((u) => (
@@ -309,67 +374,109 @@ export default function BookBuddyPanel() {
         <div style={{ height: 10 }} />
       </div>
 
-      {isDesktop && compact && hasAnySummary && (
-        <div className="bg-white px-5 py-3 border-t border-gray-100">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-800">
+      {isDesktop && hasAnySummary && (
+        <div className="bg-white px-5 py-2 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-900">
             {pendingCount > 0 && (
-              <Link href="/friends" className="underline underline-offset-2 font-medium">
-                {pendingCount} bekleyen Book Buddy isteğiniz var.
+              <Link href="/friends" className="inline-flex items-center gap-2 font-medium">
+                <span className="h-6 w-6 rounded-full bg-primary text-white grid place-content-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><circle cx="12" cy="7" r="1.5" fill="currentColor"/></svg>
+                </span>
+                {pendingCount} bekleyen Book Buddy isteğiniz var
               </Link>
             )}
             {unreadDm > 0 && (
-              <Link href="/messages" className="underline underline-offset-2 font-medium">
-                {unreadDm} okunmamış mesajınız var.
+              <Link href="/messages" className="inline-flex items-center gap-2 font-medium">
+                <span className="h-6 w-6 rounded-full bg-primary text-white grid place-content-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4l3 3 3-3h4a2 2 0 0 0 2-2z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </span>
+                {unreadDm} okunmamış mesajınız var
               </Link>
             )}
           </div>
         </div>
       )}
 
-      <div className="bg-white p-5 pt-3 space-y-4">
-        {compact === false && (
-          <>
-            <div className="max-w-full">
-              <div className="flex flex-wrap gap-2">
-                {visibleFriends.map((f) => (
-                  <Link key={f.id} href={userPath(f.username, f.name, f.slug)} className="inline-flex items-center rounded-full ring-1 ring-black/10" title={f.name || ''}>
-                    <img src={f.avatarUrl || '/avatar.png'} alt={f.name || 'Avatar'} className="h-10 w-10 rounded-full object-cover" loading="lazy" />
-                  </Link>
-                ))}
-              </div>
-              {friends.length > 5 && (
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setExpanded((v) => !v)}
-                    className="text-sm font-medium text-primary hover:underline"
-                    aria-expanded={expanded}
-                  >
-                    {expanded ? 'Daralt' : 'Tümünü göster'}
-                  </button>
-                </div>
-              )}
+      {(!isDesktop || compact === false) && (
+        <div className="bg-white p-5 pt-3 space-y-4">
+          <div className="max-w-full">
+            <div className="flex flex-wrap gap-2">
+              {visibleFriends.map((f) => (
+                <Link key={f.id} href={userPath(f.username, f.name, f.slug)} className="inline-flex items-center rounded-full ring-1 ring-black/10" title={f.name || ''}>
+                  <img src={f.avatarUrl || '/avatar.png'} alt={f.name || 'Avatar'} className="h-10 w-10 rounded-full object-cover" loading="lazy" />
+                </Link>
+              ))}
             </div>
-
-            {expanded && (
-              <div className="space-y-6">
-                <Section title="Arkadaşlar">
-                  {friends.length === 0 && <EmptyRow text="Henüz arkadaş yok." />}
-                  {friends.map((u) => <UserRow key={`f-${u.id}`} u={u} />)}
-                </Section>
-                <Section title="Gelen istekler">
-                  {incomingList.length === 0 && <EmptyRow text="Bekleyen istek yok." />}
-                  {incomingList.map((u) => <UserRow key={`in-${u.id}`} u={u} badge="Sana istek" />)}
-                </Section>
-                <Section title="Gönderilen istekler">
-                  {outgoingList.length === 0 && <EmptyRow text="Gönderilmiş istek yok." />}
-                  {outgoingList.map((u) => <UserRow key={`out-${u.id}`} u={u} badge="Beklemede" />)}
-                </Section>
+            {friends.length > 5 && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="text-sm font-medium text-primary hover:underline"
+                  aria-expanded={expanded}
+                >
+                  {expanded ? 'Daralt' : 'Tümünü göster'}
+                </button>
               </div>
             )}
-          </>
-        )}
-      </div>
+          </div>
+
+          {expanded && (
+            <div className="space-y-6">
+              <section className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenIncoming((v) => !v)}
+                  className="w-full flex items-center justify-between rounded-xl px-3 py-2 ring-1 ring-black/5 hover:bg-gray-50"
+                  aria-expanded={openIncoming}
+                >
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-semibold text-slate-700">Gelen istekler</h4>
+                    <span className="inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-primary text-white text-[11px] font-bold">
+                      {incomingList.length > 99 ? '99+' : incomingList.length}
+                    </span>
+                  </div>
+                  <svg className={`text-primary transition-transform ${openIncoming ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24"><path d="M8 10l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                {openIncoming && (
+                  <div className="space-y-2">
+                    {incomingList.length === 0 && <EmptyRow text="Bekleyen istek yok." />}
+                    {incomingList.map((u) => <UserRow key={`in-${u.id}`} u={u} badge="Sana istek" />)}
+                  </div>
+                )}
+              </section>
+
+              <section className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenOutgoing((v) => !v)}
+                  className="w-full flex items-center justify-between rounded-xl px-3 py-2 ring-1 ring-black/5 hover:bg-gray-50"
+                  aria-expanded={openOutgoing}
+                >
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-semibold text-slate-700">Gönderilen istekler</h4>
+                    <span className="inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-primary text-white text-[11px] font-bold">
+                      {outgoingList.length > 99 ? '99+' : outgoingList.length}
+                    </span>
+                  </div>
+                  <svg className={`text-primary transition-transform ${openOutgoing ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24"><path d="M8 10l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                {openOutgoing && (
+                  <div className="space-y-2">
+                    {outgoingList.length === 0 && <EmptyRow text="Gönderilmiş istek yok." />}
+                    {outgoingList.map((u) => <UserRow key={`out-${u.id}`} u={u} badge="Beklemede" />)}
+                  </div>
+                )}
+              </section>
+
+              <Section title="Arkadaşlar">
+                {friends.length === 0 && <EmptyRow text="Henüz arkadaş yok." />}
+                {friends.map((u) => <UserRow key={`f-${u.id}`} u={u} />)}
+              </Section>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   )
 }
@@ -401,3 +508,9 @@ function UserRow({ u, badge }: { u: UserLite; badge?: string }) {
     </Link>
   )
 }
+
+
+
+
+
+
