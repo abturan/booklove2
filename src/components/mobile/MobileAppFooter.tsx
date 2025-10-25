@@ -101,7 +101,7 @@ export default function MobileAppFooter() {
 
           {isAuth && (
             <>
-              <Link href="/friends" scroll={false} className="relative grid place-content-center h-12">
+              <Link href="/?tab=buddy" scroll={false} className="relative grid place-content-center h-12">
                 <IBuddy />
                 <NotificationBadge placement="absolute -top-1 -right-1" />
               </Link>
@@ -178,3 +178,9 @@ export default function MobileAppFooter() {
     </>
   )
 }
+
+
+
+
+
+

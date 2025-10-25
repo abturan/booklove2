@@ -31,7 +31,6 @@ export default function UserMenu() {
   const [menu, setMenu] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
-  // sayaçlar
   const [dmUnread, setDmUnread] = useState(0)
   const [friendPending, setFriendPending] = useState(0)
 
@@ -41,13 +40,13 @@ export default function UserMenu() {
       try {
         const [dmRes, frRes] = await Promise.all([
           fetch('/api/dm/unread-counts', { cache: 'no-store' }),
-          fetch('/api/friends/pending-count', { cache: 'no-store' }),
+          fetch('/api/friends/pending/count', { cache: 'no-store' }),
         ])
         const dm = await dmRes.json().catch(() => null)
         const fr = await frRes.json().catch(() => null)
         if (alive) {
           if (dmRes.ok) setDmUnread(Number(dm?.total || 0))
-          if (frRes.ok) setFriendPending(Number(fr?.total || 0))
+          if (frRes.ok) setFriendPending(Number(fr?.count || 0))
         }
       } catch {}
     }
@@ -80,17 +79,17 @@ export default function UserMenu() {
     }
   }
 
+  const totalBadge = dmUnread + friendPending
+
   return (
     <div className="relative">
-      {/* Avatar + ÜST SAĞ ROZET */}
       <button
         onClick={() => setMenu((v) => !v)}
         className="relative inline-flex items-center justify-center"
         title="Menü"
       >
         {loaded && <Avatar src={me?.avatarUrl ?? null} size={36} alt="Profil" />}
-        {/* Yalnızca DM okunmamış toplamı avatar üstünde göster */}
-        <CountBadge count={dmUnread} className="absolute -top-1 -right-1" />
+        <CountBadge count={totalBadge} className="absolute -top-1 -right-1 z-10" />
       </button>
 
       {menu && (

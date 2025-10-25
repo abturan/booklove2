@@ -43,7 +43,7 @@ export default function RequestButton({
       disabled={busy || sent}
       className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-sm disabled:opacity-60"
     >
-      {sent ? 'İstek gönderildi' : busy ? 'Gönderiliyor…' : 'Arkadaş olarak ekle'}
+      {sent ? 'İstek gönderildi' : busy ? 'Gönderiliyor…' : 'Ekle'}
     </button>
   )
 }

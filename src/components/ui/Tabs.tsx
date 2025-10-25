@@ -3,7 +3,7 @@
 
 import clsx from 'clsx'
 
-type Tab = { value: string; label: string }
+type Tab = { value: string; label: string; badge?: number }
 type Props = {
   value: string
   onValueChange?: (v: string) => void
@@ -26,18 +26,29 @@ export default function Tabs({ value, onValueChange, tabs, className }: Props) {
       <div className={clsx('w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid gap-1', cols)}>
         {tabs.map((t) => {
           const active = t.value === value
+          const hasBadge = (t.badge ?? 0) > 0
           return (
             <button
               key={t.value}
               type="button"
               onClick={() => onValueChange?.(t.value)}
               className={clsx(
-                'h-11 rounded-xl text-sm font-semibold transition w-full',
+                'h-11 rounded-xl text-sm font-semibold transition w-full flex items-center justify-center gap-2',
                 active ? 'bg-primary text-white shadow' : 'text-gray-700 hover:bg-gray-100'
               )}
               aria-pressed={active}
             >
-              {t.label}
+              <span>{t.label}</span>
+              {hasBadge && (
+                <span
+                  className={clsx(
+                    'inline-flex min-w-[20px] h-5 px-1.5 items-center justify-center rounded-full text-[11px] font-bold',
+                    active ? 'bg-white text-primary' : 'bg-primary text-white'
+                  )}
+                >
+                  {t.badge! > 99 ? '99+' : t.badge}
+                </span>
+              )}
             </button>
           )
         })}
