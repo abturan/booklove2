@@ -2,6 +2,7 @@
 'use client'
 
 import clsx from 'clsx'
+import { useEffect, useState } from 'react'
 
 type Tab = { value: string; label: string; badge?: number }
 type Props = {
@@ -12,19 +13,42 @@ type Props = {
 }
 
 export default function Tabs({ value, onValueChange, tabs, className }: Props) {
+  const [authed, setAuthed] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        const r = await fetch('/api/auth/session', { cache: 'no-store' })
+        const j = await r.json().catch(() => null)
+        if (alive) setAuthed(!!j?.user)
+      } catch {
+        if (alive) setAuthed(false)
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
+  const filteredTabs =
+    authed === false
+      ? tabs.filter(
+          (t) => !/book.?buddy/i.test(t.label) && !/book.?buddy/i.test(t.value)
+        )
+      : tabs
+
   const cols =
-    tabs.length === 2
+    filteredTabs.length === 2
       ? 'grid-cols-2'
-      : tabs.length === 3
+      : filteredTabs.length === 3
       ? 'grid-cols-3'
-      : tabs.length === 4
+      : filteredTabs.length === 4
       ? 'grid-cols-4'
       : 'grid-cols-2'
 
   return (
     <div className={clsx('w-full', className)}>
       <div className={clsx('w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid gap-1', cols)}>
-        {tabs.map((t) => {
+        {filteredTabs.map((t) => {
           const active = t.value === value
           const n = t.badge ?? 0
           const hasBadge = n > 0

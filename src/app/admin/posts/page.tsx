@@ -23,7 +23,7 @@ export default async function AdminPostsPage({ searchParams }: { searchParams?: 
       where: s === 'REPORTED' ? { reports: { some: {} }, NOT: { status: 'HIDDEN' } } : { status: s },
       orderBy:
         s === 'REPORTED'
-          ? [{ reports: { _max: { createdAt: 'desc' } } }, { createdAt: 'desc' }]
+          ? [{ reports: { _count: 'desc' } }, { createdAt: 'desc' }]
           : [{ createdAt: 'desc' }],
       take: 100,
       select: {
