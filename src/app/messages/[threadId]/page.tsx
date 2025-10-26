@@ -15,16 +15,18 @@ export default async function ThreadMessagesPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <ProfileBanner src={me?.bannerUrl ?? null} canEdit />
+      <div className="hidden lg:block">
+        <ProfileBanner src={me?.bannerUrl ?? null} canEdit />
+      </div>
       <div className="grid lg:grid-cols-3 gap-6">
-        <div>
+        <div className="hidden lg:block">
           <LeftSidebar />
         </div>
-        <div className="lg:col-span-2 grid grid-cols-3 gap-4">
-          <div className="col-span-2">
+        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="col-span-1 lg:col-span-2">
             <ChatWindow threadId={params.threadId} />
           </div>
-          <div className="col-span-1">
+          <div className="hidden lg:block lg:col-span-1">
             <ThreadList activeThreadId={params.threadId} />
           </div>
         </div>

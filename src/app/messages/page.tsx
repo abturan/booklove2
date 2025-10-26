@@ -30,7 +30,7 @@ export default async function MessagesPage() {
           <div className="col-span-1">
             <ThreadList />
           </div>
-          <div className="col-span-1 lg:col-span-2">
+          <div className="hidden lg:block lg:col-span-2">
             <div className="card p-6 text-sm text-gray-600">Bir sohbet seçin.</div>
           </div>
         </div>

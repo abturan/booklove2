@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { UserLite } from '../types'
+import Avatar from '@/components/Avatar'
 
 export default function FriendRow({
   u,
@@ -37,14 +38,18 @@ export default function FriendRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl ring-1 ring-black/5 px-3 py-2">
       <Link href={userPath(u.username, u.name, u.slug)} className="flex items-center gap-3 min-w-0">
-        <img src={u.avatarUrl || '/avatar.png'} alt={u.name || 'Avatar'} className="h-9 w-9 rounded-full object-cover" loading="lazy" />
+        <Avatar src={u.avatarUrl ?? null} size={36} alt={u.name || 'Kullanıcı'} seed={u.username || u.slug || u.id} />
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">{u.name || 'Kullanıcı'}</div>
           <div className="truncate text-xs text-gray-500">{u.username ? `@${u.username}` : u.slug ? `@${u.slug}` : ''}</div>
         </div>
       </Link>
       <div className="ml-3 flex items-center gap-2 shrink-0 whitespace-nowrap">
-        {showBuddyLabel && <span className="rounded-full bg-gray-100 text-gray-700 px-3 h-8 inline-grid place-items-center text-xs font-semibold">Book Buddy</span>}
+        {showBuddyLabel && (
+          <span className="hidden md:inline-grid rounded-full bg-gray-100 text-gray-700 px-3 h-8 place-items-center text-xs font-semibold">
+            Book Buddy
+          </span>
+        )}
         <button
           type="button"
           onClick={startChat}

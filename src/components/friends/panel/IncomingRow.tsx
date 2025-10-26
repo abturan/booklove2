@@ -3,6 +3,7 @@
 
 import Link from 'next/link'
 import type { UserLite } from '../types'
+import Avatar from '@/components/Avatar'
 
 export default function IncomingRow({
   u, onAccept, userPath, showRequestLabel = true,
@@ -14,7 +15,7 @@ export default function IncomingRow({
   return (
     <div className="flex items-center justify-between rounded-xl ring-1 ring-black/5 px-3 py-2">
       <Link href={userPath(u.username, u.name, u.slug)} className="flex items-center gap-3 min-w-0">
-        <img src={u.avatarUrl || '/avatar.png'} alt={u.name || 'Avatar'} className="h-9 w-9 rounded-full object-cover" loading="lazy" />
+        <Avatar src={u.avatarUrl ?? null} size={36} alt={u.name || 'Kullanıcı'} seed={u.username || u.slug || u.id} />
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">{u.name || 'Kullanıcı'}</div>
           <div className="truncate text-xs text-gray-500">{u.username ? `@${u.username}` : u.slug ? `@${u.slug}` : ''}</div>

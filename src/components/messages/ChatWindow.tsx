@@ -3,40 +3,45 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { userPath } from '@/lib/userPath'
 
 type Peer = { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
 type Message = { id: string; authorId: string; body: string; createdAt: string }
-type Loaded =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'loaded'; peer: Peer; messages: Message[] }
-  | { status: 'error' }
+type Loaded = { status: 'loaded'; peer: Peer; messages: Message[] }
+type State = { status: 'idle' | 'loading' } | Loaded
 
 export default function ChatWindow({ threadId }: { threadId: string }) {
-  const [state, setState] = React.useState<Loaded>({ status: 'idle' })
+  const router = useRouter()
+  const [state, setState] = React.useState<State>({ status: 'idle' })
   const [busy, setBusy] = React.useState(false)
   const [body, setBody] = React.useState('')
 
-  async function load() {
+  async function initialLoad() {
     setState({ status: 'loading' })
     try {
       const res = await fetch(`/api/dm/thread?threadId=${encodeURIComponent(threadId)}`, { cache: 'no-store' })
       const j = await res.json()
-      if (res.ok) {
-        setState({ status: 'loaded', peer: j.peer, messages: j.messages || [] })
-      } else {
-        setState({ status: 'error' })
-      }
+      if (res.ok) setState({ status: 'loaded', peer: j.peer, messages: j.messages || [] })
+      else setState({ status: 'loaded', peer: j.peer || null, messages: [] } as any)
     } catch {
-      setState({ status: 'error' })
+      setState({ status: 'loaded', peer: null as any, messages: [] })
     }
   }
 
+  async function refresh() {
+    if (state.status !== 'loaded') return initialLoad()
+    try {
+      const res = await fetch(`/api/dm/thread?threadId=${encodeURIComponent(threadId)}`, { cache: 'no-store' })
+      const j = await res.json()
+      if (res.ok) setState({ status: 'loaded', peer: j.peer, messages: j.messages || [] })
+    } catch {}
+  }
+
   React.useEffect(() => {
-    load()
-    const h = () => load()
+    initialLoad()
+    const h = () => refresh()
     window.addEventListener('dm:changed', h)
     return () => window.removeEventListener('dm:changed', h)
   }, [threadId])
@@ -45,6 +50,10 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
     const text = body.trim()
     if (!text || busy || state.status !== 'loaded') return
     setBusy(true)
+    const now = new Date().toISOString()
+    const optimistic: Message = { id: `tmp-${Date.now()}`, authorId: 'me', body: text, createdAt: now }
+    setState({ status: 'loaded', peer: state.peer, messages: [...state.messages, optimistic] })
+    setBody('')
     try {
       const res = await fetch('/api/dm/send', {
         method: 'POST',
@@ -53,9 +62,10 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
       })
       const j = await res.json().catch(() => null)
       if (res.ok && j?.ok) {
-        setBody('')
-        window.dispatchEvent(new CustomEvent('dm:changed'))
-        await load()
+        window.dispatchEvent(new Event('dm:counts'))
+        await refresh()
+      } else {
+        setState({ status: 'loaded', peer: state.peer, messages: state.messages })
       }
     } finally {
       setBusy(false)
@@ -65,9 +75,6 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
   if (state.status === 'idle' || state.status === 'loading') {
     return <div className="card p-6 text-sm text-gray-600">Yükleniyor…</div>
   }
-  if (state.status === 'error') {
-    return <div className="card p-6 text-sm text-red-600">Sohbet yüklenemedi.</div>
-  }
 
   const { peer, messages } = state
 
@@ -76,7 +83,7 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
       <div className="flex items-center gap-3 px-4 py-3 border-b">
         <button
           type="button"
-          onClick={() => history.back()}
+          onClick={() => router.push('/messages')}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100"
           aria-label="Geri"
         >
@@ -95,19 +102,6 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
             <div className="text-xs text-gray-600 truncate">{peer?.username ? `@${peer.username}` : ''}</div>
           </div>
         </Link>
-
-        <div className="ml-auto">
-          <button
-            type="button"
-            onClick={() => {
-              const el = document.querySelector<HTMLInputElement>('#dm-input')
-              el?.focus()
-            }}
-            className="inline-flex h-9 px-3 items-center justify-center rounded-full bg-gray-900 text-white text-sm font-medium"
-          >
-            Yaz
-          </button>
-        </div>
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-4 space-y-3 bg-white">
@@ -153,9 +147,3 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
     </div>
   )
 }
-
-
-
-
-
-
