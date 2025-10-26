@@ -3,6 +3,7 @@
 
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
+import { useBuddyCounts } from '@/components/friends/hooks/useBuddyCounts'
 
 type Tab = { value: string; label: string; badge?: number }
 type Props = {
@@ -29,6 +30,10 @@ export default function Tabs({ value, onValueChange, tabs, className }: Props) {
     return () => { alive = false }
   }, [])
 
+  // Buddy sayaçlarını (istek + okunmamış DM) sekme bileşeni içinde topla
+  const { pendingCount, unreadDm } = useBuddyCounts(Boolean(authed))
+  const buddyTotal = (pendingCount || 0) + (unreadDm || 0)
+
   const filteredTabs =
     authed === false
       ? tabs.filter(
@@ -50,9 +55,16 @@ export default function Tabs({ value, onValueChange, tabs, className }: Props) {
       <div className={clsx('w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid gap-1', cols)}>
         {filteredTabs.map((t) => {
           const active = t.value === value
-          const n = t.badge ?? 0
+          const isBuddyTab = /book.?buddy/i.test(t.label) || /book.?buddy/i.test(t.value)
+
+          // Buddy sekmesi için: rozet = bekleyen + okunmamış DM
+          // Diğerleri için: verilen badge değeri
+          const raw = t.badge ?? 0
+          const n = isBuddyTab ? buddyTotal : raw
+
           const hasBadge = n > 0
           const big = n > 99
+
           return (
             <button
               key={t.value}

@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma'
 import ProfileBanner from '@/components/profile/ProfileBanner'
 import LeftSidebar from '@/components/sidebars/LeftSidebar'
 import ThreadList from '@/components/messages/ThreadList'
-import ChatWindow from '@/components/messages/ChatWindow'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +26,15 @@ export default async function StartPeerChatPage({ params }: Props) {
             <ThreadList activePeerId={params.peerId} />
           </div>
           <div className="col-span-2">
-            <ChatWindow peerId={params.peerId} />
+            <div className="card p-6 min-h-[60vh] flex items-center justify-center text-center">
+              <div>
+                <div className="text-lg font-semibold mb-2">Sohbet Seçin veya Başlatın</div>
+                <p className="text-sm text-gray-600">
+                  Soldan bir konuşma seçin. Eğer {params.peerId} kullanıcısıyla ilk kez yazışacaksanız,
+                  mevcut konuşma listesinde görünmüyor olabilir; önce yeni bir konuşma oluşturmanız gerekebilir.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -103,7 +103,7 @@ export default function MobileAppFooter() {
             <>
               <Link href="/?tab=buddy" scroll={false} className="relative grid place-content-center h-12">
                 <IBuddy />
-                <NotificationBadge placement="absolute -top-1 -right-1" />
+                <NotificationBadge placement="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4" />
               </Link>
 
               <button
@@ -121,7 +121,7 @@ export default function MobileAppFooter() {
               <Link href="/messages" scroll={false} className="relative grid place-content-center h-12">
                 <IMessages />
                 {dmUnread > 0 && (
-                  <span className="absolute  -right-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
+                  <span className="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
                     {dmUnread > 99 ? '99+' : dmUnread}
                   </span>
                 )}
@@ -149,15 +149,15 @@ export default function MobileAppFooter() {
         <div className="fixed inset-0 z-[60]">
           <div className="absolute inset-0 bg-black/30" onClick={() => setOpenSettings(false)} />
           <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white shadow-xl p-2">
-            <div className="grid grid-cols-4 gap-2 text-sm">
+            <div className="grid grid-cols-3 gap-2 text-sm">
               <Link href={profileHref} scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
                 <Avatar src={avatarUrl} size={24} alt={displayName} />
                 <span>Profil</span>
               </Link>
-              <Link href="/clubs/create" scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
+              {/* <Link href="/clubs/create" scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
                 <ICreateClub />
                 <span>Kulüp Kur</span>
-              </Link>
+              </Link> */}
               <Link href="/profile/settings" scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
                 <svg width="24" height="24" viewBox="0 0 24 24" className="text-primary"><path d="M12 8a4 4 0 1 0 0 8" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>
                 <span>Ayarlar</span>
@@ -178,9 +178,3 @@ export default function MobileAppFooter() {
     </>
   )
 }
-
-
-
-
-
-

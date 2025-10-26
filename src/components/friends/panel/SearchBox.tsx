@@ -3,6 +3,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import type { BuddySets, UserLite } from '../types'
 
@@ -22,8 +23,10 @@ export default function SearchBox({
   acceptIncoming: (id: string) => void
   placeholder?: string
 }) {
+  const router = useRouter()
   const ref = useRef<HTMLInputElement | null>(null)
   const [box, setBox] = useState<{ top: number; left: number; width: number } | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) { setBox(null); return }
@@ -45,20 +48,41 @@ export default function SearchBox({
     }
   }, [open, q])
 
+  async function startChat(peerId: string) {
+    if (busyId) return
+    setBusyId(peerId)
+    try {
+      const res = await fetch(`/api/dm/open?peerId=${encodeURIComponent(peerId)}`, { cache: 'no-store' })
+      const j = await res.json().catch(() => null)
+      if (res.ok && j?.threadId) {
+        setOpen(false)
+        router.push(`/messages/${j.threadId}`)
+        router.refresh()
+        window.dispatchEvent(new CustomEvent('dm:changed'))
+      }
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const Action = useMemo(() => (u: UserLite) => {
     if (sets.friends.has(u.id)) {
+      const pending = busyId === u.id
       return (
         <div className="flex items-center gap-1 sm:gap-2 shrink-0 whitespace-nowrap pr-2">
           <span className="rounded-full bg-gray-100 text-gray-700 px-3 h-7 inline-grid place-items-center text-[11px] font-semibold">
             Book Buddy
           </span>
-          <Link
-            href="/messages"
-            className="inline-flex items-center justify-center rounded-full bg-primary text-white h-7 px-2 sm:px-3 text-[12px] font-semibold hover:bg-primary/90"
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => startChat(u.id)}
+            disabled={pending}
+            className="inline-flex items-center justify-center rounded-full bg-primary text-white h-7 px-2 sm:px-3 text-[12px] font-semibold hover:bg-primary/90 disabled:opacity-60"
           >
             <svg className="sm:mr-1" width="14" height="14" viewBox="0 0 24 24"><path d="M4 6h16v12H4z" fill="none" stroke="currentColor" strokeWidth="2"/><path d="M22 6l-10 7L2 6" fill="none" stroke="currentColor" strokeWidth="2"/></svg>
-            <span className="hidden sm:inline">Mesaj Gönder</span>
-          </Link>
+            <span className="hidden sm:inline">{pending ? 'Açılıyor…' : 'Mesaj Gönder'}</span>
+          </button>
         </div>
       )
     }
@@ -87,7 +111,7 @@ export default function SearchBox({
         Ekle
       </button>
     )
-  }, [sets, addFriend, acceptIncoming])
+  }, [sets, addFriend, acceptIncoming, busyId])
 
   return (
     <div className="relative">

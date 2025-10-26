@@ -11,7 +11,13 @@ type Item = { threadId: string; peer: Peer; last?: { body: string; createdAt: st
 
 const CACHE_KEY = 'dm:threads:v1'
 
-export default function ThreadList({ activePeerId }: { activePeerId?: string }) {
+export default function ThreadList({
+  activeThreadId,
+  activePeerId,
+}: {
+  activeThreadId?: string
+  activePeerId?: string
+}) {
   const [items, setItems] = React.useState<Item[]>([])
   const [loading, setLoading] = React.useState(true)
   const [counts, setCounts] = React.useState<Record<string, number>>({})
@@ -76,13 +82,16 @@ export default function ThreadList({ activePeerId }: { activePeerId?: string }) 
         ) : (
           items.map((it) => {
             const n = Number(counts[it.threadId] || 0)
+            const isActiveByThread = activeThreadId === it.threadId
+            const isActiveByPeer = activePeerId && activePeerId === it.peer.id
+            const active = isActiveByThread || isActiveByPeer
             return (
               <li key={it.threadId}>
                 <Link
                   href={`/messages/${it.threadId}`}
                   scroll={false}
                   prefetch
-                  className={`flex items-center gap-3 px-3 py-3 hover:bg-gray-50 ${activePeerId === it.peer.id ? 'bg-gray-50' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-3 hover:bg-gray-50 ${active ? 'bg-gray-50' : ''}`}
                 >
                   <Avatar src={it.peer.avatarUrl ?? null} size={40} alt={it.peer.name || 'Kullanıcı'} />
                   <div className="min-w-0">

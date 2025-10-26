@@ -38,17 +38,17 @@ export function useBuddyPanelLists(enabled: boolean) {
       const j = await r.json()
       if (!r.ok) throw new Error('panel')
 
-      const f = Array.isArray(j.friends) ? j.friends.map(toLite) : []
-      const o = (Array.isArray(j.outgoing) ? j.outgoing : []).map((x: any) => toLite(x.to || x))
-      const i = (Array.isArray(j.incoming) ? j.incoming : []).map((x: any) => toLite(x.from || x))
+      const f: UserLite[] = Array.isArray(j.friends) ? (j.friends as any[]).map(toLite) : []
+      const o: UserLite[] = (Array.isArray(j.outgoing) ? (j.outgoing as any[]) : []).map((x: any) => toLite(x.to || x))
+      const i: UserLite[] = (Array.isArray(j.incoming) ? (j.incoming as any[]) : []).map((x: any) => toLite(x.from || x))
 
       setFriends(f)
       setOutgoing(o)
       setIncoming(i)
       setSets({
-        friends: new Set(f.map((x) => x.id)),
-        outgoing: new Set(o.map((x) => x.id)),
-        incoming: new Set(i.map((x) => x.id)),
+        friends: new Set(f.map((x: UserLite) => x.id)),
+        outgoing: new Set(o.map((x: UserLite) => x.id)),
+        incoming: new Set(i.map((x: UserLite) => x.id)),
       })
     } catch {
       setFriends([])
@@ -106,3 +106,9 @@ export function useBuddyPanelLists(enabled: boolean) {
 
   return { friends, incoming, outgoing, sets, addFriend, acceptIncoming, cancelOutgoing }
 }
+
+
+
+
+
+

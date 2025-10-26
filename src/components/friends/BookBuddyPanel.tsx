@@ -21,11 +21,14 @@ import OutgoingRow from './panel/OutgoingRow'
 export default function BookBuddyPanel({ active = true }: { active?: boolean }) {
   const { authed } = useAuth()
   const { isDesktop, inputShell, wrapRing } = useResponsive()
-  const { pendingCount, unreadDm } = useBuddyCounts(active && authed)
-  const lists = useBuddyPanelLists(active && authed)
-  const sug = useSuggestions(active && authed)
 
-  const [expanded, setExpanded] = useState(false)
+  const enabled = Boolean(active && authed)
+
+  const { pendingCount, unreadDm } = useBuddyCounts(enabled)
+  const lists = useBuddyPanelLists(enabled)
+  const sug = useSuggestions(enabled)
+
+  const [expanded, setExpanded] = useState(true)
   const [compact, setCompact] = useState(true)
 
   const totalHeaderCount = pendingCount + unreadDm
@@ -58,6 +61,16 @@ export default function BookBuddyPanel({ active = true }: { active?: boolean }) 
         <div className="space-y-4">
           <HeaderBar totalCount={totalHeaderCount} compact={false} onToggleCompact={() => {}} />
           <div className="h-1 w-full rounded-full bg-primary" />
+
+          {totalHeaderCount > 0 && (
+            <SummaryBar
+              pendingCount={pendingCount}
+              unreadDm={unreadDm}
+              compact={false}
+              onToggleCompact={() => {}}
+            />
+          )}
+
           <SearchBox
             {...sug}
             placeholder="Book Buddy'lerini Bul"
@@ -67,20 +80,12 @@ export default function BookBuddyPanel({ active = true }: { active?: boolean }) 
             addFriend={lists.addFriend}
             acceptIncoming={lists.acceptIncoming}
           />
+
           <div className="max-w-full">
-            <FriendsAvatars friends={visible} userPath={userPath} />
-            {lists.friends.length > 5 && (
-              <button
-                type="button"
-                onClick={() => setExpanded(v => !v)}
-                className="text-sm font-medium text-primary hover:underline"
-                aria-expanded={expanded}
-              >
-                {expanded ? 'Daralt' : 'Tümünü göster'}
-              </button>
-            )}
+            <FriendsAvatars friends={lists.friends} userPath={userPath} />
           </div>
-          {expanded && sections}
+
+          {sections}
         </div>
       )}
 
@@ -132,3 +137,9 @@ export default function BookBuddyPanel({ active = true }: { active?: boolean }) 
     </>
   )
 }
+
+
+
+
+
+

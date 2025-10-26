@@ -20,7 +20,7 @@ export default function HeaderBar({
         {showBadge && (
           <Link
             href="/friends"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary text-xs font-bold"
+            className="hidden lg:inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary text-xs font-bold"
             aria-label={`${countLabel} bildirim (istek + okunmamış)`}
             title="Bildirimler (istek + okunmamış)"
           >

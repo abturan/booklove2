@@ -17,7 +17,7 @@ export default function SummaryBar({
   const total = pendingCount + unreadDm
 
   return (
-    <div className="bg-white border-t border-gray-100 px-5 py-3">
+    <div className="px-5 py-3 border-t bg-transparent border-transparent lg:bg-white lg:border-gray-100">
       <div className="grid grid-cols-[1fr_auto] items-center gap-x-6">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-900">
           {pendingCount > 0 && (
@@ -56,7 +56,7 @@ export default function SummaryBar({
             onClick={onToggleCompact}
             aria-label={compact ? 'Genişlet' : 'Küçült'}
             title={compact ? 'Genişlet' : 'Küçült'}
-            className="grid h-11 w-11 place-content-center rounded-full bg-primary text-white shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="hidden lg:grid h-11 w-11 place-content-center rounded-full bg-primary text-white shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             {compact ? (
               <svg width="18" height="18" viewBox="0 0 24 24">

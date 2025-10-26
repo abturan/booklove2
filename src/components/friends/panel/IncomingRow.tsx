@@ -5,10 +5,11 @@ import Link from 'next/link'
 import type { UserLite } from '../types'
 
 export default function IncomingRow({
-  u, onAccept, userPath,
+  u, onAccept, userPath, showRequestLabel = true,
 }: {
   u: UserLite; onAccept: () => void
   userPath: (u?: string|null, n?: string|null, s?: string|null) => string
+  showRequestLabel?: boolean
 }) {
   return (
     <div className="flex items-center justify-between rounded-xl ring-1 ring-black/5 px-3 py-2">
@@ -20,7 +21,7 @@ export default function IncomingRow({
         </div>
       </Link>
       <div className="ml-3 flex items-center gap-2 shrink-0">
-        <span className="rounded-full bg-blue-50 text-blue-700 px-3 h-7 grid place-items-center text-[11px] font-semibold">İstek</span>
+        {showRequestLabel && <span className="rounded-full bg-blue-50 text-blue-700 px-3 h-7 grid place-items-center text-[11px] font-semibold">İstek</span>}
         <button type="button" onClick={onAccept} className="rounded-full bg-primary text-white px-3 h-7 text-[12px] font-semibold hover:bg-primary/90 active:scale-[0.98]">Kabul Et</button>
       </div>
     </div>

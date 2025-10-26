@@ -3,62 +3,33 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-function order(a: string, b: string) {
-  return a < b ? [a, b] : [b, a]
-}
-
 export async function GET(req: Request) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user?.id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const rawPeer = String(searchParams.get('peerId') || '').trim()
+  if (!rawPeer) return NextResponse.json({ error: 'invalid_peer' }, { status: 400 })
+
   const me = session.user.id
+  if (rawPeer === me) return NextResponse.json({ error: 'self_not_allowed' }, { status: 400 })
 
-  const url = new URL(req.url)
-  const peerId = url.searchParams.get('peerId') || ''
-  if (!peerId || peerId === me) return NextResponse.json({ error: 'Bad Request' }, { status: 400 })
+  const peer = await prisma.user.findUnique({ where: { id: rawPeer }, select: { id: true } })
+  if (!peer) return NextResponse.json({ error: 'peer_not_found' }, { status: 404 })
 
-  const peer = await prisma.user.findUnique({
-    where: { id: peerId },
-    select: { id: true, name: true, username: true, avatarUrl: true },
-  })
-
-  if (!peer) {
-    const thread = await prisma.dmThread.findFirst({
-      where: { id: peerId, OR: [{ userAId: me }, { userBId: me }] },
-      select: {
-        id: true,
-        userAId: true,
-        userBId: true,
-        userA: { select: { id: true, name: true, username: true, avatarUrl: true } },
-        userB: { select: { id: true, name: true, username: true, avatarUrl: true } },
-      },
-    })
-    if (!thread) return NextResponse.json({ error: 'Not Found' }, { status: 404 })
-
-    const other = thread.userAId === me ? thread.userB : thread.userA
-    const messages = await prisma.dmMessage.findMany({
-      where: { threadId: thread.id },
-      orderBy: { createdAt: 'asc' },
-      take: 200,
-      select: { id: true, body: true, createdAt: true, authorId: true },
-    })
-    return NextResponse.json({ threadId: thread.id, peer: other, messages })
-  }
-
-  const [a, b] = order(me, peer.id)
+  const [a, b] = me < rawPeer ? [me, rawPeer] : [rawPeer, me]
 
   let thread = await prisma.dmThread.findUnique({
     where: { userAId_userBId: { userAId: a, userBId: b } },
+    select: { id: true },
   })
+
   if (!thread) {
-    thread = await prisma.dmThread.create({ data: { userAId: a, userBId: b } })
+    thread = await prisma.dmThread.create({
+      data: { userAId: a, userBId: b },
+      select: { id: true },
+    })
   }
 
-  const messages = await prisma.dmMessage.findMany({
-    where: { threadId: thread.id },
-    orderBy: { createdAt: 'asc' },
-    take: 200,
-    select: { id: true, body: true, createdAt: true, authorId: true },
-  })
-
-  return NextResponse.json({ threadId: thread.id, peer, messages })
+  return NextResponse.json({ threadId: thread.id })
 }
