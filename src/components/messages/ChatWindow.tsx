@@ -24,9 +24,9 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
       const res = await fetch(`/api/dm/thread?threadId=${encodeURIComponent(threadId)}`, { cache: 'no-store' })
       const j = await res.json()
       if (res.ok) setState({ status: 'loaded', peer: j.peer, messages: j.messages || [] })
-      else setState({ status: 'loaded', peer: j.peer || null, messages: [] } as any)
+      else setState({ status: 'loaded', peer: j.peer || null, messages: [] } as Loaded)
     } catch {
-      setState({ status: 'loaded', peer: null as any, messages: [] })
+      setState({ status: 'loaded', peer: { id: '', name: null, username: null, slug: null, avatarUrl: null }, messages: [] })
     }
   }
 
@@ -50,8 +50,7 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
     const text = body.trim()
     if (!text || busy || state.status !== 'loaded') return
     setBusy(true)
-    const now = new Date().toISOString()
-    const optimistic: Message = { id: `tmp-${Date.now()}`, authorId: 'me', body: text, createdAt: now }
+    const optimistic: Message = { id: `tmp-${Date.now()}`, authorId: 'me', body: text, createdAt: new Date().toISOString() }
     setState({ status: 'loaded', peer: state.peer, messages: [...state.messages, optimistic] })
     setBody('')
     try {
@@ -64,15 +63,13 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
       if (res.ok && j?.ok) {
         window.dispatchEvent(new Event('dm:counts'))
         await refresh()
-      } else {
-        setState({ status: 'loaded', peer: state.peer, messages: state.messages })
       }
     } finally {
       setBusy(false)
     }
   }
 
-  if (state.status === 'idle' || state.status === 'loading') {
+  if (state.status !== 'loaded') {
     return <div className="card p-6 text-sm text-gray-600">Yükleniyor…</div>
   }
 
@@ -87,11 +84,8 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
           className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100"
           aria-label="Geri"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24">
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
-          </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" /></svg>
         </button>
-
         <Link
           href={userPath(peer?.username ?? undefined, peer?.name ?? undefined, peer?.slug ?? undefined)}
           className="flex items-center gap-3 min-w-0"
@@ -128,10 +122,7 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
             placeholder="Mesaj yazın…"
             className="flex-1 rounded-full border px-4 py-2 outline-none focus:ring-2 focus:ring-gray-900"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                send()
-              }
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
             }}
           />
           <button
