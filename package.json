@@ -9,8 +9,13 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
-    "q": "node scripts/queue-files.mjs",
-    "patch": "node scripts/patch-apply.mjs"
+    "patch:files": "node scripts/queue-files.mjs",
+    "patch:dry": "bash scripts/self-apply-patch.sh --patch ./changes.patch --dry-run",
+    "patch:apply": "bash scripts/self-apply-patch.sh --patch ./changes.patch",
+    "patch:reverse": "bash scripts/self-apply-patch.sh --patch ./changes.patch --reverse",
+    "patch:stdin": "bash scripts/self-apply-patch.sh --patch -",
+    "patch:root": "bash scripts/self-apply-patch.sh --root .",
+    "ai:snapshot": "bash scripts/make-ai-snapshot.sh"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
