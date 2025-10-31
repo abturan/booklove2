@@ -11,6 +11,7 @@ export default function PostActions({
   onShowLikers,
   onToggleComments,
   canInteract,
+  shareSlot,
 }: {
   liked: boolean
   likeCount: number
@@ -19,12 +20,13 @@ export default function PostActions({
   onShowLikers: () => void
   onToggleComments: () => void
   canInteract: boolean
+  shareSlot?: React.ReactNode
 }) {
   const begeniYazi = likeCount === 1 ? '1 beğeni' : `${likeCount} beğeni`
   const yorumYazi = commentCount === 1 ? '1 yorum' : `${commentCount} yorum`
 
   return (
-    <div className="mt-3 flex items-center gap-8 text-sm text-gray-700">
+    <div className="mt-3 flex flex-wrap items-center gap-6 text-sm text-gray-700">
       <div className="inline-flex items-center gap-2">
         <button
           type="button"
@@ -71,6 +73,7 @@ export default function PostActions({
           {yorumYazi}
         </button>
       </div>
+      {shareSlot}
     </div>
   )
 }

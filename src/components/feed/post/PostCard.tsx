@@ -10,6 +10,7 @@ import PostImages from './PostImages'
 import PostActions from './PostActions'
 import PostComments from './PostComments'
 import PostEditor from './PostEditor'
+import PostShareButton from './PostShareButton'
 import { useComments } from './hooks/useComments'
 import { useEdit } from './hooks/useEdit'
 import { useLike } from './hooks/useLike'
@@ -151,6 +152,15 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
             onShowLikers={() => setLikersOpen(true)}
             onToggleComments={() => { c.setOpen(!c.open); if (!c.open) c.load() }}
             canInteract={canInteract}
+            shareSlot={
+              <PostShareButton
+                postId={post.id}
+                body={post.body}
+                owner={{ id: post.owner.id, name: post.owner.name, username: post.owner.username, slug: post.owner.slug }}
+                images={post.images}
+                canInstagramShare={isAdmin}
+              />
+            }
           />
 
           <PostComments
@@ -172,7 +182,7 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
         <PostEditor
           text={ed.editText}
           setText={ed.setEditText}
-          images={ed.editImages as any}
+          images={ed.editImages}
           onRemove={ed.removeEditImage}
           fileRef={ed.fileRef}
           onPick={ed.addEditImages}

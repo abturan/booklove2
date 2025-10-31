@@ -611,7 +611,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
           style={{
             bottom: 'env(safe-area-inset-bottom)',
             transform: mobileChatOpen
-              ? `translateY(calc(-1 * (${FOOTER_HEIGHT_VAR})))`
+              ? `translateY(calc(-0.9 * (${FOOTER_HEIGHT_VAR})))`
               : `translateY(calc(100% - (${CHAT_HEADER_HEIGHT}px + ${FOOTER_HEIGHT_VAR})))`,
           }}
         >
@@ -679,7 +679,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
             </div>
             <div
               className={clsx(
-                'flex min-h-[320px] flex-col bg-white px-4 transition-[max-height] duration-300 ease-out',
+                'flex min-h-[310px] flex-col bg-white px-4 transition-[max-height] duration-300 ease-out',
                 mobileChatExpanded ? 'max-h-none' : '',
               )}
               style={{

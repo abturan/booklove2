@@ -64,7 +64,6 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
         <ModeratorClubCard
           name={user.Club.name}
           slug={user.Club.slug}
-          bannerUrl={user.Club.bannerUrl}
           ownerName={user.name || ''}
           ownerUsername={user.username || ''}
           counts={{
@@ -74,7 +73,7 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
           }}
         />
       )}
-      <FriendCloud title="Arkadaşlar" count={friendCount} friends={friends} />
+      <FriendCloud title="Arkadaşlar" count={friendCount} friends={friends} userId={user.id} />
       <MemberClubsList items={memberships} />
     </div>
   )

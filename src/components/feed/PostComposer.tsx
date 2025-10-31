@@ -7,7 +7,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [images, setImages] = useState<{ url: string; width?: number; height?: number }[]>([])
+  const [images, setImages] = useState<{ url: string; width?: number | null; height?: number | null }[]>([])
   const [okMsg, setOkMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const maxImages = 5
@@ -17,14 +17,23 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
     setError(null)
     const roomLeft = Math.max(0, maxImages - images.length)
     const arr = Array.from(files).slice(0, roomLeft)
-    const uploaded: { url: string; width?: number; height?: number }[] = []
+    const uploaded: { url: string; width?: number | null; height?: number | null }[] = []
     for (const f of arr) {
+      if (f.size > 5 * 1024 * 1024) {
+        setError('Görseller en fazla 5MB olabilir.')
+        continue
+      }
       const fd = new FormData()
       fd.set('file', f)
       const res = await fetch('/api/upload?type=post', { method: 'POST', body: fd })
       const data = await res.json()
-      if (res.ok && data?.url) uploaded.push({ url: data.url })
-      else setError(data?.error || 'Yükleme hatası')
+      if (res.ok && data?.url) {
+        uploaded.push({
+          url: data.url,
+          width: typeof data.width === 'number' ? data.width : null,
+          height: typeof data.height === 'number' ? data.height : null,
+        })
+      } else setError(data?.error || 'Yükleme hatası')
     }
     setImages((prev) => [...prev, ...uploaded].slice(0, maxImages))
   }
@@ -101,7 +110,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
           <input
             ref={fileRef}
             type="file"
-            accept="image/png,image/jpeg"
+            accept="image/png,image/jpeg,image/webp"
             multiple
             className="hidden"
             onChange={(e) => onSelectFiles(e.target.files)}
@@ -129,9 +138,6 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
     </div>
   )
 }
-
-
-
 
 
 

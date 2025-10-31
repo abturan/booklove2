@@ -1,5 +1,4 @@
 // src/app/u/[username]/_components/ProfileMain.tsx
-import ProfileAboutCard from '@/components/profile/ProfileAboutCard'
 import InfiniteFeed from '@/components/feed/InfiniteFeed'
 import { slugify } from '@/lib/slugify'
 import type { UserLite } from '../_lib/findUser'
@@ -8,10 +7,12 @@ import { prisma } from '@/lib/prisma'
 import JoinedClubsGrid from '@/components/profile/JoinedClubsGrid'
 
 export default async function ProfileMain({
-  user, canonical, active,
-}: { user:UserLite; canonical:string; active:'about'|'clubs'|'posts' }) {
-  const aboutNode = <ProfileAboutCard bio={user.bio ?? ''} />
-
+  user,
+  active,
+}: {
+  user: UserLite
+  active: 'clubs' | 'posts'
+}) {
   const rawMemberships = await prisma.membership.findMany({
     where: { userId: user.id, isActive: true },
     select: {
@@ -58,7 +59,7 @@ export default async function ProfileMain({
 
   return (
     <div className="lg:col-span-2 space-y-4">
-      <ProfileTabs initialActive={active} aboutNode={aboutNode} clubsNode={clubsNode} postsNode={postsNode} />
+      <ProfileTabs initialActive={active} clubsNode={clubsNode} postsNode={postsNode} />
     </div>
   )
 }

@@ -55,7 +55,7 @@ function HomeBody() {
   }, [params])
 
   const tabParam = params.get('tab') as 'clubs' | 'bookie' | 'buddy' | null
-  const urlTab = tabParam ?? 'clubs'
+  const urlTab = tabParam ?? 'bookie'
   const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1)
 
   const [isDesktop, setIsDesktop] = useState(false)
@@ -96,17 +96,17 @@ function HomeBody() {
           value={activeTab}
           onValueChange={(v) => setTab(v as 'clubs' | 'bookie' | 'buddy')}
           tabs={[
-            { value: 'clubs', label: 'Kulüpler' },
             { value: 'bookie', label: 'Bookie!' },
+            { value: 'clubs', label: 'Kulüpler' },
             { value: 'buddy', label: 'Book Buddy', badge: pending },
           ]}
         />
+        <div aria-hidden={activeTab !== 'bookie'} className={activeTab === 'bookie' ? 'block' : 'hidden'}>
+          <GlobalFeed hideTopBar={false} paginateDesktop={false} active={activeTab === 'bookie'} />
+        </div>
         <div aria-hidden={activeTab !== 'clubs'} className={activeTab === 'clubs' ? 'block' : 'hidden'}>
           <SearchFilters />
           <PaginatedClubs initialQuery={initialQuery} pageSize={6} page={page} onPageChange={onPageChange} />
-        </div>
-        <div aria-hidden={activeTab !== 'bookie'} className={activeTab === 'bookie' ? 'block' : 'hidden'}>
-          <GlobalFeed hideTopBar={false} paginateDesktop={false} active={activeTab === 'bookie'} />
         </div>
         <div aria-hidden={activeTab !== 'buddy'} className={activeTab === 'buddy' ? 'block' : 'hidden'}>
           <BookBuddyTab active={activeTab === 'buddy'} />

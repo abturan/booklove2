@@ -6,9 +6,11 @@ import { useState } from 'react'
 export default function RequestButton({
   toUserId,
   initialState = 'idle',
+  className,
 }: {
   toUserId: string
   initialState?: 'idle' | 'sent'
+  className?: string
 }) {
   const [sent, setSent] = useState(initialState === 'sent')
   const [busy, setBusy] = useState(false)
@@ -41,7 +43,7 @@ export default function RequestButton({
     <button
       onClick={send}
       disabled={busy || sent}
-      className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-sm disabled:opacity-60"
+      className={className || 'px-3 py-1.5 rounded-full bg-rose-600 text-white text-sm disabled:opacity-60'}
     >
       {sent ? 'İstek gönderildi' : busy ? 'Gönderiliyor…' : 'Ekle'}
     </button>

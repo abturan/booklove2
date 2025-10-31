@@ -77,7 +77,7 @@ export default function PaginatedClubs({
     return () => { cancelled = true }
   }, [JSON.stringify(initialQuery), page, pageSize])
 
-  const pageCount = total ? Math.max(Math.ceil(total / pageSize), 1) : null
+  const pageCount = total != null ? Math.max(Math.ceil(total / pageSize), 1) : null
 
   return (
     <div className="space-y-4">

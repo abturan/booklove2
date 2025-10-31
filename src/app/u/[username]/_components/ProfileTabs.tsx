@@ -4,16 +4,19 @@
 import * as React from 'react'
 import clsx from 'clsx'
 
+type TabKey = 'clubs' | 'posts'
+
 export default function ProfileTabs({
-  initialActive='about', aboutNode, clubsNode, postsNode,
+  initialActive = 'posts',
+  clubsNode,
+  postsNode,
 }: {
-  initialActive?: 'about'|'clubs'|'posts'
-  aboutNode: React.ReactNode
+  initialActive?: TabKey
   clubsNode: React.ReactNode
   postsNode: React.ReactNode
 }) {
-  const [active, setActive] = React.useState<'about'|'clubs'|'posts'>(initialActive)
-  const Btn = ({k,label}:{k:'about'|'clubs'|'posts';label:string}) => (
+  const [active, setActive] = React.useState<TabKey>(initialActive)
+  const Btn = ({ k, label }: { k: TabKey; label: string }) => (
     <button
       type="button"
       onClick={() => setActive(k)}
@@ -28,12 +31,10 @@ export default function ProfileTabs({
   )
   return (
     <div className="space-y-4">
-      <div className="w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid grid-cols-3 gap-1">
-        <Btn k="about" label="Hakkında" />
+      <div className="w-full rounded-2xl bg-white/80 backdrop-blur p-1 ring-1 ring-black/5 shadow-sm grid grid-cols-2 gap-1">
         <Btn k="clubs" label="Kulüpler" />
         <Btn k="posts" label="Bookie!" />
       </div>
-      <div className={active==='about'?'block':'hidden'}>{aboutNode}</div>
       <div className={active==='clubs'?'block':'hidden'}>{clubsNode}</div>
       <div className={active==='posts'?'block':'hidden'}>{postsNode}</div>
     </div>

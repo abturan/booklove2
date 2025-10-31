@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
-type Tab = 'about'|'clubs'|'posts'
+type Tab = 'clubs' | 'posts'
 type Props = { params: { username: string }; searchParams?: { tab?: Tab } }
 
 export default async function PublicProfilePage({ params, searchParams }: Props) {
@@ -29,17 +29,13 @@ export default async function PublicProfilePage({ params, searchParams }: Props)
   }
 
   const canonical = canonicalFromUser(user)
-  const urlTab = (searchParams?.tab as Tab | undefined)
+  const urlTab = searchParams?.tab as Tab | undefined
 
-  let defaultTab: Tab = 'about'
+  let defaultTab: Tab = 'posts'
   const memberships = await prisma.membership.count({ where: { userId: user.id, isActive: true } })
   if (memberships > 0) defaultTab = 'clubs'
-  else {
-    const posts = await prisma.post.count({ where: { ownerId: user.id, status: { in: ['PUBLISHED','PENDING','HIDDEN','REPORTED'] } } })
-    defaultTab = posts > 0 ? 'posts' : 'about'
-  }
 
-  const activeTab: Tab = urlTab || defaultTab
+  const activeTab: Tab = urlTab && (urlTab === 'clubs' || urlTab === 'posts') ? urlTab : defaultTab
 
   if (canonical && handle !== canonical) {
     redirect(`/u/${canonical}${activeTab ? `?tab=${encodeURIComponent(activeTab)}` : ''}`)
@@ -50,5 +46,5 @@ export default async function PublicProfilePage({ params, searchParams }: Props)
     select: { id: true, name: true, slug: true, bannerUrl: true },
   })
 
-  return <ProfileLayout user={user} canonical={canonical} activeTab={activeTab} modClub={modClub} />
+  return <ProfileLayout user={user} activeTab={activeTab} modClub={modClub} />
 }

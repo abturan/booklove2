@@ -6,12 +6,20 @@ import { useSession } from 'next-auth/react'
 import Avatar from '@/components/Avatar'
 import FriendAction from '@/components/sidebars/profile/FriendAction'
 
-type U = { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
+type Relationship = 'self' | 'friend' | 'outgoing' | 'incoming' | 'none'
+type LikeUser = {
+  id: string
+  name: string | null
+  username: string | null
+  slug: string | null
+  avatarUrl: string | null
+  relationship: Relationship
+}
 
 export default function LikeListModal({ postId }: { postId: string }) {
   const { data } = useSession()
   const meId = (data?.user as any)?.id || null
-  const [items, setItems] = useState<U[]>([])
+  const [items, setItems] = useState<LikeUser[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -46,7 +54,19 @@ export default function LikeListModal({ postId }: { postId: string }) {
               </div>
               {meId && u.id !== meId ? (
                 <div className="shrink-0">
-                  <FriendAction mode="canSend" userId={u.id} />
+                  <FriendAction
+                    mode={
+                      u.relationship === 'friend'
+                        ? 'message'
+                        : u.relationship === 'outgoing'
+                        ? 'sent'
+                        : u.relationship === 'incoming'
+                        ? 'pending'
+                        : 'canSend'
+                    }
+                    userId={u.id}
+                    appearance="compact"
+                  />
                 </div>
               ) : null}
             </div>

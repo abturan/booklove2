@@ -1,36 +1,24 @@
 // src/components/sidebars/profile/ModeratorClubCard.tsx
 import Link from 'next/link'
-import Image from 'next/image'
-
 type Counts = { memberships: number; picks: number; events: number }
 
 export default function ModeratorClubCard({
   name,
   slug,
-  bannerUrl,
   ownerName,
   ownerUsername,
   counts,
 }: {
   name: string
   slug: string
-  bannerUrl: string | null
   ownerName: string
   ownerUsername: string
   counts: Counts
 }) {
-  const bg = bannerUrl && bannerUrl.trim().length > 0 ? bannerUrl : '/images/club-bg-red.svg'
-
   return (
     <section className="rounded-3xl overflow-hidden shadow-soft ring-1 ring-black/5">
       <div className="relative bg-primary text-white">
-        <Image
-          src={bg}
-          alt=""
-          width={800}
-          height={400}
-          className="absolute inset-0 h-full w-full object-cover opacity-25"
-        />
+        <div className="absolute inset-0 bg-primary" aria-hidden />
         <div className="relative p-5 sm:p-6">
           <div className="text-2xl sm:text-3xl font-extrabold leading-tight break-words">{name}</div>
           <div className="mt-1 text-sm text-white/90 leading-tight">

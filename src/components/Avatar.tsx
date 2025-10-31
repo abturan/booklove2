@@ -3,7 +3,7 @@
 
 import Image from 'next/image'
 import clsx from 'clsx'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type Props = {
   src?: string | null
@@ -21,6 +21,11 @@ export default function Avatar({ src, size = 36, alt = 'Avatar', className, seed
   )
   const [broken, setBroken] = useState(false)
   const [usedFallback, setUsedFallback] = useState(!src)
+
+  useEffect(() => {
+    setBroken(false)
+    setUsedFallback(!src)
+  }, [src])
 
   const showInitials = broken && usedFallback
   const initials = (alt || 'U').trim().charAt(0).toUpperCase()

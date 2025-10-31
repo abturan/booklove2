@@ -2,10 +2,12 @@
 import { useRef, useState } from 'react'
 import type { Post } from '../types'
 
+type EditImage = { url: string; width: number | null; height: number | null }
+
 export function useEdit(post: Post, onUpdated?: (p: Post)=>void, onDeleted?: (id:string)=>void) {
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(post.body)
-  const [editImages, setEditImages] = useState(post.images || [])
+  const [editImages, setEditImages] = useState<EditImage[]>(post.images || [])
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   function removeEditImage(i: number) { setEditImages((p)=>p.filter((_,x)=>x!==i)) }
@@ -14,11 +16,19 @@ export function useEdit(post: Post, onUpdated?: (p: Post)=>void, onDeleted?: (id
     if (!files || files.length === 0) return
     const room = Math.max(0, 5 - editImages.length)
     const arr = Array.from(files).slice(0, room)
-    const up: any[] = []
+    const up: EditImage[] = []
     for (const f of arr) {
+      if (f.size > 5 * 1024 * 1024) {
+        if (typeof window !== 'undefined') window.alert('Görseller en fazla 5MB olabilir.')
+        continue
+      }
       const fd = new FormData(); fd.set('file', f)
       const r = await fetch('/api/upload?type=post', { method: 'POST', body: fd })
-      const j = await r.json(); if (r.ok && j?.url) up.push({ url: j.url })
+      const j = await r.json(); if (r.ok && j?.url) up.push({
+        url: j.url,
+        width: typeof j.width === 'number' ? j.width : null,
+        height: typeof j.height === 'number' ? j.height : null,
+      })
     }
     setEditImages((p)=>[...p, ...up].slice(0,5))
   }

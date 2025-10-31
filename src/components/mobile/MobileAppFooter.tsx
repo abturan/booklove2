@@ -15,11 +15,31 @@ function IBuddy() { return (<svg width="26" height="26" viewBox="0 0 24 24"><cir
 function IMessages() { return (<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round"/></svg>) }
 function ISubscriptions() { return (<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M7 10h10M7 14h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>) }
 function ICreateClub() { return (<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 6h10a3 3 0 0 1 3 3v9H5z" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M12 12v4M10 14h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>) }
+function ILogin() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24">
+      <path d="M12 5h6a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="m12 16 4-4-4-4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 12H4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
+function IRegister() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24">
+      <circle cx="12" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
+      <path d="M6 19c0-3.5 3-5.5 6-5.5s6 2 6 5.5" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="M18 8v3M16.5 9.5h3" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 export default function MobileAppFooter() {
   const router = useRouter()
   const { status } = useSession()
   const isAuth = status === 'authenticated'
+
+  const navRef = useRef<HTMLElement | null>(null)
 
   const [openSettings, setOpenSettings] = useState(false)
   const [profileHref, setProfileHref] = useState<string>('/profile/settings')
@@ -87,8 +107,6 @@ export default function MobileAppFooter() {
     }
   }
 
-  const navRef = useRef<HTMLElement | null>(null)
-
   useEffect(() => {
     if (typeof window === 'undefined') return
     const win = window as Window
@@ -106,41 +124,36 @@ export default function MobileAppFooter() {
 
     measure()
 
-    if ('ResizeObserver' in window) {
-      const ro = new ResizeObserver((entries) => {
+    if ('ResizeObserver' in win) {
+      const observer = new ResizeObserver((entries) => {
         const entry = entries[0]
         if (entry) applyHeight(entry.contentRect.height)
       })
-      ro.observe(el)
-      return () => {
-        ro.disconnect()
-      }
+      observer.observe(el)
+      return () => observer.disconnect()
     }
 
-    const resizeHandler = () => measure()
-    win.addEventListener('resize', resizeHandler)
-    return () => win.removeEventListener('resize', resizeHandler)
+    const handler = () => measure()
+    win.addEventListener('resize', handler)
+    return () => win.removeEventListener('resize', handler)
   }, [])
 
   return (
     <>
       <nav data-mobile-footer ref={navRef} className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t">
-        <div className={`${isAuth ? 'grid-cols-7' : 'grid-cols-2'} grid items-center px-2 py-2 text-primary`}>
-          <Link href="/?tab=clubs" scroll={false} className="grid place-content-center h-12">
-            <IClubs />
-          </Link>
-
-          <Link href="/?tab=bookie" scroll={false} className="grid place-content-center h-12">
-            <IBookie />
-          </Link>
-
-          {isAuth && (
+        <div className={`${isAuth ? 'grid-cols-7' : 'grid-cols-4'} grid items-center px-2 py-2 text-primary gap-2`}>
+          {isAuth ? (
             <>
-              <Link href="/?tab=buddy" scroll={false} className="relative grid place-content-center h-12">
+              <Link href="/?tab=clubs" scroll={false} className="grid place-content-center h-12" aria-label="Kulüpler">
+                <IClubs />
+              </Link>
+              <Link href="/?tab=bookie" scroll={false} className="grid place-content-center h-12" aria-label="Bookie">
+                <IBookie />
+              </Link>
+              <Link href="/?tab=buddy" scroll={false} className="relative grid place-content-center h-12" aria-label="Buddy">
                 <IBuddy />
                 <NotificationBadge placement="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4" />
               </Link>
-
               <button
                 type="button"
                 onClick={openShare}
@@ -152,8 +165,7 @@ export default function MobileAppFooter() {
                   <IPlus />
                 </div>
               </button>
-
-              <Link href="/messages" scroll={false} className="relative grid place-content-center h-12">
+              <Link href="/messages" scroll={false} className="relative grid place-content-center h-12" aria-label="Mesajlar">
                 <IMessages />
                 {dmUnread > 0 && (
                   <span className="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
@@ -161,20 +173,53 @@ export default function MobileAppFooter() {
                   </span>
                 )}
               </Link>
-
-              <Link href="/subscriptions" scroll={false} className="grid place-content-center h-12">
+              <Link href="/subscriptions" scroll={false} className="grid place-content-center h-12" aria-label="Kulüplerim">
                 <ISubscriptions />
               </Link>
-
               <button
                 type="button"
                 onClick={() => setOpenSettings(true)}
                 className="grid place-content-center h-12"
-                aria-label="Ayarlar"
+                aria-label="Profil"
                 title={displayName}
               >
                 <Avatar src={avatarUrl} size={28} alt={displayName} />
               </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/?tab=clubs"
+                scroll={false}
+                className="flex h-12 flex-col items-center justify-center gap-1 text-[11px] font-medium leading-none text-primary"
+              >
+                <IClubs />
+                <span>Kulüpler</span>
+              </Link>
+              <Link
+                href="/?tab=bookie"
+                scroll={false}
+                className="flex h-12 flex-col items-center justify-center gap-1 text-[11px] font-medium leading-none text-primary"
+              >
+                <IBookie />
+                <span>Bookie!</span>
+              </Link>
+              <Link
+                href="/login"
+                scroll={false}
+                className="flex h-12 flex-col items-center justify-center gap-1 text-[11px] font-medium leading-none text-primary"
+              >
+                <ILogin />
+                <span>Giriş</span>
+              </Link>
+              <Link
+                href="/register"
+                scroll={false}
+                className="flex h-12 flex-col items-center justify-center gap-1 text-[11px] font-medium leading-none text-primary"
+              >
+                <IRegister />
+                <span>Kayıt</span>
+              </Link>
             </>
           )}
         </div>
