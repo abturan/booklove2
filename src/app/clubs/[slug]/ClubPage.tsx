@@ -9,7 +9,7 @@ export default async function ClubPage({ slug }: { slug: string }) {
   return (
     <div className="space-y-6 overflow-x-hidden">
       <Banner url={initial.club.bannerUrl} />
-      <ClubInteractive initial={initial as any} />
+      <ClubInteractive initial={initial} />
     </div>
   )
 }

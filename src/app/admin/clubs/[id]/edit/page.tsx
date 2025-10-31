@@ -4,12 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ClubEditorForm from '@/components/admin/ClubEditorForm'
+import ClubEventsManager from '@/components/admin/ClubEventsManager'
 
 export const dynamic = 'force-dynamic'
-
-function monthKeyFromDateUTC(d: Date) {
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
-}
 
 export default async function EditClubPage({ params }: { params: { id: string } }) {
   const session = await auth()
@@ -26,40 +23,30 @@ export default async function EditClubPage({ params }: { params: { id: string } 
       priceTRY: true,
       capacity: true,
       moderator: { select: { id: true, name: true, email: true } },
-      picks: {
-        orderBy: { monthKey: 'desc' },
-        select: {
-          id: true,
-          monthKey: true,
-          isCurrent: true,
-          note: true,
-          book: {
-            select: {
-              id: true,
-              title: true,
-              author: true,
-              translator: true,
-              pages: true,
-              coverUrl: true,
-              isbn: true,
-            },
-          },
-        },
-      },
     },
   })
   if (!club) redirect('/admin')
 
-  const events = await prisma.clubEvent.findMany({
+  const eventRecords = await prisma.clubEvent.findMany({
     where: { clubId: params.id },
-    select: { id: true, startsAt: true },
+    orderBy: { startsAt: 'asc' },
+    select: {
+      id: true,
+      startsAt: true,
+      title: true,
+      notes: true,
+      priceTRY: true,
+      capacity: true,
+      bookTitle: true,
+      bookAuthor: true,
+      bookTranslator: true,
+      bookPages: true,
+      bookIsbn: true,
+      bookCoverUrl: true,
+      memberships: { where: { isActive: true }, select: { id: true } },
+      subscriptions: { where: { active: true }, select: { id: true } },
+    },
   })
-  const eventByMonth = new Map<string, string>()
-  for (const e of events) {
-    const k = monthKeyFromDateUTC(e.startsAt)
-    if (!eventByMonth.has(k)) eventByMonth.set(k, e.startsAt.toISOString())
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -71,7 +58,6 @@ export default async function EditClubPage({ params }: { params: { id: string } 
           Önizleme
         </Link>
       </div>
-
       <ClubEditorForm
         initialClub={{
           id: club.id,
@@ -85,28 +71,42 @@ export default async function EditClubPage({ params }: { params: { id: string } 
             : null,
           capacity: club.capacity ?? null,
         }}
-        initialPrograms={club.picks.map(p => ({
-          id: p.id,
-          monthKey: p.monthKey,
-          isCurrent: p.isCurrent,
-          note: p.note || '',
-          startsAt: eventByMonth.get(p.monthKey) || '',
-          book: {
-            title: p.book?.title || '',
-            author: p.book?.author || '',
-            translator: p.book?.translator || '',
-            pages: p.book?.pages || null,
-            coverUrl: p.book?.coverUrl || '',
-            isbn: p.book?.isbn || '',
-          },
-        }))}
       />
+
+      <div className="rounded-2xl border p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Etkinlikleri yönet</h2>
+          <Link
+            href={`/admin/clubs/${club.id}/program/new`}
+            className="rounded-full border px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Yeni etkinlik ekle
+          </Link>
+        </div>
+        <p className="text-xs text-gray-500">
+          Buradan tarih, ücret ve kapasite bilgilerini güncelleyebilirsiniz. Kulüp varsayılan fiyatı: ₺{(club.priceTRY ?? 0).toLocaleString('tr-TR')}.
+        </p>
+        <ClubEventsManager
+          defaultPrice={club.priceTRY ?? null}
+          defaultCapacity={club.capacity ?? null}
+          items={eventRecords.map((event) => ({
+            id: event.id,
+            title: event.title,
+            startsAt: event.startsAt.toISOString(),
+            priceTRY: event.priceTRY,
+            capacity: event.capacity,
+            notes: event.notes,
+            activeMembers: event.memberships.length,
+            activeSubscriptions: event.subscriptions.length,
+            bookTitle: event.bookTitle ?? '',
+            bookAuthor: event.bookAuthor ?? '',
+            bookTranslator: event.bookTranslator ?? '',
+            bookPages: event.bookPages != null ? String(event.bookPages) : '',
+            bookIsbn: event.bookIsbn ?? '',
+            bookCoverUrl: event.bookCoverUrl ?? '',
+          }))}
+        />
+      </div>
     </div>
   )
 }
-
-
-
-
-
-

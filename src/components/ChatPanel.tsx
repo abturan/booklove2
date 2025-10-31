@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/Avatar'
 import { userPath } from '@/lib/userPath'
+import clsx from 'clsx'
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -17,13 +18,18 @@ const EMOJIS = [
 ]
 
 export default function ChatPanel({
-  clubId,
+  eventId,
   enabled,
+  className,
+  onCountChange,
 }: {
-  clubId: string
+  eventId: string | null
   enabled: boolean
+  className?: string
+  onCountChange?: (count: number) => void
 }) {
-  const { data, mutate } = useSWR(`/api/chat/${clubId}/messages`, fetcher, {
+  const canLoad = !!eventId
+  const { data, mutate } = useSWR(canLoad ? `/api/chat/events/${eventId}/messages` : null, fetcher, {
     refreshInterval: enabled ? 5000 : 15000,
   })
   const [text, setText] = useState('')
@@ -33,15 +39,13 @@ export default function ChatPanel({
   const emojiBtnRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     const el = scrollRef.current
     if (!el) return
-    const diff = el.scrollHeight - el.scrollTop - el.clientHeight
-    const nearBottom = diff < 48
-    if (nearBottom) {
+    requestAnimationFrame(() => {
       el.scrollTop = el.scrollHeight
-    }
-  }, [enabled, data?.items?.length])
+    })
+  }
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -64,12 +68,18 @@ export default function ChatPanel({
 
   const items: any[] = data?.items ?? []
 
+  useEffect(() => {
+    scrollToBottom()
+    onCountChange?.(items.length)
+  }, [enabled, items.length, onCountChange])
+
   const send = async () => {
-    if (!enabled) return
+    if (!enabled || !eventId) return
     const body = text.trim()
     if (!body) return
     setText('')
-    const res = await fetch(`/api/chat/${clubId}/messages`, {
+    scrollToBottom()
+    const res = await fetch(`/api/chat/events/${eventId}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ body }),
@@ -78,19 +88,19 @@ export default function ChatPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div ref={scrollRef} className="max-h-[360px] overflow-auto rounded-2xl bg-white p-3 border">
+    <div className={clsx('flex flex-col gap-2 pt-2 text-slate-700 max-h-[440px]', className)}>
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto px-1 pb-2">
         {items.length === 0 && (
-          <div className="text-sm text-gray-600 p-2">Henüz mesaj yok.</div>
+          <div className="p-2 text-sm text-slate-500">Henüz mesaj yok.</div>
         )}
         {items.map((m) => (
           <div key={m.id} className="flex gap-2 items-start p-2">
             <Link href={userPath(m.author?.username, m.author?.name, m.author?.slug)} className="inline-block">
               <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} />
             </Link>
-            <div>
-              <div className="text-sm font-medium">{m.author?.name ?? 'Üye'}</div>
-              <div className="text-sm">{m.body}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-slate-800">{m.author?.name ?? 'Üye'}</div>
+              <div className="text-sm text-slate-600">{m.body}</div>
             </div>
           </div>
         ))}
@@ -102,9 +112,9 @@ export default function ChatPanel({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => enabled && e.key === 'Enter' && send()}
-          className="flex-1 h-11 rounded-xl border disabled:opacity-60"
-          placeholder=""
-          disabled={!enabled}
+          className="flex-1 h-11 rounded-xl border pl-4 pr-3 disabled:opacity-60"
+          placeholder={enabled && eventId ? 'Mesajınızı yazın' : 'Sohbete katılmak için etkinliğe dahil olun'}
+          disabled={!enabled || !eventId}
         />
         <div className="relative">
           <button
@@ -114,6 +124,7 @@ export default function ChatPanel({
             
             aria-label="Emoji seç"
             disabled={!enabled}
+            className="text-2xl leading-none text-slate-500 transition hover:text-slate-700 disabled:text-slate-300"
           >
             🙂
           </button>
@@ -144,7 +155,7 @@ export default function ChatPanel({
         <button
           onClick={send}
           className="h-11 px-4 rounded-xl bg-gray-900 text-white disabled:opacity-60"
-          disabled={!enabled}
+          disabled={!enabled || !eventId}
         >
           Gönder
         </button>
@@ -152,9 +163,3 @@ export default function ChatPanel({
     </div>
   )
 }
-
-
-
-
-
-

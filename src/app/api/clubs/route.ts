@@ -50,7 +50,7 @@ export async function GET(req: Request) {
       priceTRY: true,
       capacity: true,
       moderator: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
-      _count: { select: { memberships: { where: { isActive: true } }, picks: true } },
+      _count: { select: { memberships: { where: { isActive: true } }, events: true } },
     },
   })
 
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
       bannerUrl: c.bannerUrl,
       priceTRY: c.priceTRY,
       memberCount: c._count.memberships as unknown as number,
-      pickCount: (c._count.picks as unknown as number) ?? 0,
+      pickCount: (c._count.events as unknown as number) ?? 0,
       capacity: c.capacity ?? null,
       moderator: {
         id: c.moderator?.id ?? '',

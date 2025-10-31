@@ -12,37 +12,54 @@ export async function assignMemberToClub(formData: FormData) {
   }
 
   const userId = String(formData.get('userId') || '')
-  const clubId = String(formData.get('clubId') || '')
-  if (!userId || !clubId) throw new Error('Eksik bilgi')
+  const requestedEventId = String(formData.get('clubEventId') || '')
+  if (!userId || !requestedEventId) throw new Error('Eksik bilgi')
 
-  // Kulüp ve kapasite kontrolü (varsa)
+  const event = await prisma.clubEvent.findUnique({
+    where: { id: requestedEventId },
+    select: { id: true, clubId: true, priceTRY: true, capacity: true },
+  })
+
+  if (!event) throw new Error('Etkinlik bulunamadı')
+
+  const clubId = event.clubId
+  const clubEventId = event.id
+
+  // Kulüp kapasitesi (etkinlik öncelikli)
   const club = await prisma.club.findUnique({
     where: { id: clubId },
     select: { id: true, capacity: true },
   })
   if (!club) throw new Error('Kulüp bulunamadı')
 
-  if (club.capacity != null) {
+  const effectiveCapacity =
+    typeof event.capacity === 'number' && event.capacity >= 0
+      ? event.capacity
+      : typeof club.capacity === 'number' && club.capacity >= 0
+        ? club.capacity
+        : null
+
+  if (typeof effectiveCapacity === 'number') {
     const activeCount = await prisma.membership.count({
-      where: { clubId, isActive: true },
+      where: { clubEventId, isActive: true },
     })
-    if (activeCount >= club.capacity) {
-      throw new Error('Kulüp kapasitesi dolu')
+    if (activeCount >= effectiveCapacity) {
+      throw new Error('Etkinlik kapasitesi dolu')
     }
   }
 
   // Membership upsert (idempotent)
   await prisma.membership.upsert({
-    where: { userId_clubId: { userId, clubId } },
-    update: { isActive: true, role: 'MEMBER' },
-    create: { userId, clubId, isActive: true, role: 'MEMBER' },
+    where: { userId_clubEventId: { userId, clubEventId } },
+    update: { isActive: true, role: 'MEMBER', clubId },
+    create: { userId, clubId, clubEventId, isActive: true, role: 'MEMBER' },
   })
 
   // Subscription upsert (manuel abonelik etkinleştirme)
   await prisma.subscription.upsert({
-    where: { userId_clubId: { userId, clubId } },
-    update: { active: true, startedAt: new Date(), canceledAt: null },
-    create: { userId, clubId, active: true, startedAt: new Date() },
+    where: { userId_clubEventId: { userId, clubEventId } },
+    update: { active: true, startedAt: new Date(), canceledAt: null, clubId },
+    create: { userId, clubId, clubEventId, active: true, startedAt: new Date() },
   })
 
   revalidatePath(`/admin/members/${userId}`)

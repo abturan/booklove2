@@ -9,7 +9,7 @@ export type PaytrEnv = {
   testMode: string
 }
 
-export function getPaytrEnv(): PaytrEnv {
+export function getPaytrEnv(baseUrlFallback?: string): PaytrEnv {
   const {
     PAYTR_MERCHANT_ID,
     PAYTR_MERCHANT_KEY,
@@ -18,14 +18,16 @@ export function getPaytrEnv(): PaytrEnv {
     PAYTR_TEST_MODE,
   } = process.env
 
-  if (!PAYTR_MERCHANT_ID || !PAYTR_MERCHANT_KEY || !PAYTR_MERCHANT_SALT || !APP_BASE_URL) {
+  const baseUrl = baseUrlFallback || APP_BASE_URL
+
+  if (!PAYTR_MERCHANT_ID || !PAYTR_MERCHANT_KEY || !PAYTR_MERCHANT_SALT || !baseUrl) {
     throw new Error('PayTR env vars missing.')
   }
   return {
     merchantId: PAYTR_MERCHANT_ID,
     merchantKey: PAYTR_MERCHANT_KEY,
     merchantSalt: PAYTR_MERCHANT_SALT,
-    baseUrl: APP_BASE_URL,
+    baseUrl,
     testMode: PAYTR_TEST_MODE ?? '0',
   }
 }

@@ -5,11 +5,11 @@ import { useEffect, useRef, useState } from 'react'
 import EmojiPicker from './EmojiPicker'
 
 export default function ChatInput({
-  clubId,
+  eventId,
   enabled,
   onSent,
 }: {
-  clubId: string
+  eventId: string
   enabled: boolean
   onSent: () => void
 }) {
@@ -41,7 +41,7 @@ export default function ChatInput({
     const body = text.trim()
     if (!body) return
     setText('')
-    const res = await fetch(`/api/chat/${clubId}/messages`, {
+    const res = await fetch(`/api/chat/events/${eventId}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ body }),

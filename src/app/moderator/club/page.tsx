@@ -1,7 +1,5 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { monthKey } from '@/lib/utils'
-
 export const dynamic = 'force-dynamic'
 
 export default async function ModClub() {
@@ -9,8 +7,16 @@ export default async function ModClub() {
   if ((session as any)?.role !== 'MODERATOR') return <div className="mt-10">Unauthorized</div>
   const me = await prisma.user.findUnique({ where: { email: session!.user!.email! } })
   if (!me) return <div>User?</div>
-  const club = await prisma.club.findFirst({ where: { moderatorId: me.id }, include: { picks: { include: { book: true }, orderBy: { monthKey: 'desc' } }, events: true } })
+  const club = await prisma.club.findFirst({
+    where: { moderatorId: me.id },
+    include: { events: { orderBy: { startsAt: 'asc' } } },
+  })
   if (!club) return <div>Kulübün yok</div>
+
+  const now = new Date()
+  const upcoming = club.events.find((event) => event.startsAt >= now)
+  const fallback = club.events.length ? club.events[club.events.length - 1] : null
+  const activeEvent = upcoming ?? fallback ?? null
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -26,7 +32,7 @@ export default async function ModClub() {
       </div>
 
       <div className="card p-4">
-        <div className="font-medium mb-2">Bu ayın seçkisi</div>
+        <div className="font-medium mb-2">Etkinlik kitabı</div>
         <form action="/api/mod/pick" method="post" className="space-y-2">
           <input type="hidden" name="clubId" value={club.id} />
           <input name="title" placeholder="Kitap adı" className="w-full rounded-2xl border px-3 py-2" />
@@ -35,7 +41,7 @@ export default async function ModClub() {
           <button className="rounded-2xl bg-gray-900 text-white px-4 py-2">Bu ay olarak ayarla</button>
         </form>
         <div className="mt-4 text-sm text-gray-600">
-          Şu an: {club.picks.find(p => p.isCurrent)?.book.title || '—'}
+          Şu an: {activeEvent?.bookTitle || '—'}
         </div>
       </div>
 

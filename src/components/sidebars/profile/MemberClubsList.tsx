@@ -8,7 +8,7 @@ export default function MemberClubsList({
     slug: string
     name: string
     bannerUrl: string | null
-    _count?: { memberships?: number | null; picks?: number | null; events?: number | null }
+    _count?: { memberships?: number | null; events?: number | null }
   }>
 }) {
   if (!items || items.length === 0) return null
@@ -33,7 +33,7 @@ export default function MemberClubsList({
               <div className="min-w-0">
                 <div className="text-sm font-medium text-slate-800 truncate">{c.name}</div>
                 <div className="text-xs text-slate-500">
-                  👥 {(c._count?.memberships ?? 0)} · 📚 {(c._count?.picks ?? 0)} · 🗓️ {(c._count?.events ?? 0)}
+                  👥 {(c._count?.memberships ?? 0)} · 🗓️ {(c._count?.events ?? 0)}
                 </div>
               </div>
               <span className="ml-auto text-sm text-primary opacity-0 group-hover:opacity-100 transition">Git →</span>
@@ -44,8 +44,6 @@ export default function MemberClubsList({
     </section>
   )
 }
-
-
 
 
 

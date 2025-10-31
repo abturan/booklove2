@@ -18,7 +18,7 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
           slug: true,
           name: true,
           bannerUrl: true,
-          _count: { select: { memberships: true, picks: true, events: true } },
+          _count: { select: { memberships: true, events: true } },
         },
       },
       Memberships: {
@@ -28,7 +28,7 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
               slug: true,
               name: true,
               bannerUrl: true,
-              _count: { select: { memberships: true, picks: true, events: true } },
+              _count: { select: { memberships: true, events: true } },
             },
           },
         },
@@ -69,7 +69,7 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
           ownerUsername={user.username || ''}
           counts={{
             memberships: user.Club._count?.memberships ?? 0,
-            picks: user.Club._count?.picks ?? 0,
+            picks: user.Club._count?.events ?? 0,
             events: user.Club._count?.events ?? 0,
           }}
         />

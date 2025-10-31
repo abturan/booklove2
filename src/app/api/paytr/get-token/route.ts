@@ -13,19 +13,31 @@ import {
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-function makeMerchantOid(clubId: string) {
+function makeMerchantOid(clubId: string, eventId: string) {
   const cleanedClub = String(clubId).replace(/[^A-Za-z0-9]/g, '')
+  const cleanedEvent = String(eventId).replace(/[^A-Za-z0-9]/g, '')
   const t = Date.now().toString(36)
   const r = Math.random().toString(36).slice(2, 8)
-  return (`SUB${cleanedClub}${t}${r}`).slice(0, 64)
+  return (`SUB${cleanedClub}${cleanedEvent}${t}${r}`).slice(0, 64)
 }
 
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
     const userId = session?.user?.id || null
-    const { merchantId, merchantKey, merchantSalt, baseUrl, testMode } = getPaytrEnv()
+    const requestOrigin = req.nextUrl?.origin || new URL(req.url).origin
     const body = await req.json()
+    const originOverride =
+      typeof body?.origin === 'string' && body.origin.trim().startsWith('http')
+        ? body.origin.trim()
+        : null
+    const {
+      merchantId,
+      merchantKey,
+      merchantSalt,
+      baseUrl,
+      testMode,
+    } = getPaytrEnv(originOverride || requestOrigin)
 
     const {
       email,
@@ -36,37 +48,67 @@ export async function POST(req: NextRequest) {
       clubId,
       clubName,
       redirectSlug,
+      clubEventId,
+      clubEventTitle,
       noInstallment = 0,
       maxInstallment = 0,
       currency = 'TL',
       lang = 'tr',
     } = body
 
-    if (!email || !amount || !clubId || !clubName || !redirectSlug) {
+    if (!email || !amount || !clubId || !clubName || !redirectSlug || !clubEventId) {
       return NextResponse.json({ error: 'Eksik alan' }, { status: 400 })
     }
 
-    // Kapasite kontrolü (sunucu tarafında kesin kontrol)
-    const club = await prisma.club.findUnique({
-      where: { id: String(clubId) },
-      select: { id: true, capacity: true },
+    const event = await prisma.clubEvent.findUnique({
+      where: { id: String(clubEventId) },
+      select: {
+        id: true,
+        clubId: true,
+        startsAt: true,
+        title: true,
+        priceTRY: true,
+        capacity: true,
+        club: { select: { id: true, priceTRY: true, capacity: true } },
+      },
     })
-    if (!club) {
-      return NextResponse.json({ error: 'Kulüp bulunamadı' }, { status: 404 })
+    if (!event || event.clubId !== String(clubId)) {
+      return NextResponse.json({ error: 'Etkinlik bulunamadı' }, { status: 404 })
     }
-    if (typeof club.capacity === 'number' && club.capacity >= 0) {
+
+    const effectivePrice = event.priceTRY ?? event.club.priceTRY
+    const effectiveCapacity =
+      typeof event.capacity === 'number' && event.capacity >= 0
+        ? event.capacity
+        : typeof event.club.capacity === 'number' && event.club.capacity >= 0
+          ? event.club.capacity
+          : null
+
+    if (effectivePrice !== amount) {
+      return NextResponse.json({ error: 'Fiyat uyuşmazlığı' }, { status: 422 })
+    }
+
+    if (typeof effectiveCapacity === 'number') {
       const activeCount = await prisma.membership.count({
-        where: { clubId: club.id, isActive: true },
+        where: { clubEventId: event.id, isActive: true },
       })
-      if (activeCount >= (club.capacity ?? 0)) {
+      if (activeCount >= effectiveCapacity) {
         return NextResponse.json({ error: 'Kontenjan dolu' }, { status: 422 })
       }
     }
 
     const userIp = getClientIp(req.headers)
-    const merchant_oid = makeMerchantOid(String(clubId))
+    const merchant_oid = makeMerchantOid(String(clubId), String(clubEventId))
     const payment_amount = amountToKurus(amount)
-    const user_basket = toPaytrBasketBase64([[`Üyelik - ${clubName}`, amount.toFixed(2), 1]])
+    const basketLabel = clubEventTitle ? `${clubEventTitle} – ${clubName}` : `Etkinlik Üyeliği - ${clubName}`
+    const user_basket = toPaytrBasketBase64([[basketLabel, amount.toFixed(2), 1]])
+    const callbackBase = originOverride || requestOrigin || baseUrl
+    const okUrl = new URL('/paytr/ok', callbackBase)
+    okUrl.searchParams.set('oid', merchant_oid)
+    okUrl.searchParams.set('to', redirectSlug.startsWith('/') ? redirectSlug : `/${redirectSlug}`)
+    const failUrl = new URL('/paytr/fail', callbackBase)
+    failUrl.searchParams.set('oid', merchant_oid)
+    failUrl.searchParams.set('to', redirectSlug.startsWith('/') ? redirectSlug : `/${redirectSlug}`)
 
     const paytr_token = buildIframePaytrToken({
       merchantId,
@@ -88,6 +130,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId,
           clubId,
+          clubEventId,
           amountTRY: payment_amount,
           status: 'REQUIRES_PAYMENT',
           merchantOid: merchant_oid,
@@ -109,8 +152,8 @@ export async function POST(req: NextRequest) {
       user_name: userName || 'Abone',
       user_address: userAddress || 'Türkiye',
       user_phone: userPhone || '0000000000',
-      merchant_ok_url: `${baseUrl}/paytr/ok?oid=${encodeURIComponent(merchant_oid)}&to=/${redirectSlug}`,
-      merchant_fail_url: `${baseUrl}/paytr/fail?oid=${encodeURIComponent(merchant_oid)}&to=/${redirectSlug}`,
+      merchant_ok_url: okUrl.toString(),
+      merchant_fail_url: failUrl.toString(),
       timeout_limit: '30',
       currency,
       test_mode: String(testMode ?? '0'),
@@ -126,6 +169,7 @@ export async function POST(req: NextRequest) {
 
     const json = await res.json()
     if (json?.status !== 'success' || !json?.token) {
+      console.log(json?.reason)
       return NextResponse.json({ error: json?.reason || 'PAYTR token alınamadı' }, { status: 400 })
     }
 
@@ -136,6 +180,8 @@ export async function POST(req: NextRequest) {
       iframe_url: `https://www.paytr.com/odeme/guvenli/${json.token}`,
     })
   } catch (err: any) {
+          console.log(err?.message)
+
     return NextResponse.json({ error: err?.message || 'Sunucu hatası' }, { status: 500 })
   }
 }

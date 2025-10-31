@@ -12,22 +12,31 @@ export default async function ProfileMain({
 }: { user:UserLite; canonical:string; active:'about'|'clubs'|'posts' }) {
   const aboutNode = <ProfileAboutCard bio={user.bio ?? ''} />
 
-  const memberships = await prisma.membership.findMany({
+  const rawMemberships = await prisma.membership.findMany({
     where: { userId: user.id, isActive: true },
     select: {
       joinedAt: true,
+      clubId: true,
       club: {
         select: {
           id: true,
           slug: true,
           name: true,
           bannerUrl: true,
-          _count: { select: { memberships: true, picks: true, events: true } },
+          _count: { select: { memberships: true, events: true } },
         },
       },
     },
     orderBy: { joinedAt: 'desc' },
   })
+
+  const memberships = [] as typeof rawMemberships
+  const seen = new Set<string>()
+  for (const m of rawMemberships) {
+    if (seen.has(m.clubId)) continue
+    seen.add(m.clubId)
+    memberships.push(m)
+  }
 
   const joinedItems = memberships.map((m) => ({
     id: m.club.id,
@@ -35,7 +44,7 @@ export default async function ProfileMain({
     name: m.club.name,
     imageUrl: m.club.bannerUrl || null,
     members: m.club._count.memberships,
-    picks: m.club._count.picks,
+    picks: m.club._count.events,
     events: m.club._count.events,
   }))
 

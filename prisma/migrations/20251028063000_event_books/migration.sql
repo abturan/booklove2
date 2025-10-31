@@ -1,0 +1,1 @@
+-- Placeholder migration kept for history after being rolled back.

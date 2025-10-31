@@ -80,10 +80,9 @@ model Club {
   updatedAt      DateTime        @updatedAt
   published      Boolean         @default(false)
   moderatorId    String          @unique
-  chatRoom       ChatRoom?
+  chatRooms      ChatRoom[]
   moderator      User            @relation("ClubModerator", fields: [moderatorId], references: [id])
   events         ClubEvent[]
-  picks          ClubPick[]
   memberships    Membership[]
   paymentIntents PaymentIntent[]
   subscriptions  Subscription[]
@@ -95,64 +94,46 @@ model Membership {
   id       String   @id @default(cuid())
   userId   String
   clubId   String
+  clubEventId String
   role     String   @default("MEMBER")
   isActive Boolean  @default(true)
   joinedAt DateTime @default(now())
   club     Club     @relation(fields: [clubId], references: [id])
+  event    ClubEvent @relation(fields: [clubEventId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
 
-  @@unique([userId, clubId])
+  @@unique([userId, clubEventId])
 }
 
 model Subscription {
   id         String    @id @default(cuid())
   userId     String
   clubId     String
+  clubEventId String
   active     Boolean   @default(false)
   startedAt  DateTime?
   canceledAt DateTime?
   club       Club      @relation(fields: [clubId], references: [id])
+  event      ClubEvent @relation(fields: [clubEventId], references: [id])
   user       User      @relation(fields: [userId], references: [id])
 
-  @@unique([userId, clubId])
+  @@unique([userId, clubEventId])
 }
 
 model PaymentIntent {
   id          String   @id @default(cuid())
   userId      String
   clubId      String
+  clubEventId String
   amountTRY   Int
   status      String   @default("REQUIRES_PAYMENT")
   createdAt   DateTime @default(now())
   merchantOid String   @unique
   club        Club     @relation(fields: [clubId], references: [id])
+  event       ClubEvent @relation(fields: [clubEventId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
 
   @@index([createdAt])
-}
-
-model Book {
-  id         String     @id @default(cuid())
-  title      String
-  author     String
-  translator String?
-  pages      Int?
-  isbn       String?
-  coverUrl   String?
-  picks      ClubPick[]
-}
-
-model ClubPick {
-  id        String  @id @default(cuid())
-  clubId    String
-  bookId    String
-  monthKey  String
-  isCurrent Boolean @default(false)
-  note      String?
-  book      Book    @relation(fields: [bookId], references: [id])
-  club      Club    @relation(fields: [clubId], references: [id])
-
-  @@unique([clubId, monthKey])
 }
 
 model ClubEvent {
@@ -161,14 +142,28 @@ model ClubEvent {
   startsAt DateTime
   title    String   @default("Aylık Oturum")
   notes    String?
+  priceTRY Int?
+  capacity Int?
+  bookTitle String?
+  bookAuthor String?
+  bookTranslator String?
+  bookPages Int?
+  bookIsbn String?
+  bookCoverUrl String?
   club     Club     @relation(fields: [clubId], references: [id])
+  memberships Membership[]
+  subscriptions Subscription[]
+  paymentIntents PaymentIntent[]
+  chatRoom ChatRoom?
 }
 
 model ChatRoom {
-  id       String        @id @default(cuid())
-  clubId   String        @unique
-  messages ChatMessage[]
-  club     Club          @relation(fields: [clubId], references: [id])
+  id          String        @id @default(cuid())
+  clubId      String?       @unique
+  clubEventId String        @unique
+  messages    ChatMessage[]
+  club        Club?         @relation(fields: [clubId], references: [id])
+  event       ClubEvent     @relation(fields: [clubEventId], references: [id])
 }
 
 model ChatMessage {

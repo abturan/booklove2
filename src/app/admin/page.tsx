@@ -14,7 +14,8 @@ export default async function AdminHome() {
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/')
 
   // ----- üst kart metrikleri
-  const [userCount, clubCount, activeClubCount, paidIntents, subsCount] = await Promise.all([
+  const now = new Date()
+  const [userCount, clubCount, activeClubCount, paidIntents, subsCount, upcomingEventCount] = await Promise.all([
     prisma.user.count(),
     prisma.club.count(),
     prisma.club.count({ where: { published: true } }),
@@ -23,13 +24,13 @@ export default async function AdminHome() {
       select: { amountTRY: true, createdAt: true },
     }),
     prisma.subscription.count({ where: { active: true } }),
+    prisma.clubEvent.count({ where: { startsAt: { gte: now } } }),
   ])
 
   const revenueTRY = paidIntents.reduce((sum, p) => sum + (p.amountTRY ?? 0), 0) // ❗ bölme yok
   const fmt = (n: number) => n.toLocaleString('tr-TR')
 
   // ----- grafikleri besleyecek zaman serileri (son 30 gün)
-  const now = new Date()
   const from = new Date(now.getTime() - 29 * 24 * 3600 * 1000)
 
   // PostgreSQL kullanıyoruz; date_trunc ile gruplayalım (raw).
@@ -74,7 +75,8 @@ export default async function AdminHome() {
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card title="Toplam Üye" value={fmt(userCount)} href="/admin/members" />
         <Card title="Kulüp (aktif)" value={`${fmt(activeClubCount)} / ${fmt(clubCount)}`} href="/admin/clubs" />
-        <Card title="Ücretli Abone" value={fmt(subsCount)} href="/admin/members" />
+        <Card title="Etkinlik Aboneliği (aktif)" value={fmt(subsCount)} href="/admin/members" />
+        <Card title="Yaklaşan Etkinlik" value={fmt(upcomingEventCount)} href="/admin/clubs" />
         <Card title="Toplam Ciro (₺)" value={fmt(revenueTRY)} />
       </section>
 

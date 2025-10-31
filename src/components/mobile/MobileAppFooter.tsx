@@ -2,7 +2,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import NotificationBadge from '@/components/NotificationBadge'
@@ -87,9 +87,44 @@ export default function MobileAppFooter() {
     }
   }
 
+  const navRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const win = window as Window
+    const el = navRef.current
+    if (!el) return
+
+    const applyHeight = (h: number) => {
+      document.documentElement.style.setProperty('--mobile-footer-height', `${h}px`)
+    }
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect()
+      applyHeight(rect.height)
+    }
+
+    measure()
+
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver((entries) => {
+        const entry = entries[0]
+        if (entry) applyHeight(entry.contentRect.height)
+      })
+      ro.observe(el)
+      return () => {
+        ro.disconnect()
+      }
+    }
+
+    const resizeHandler = () => measure()
+    win.addEventListener('resize', resizeHandler)
+    return () => win.removeEventListener('resize', resizeHandler)
+  }, [])
+
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t">
+      <nav data-mobile-footer ref={navRef} className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t">
         <div className={`${isAuth ? 'grid-cols-7' : 'grid-cols-2'} grid items-center px-2 py-2 text-primary`}>
           <Link href="/?tab=clubs" scroll={false} className="grid place-content-center h-12">
             <IClubs />

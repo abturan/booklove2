@@ -6,7 +6,7 @@ import clsx from 'clsx'
 import Image from 'next/image'
 import Link from 'next/link'
 
-type Count = { memberships?: number; picks?: number; events?: number }
+type Count = { memberships?: number; events?: number }
 type ClubLite = {
   slug: string
   name: string
@@ -121,7 +121,6 @@ export default function ProfileTabs({
           {list.map((m, i) => {
             const c = m.club
             const members = c._count?.memberships ?? 0
-            const picks = c._count?.picks ?? 0
             const events = c._count?.events ?? 0
             const cover =
               (typeof c.bannerUrl === 'string' && c.bannerUrl.trim()) ||
@@ -150,9 +149,6 @@ export default function ProfileTabs({
                   <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 ring-1 ring-black/5">
                       👥 <b className="tabular-nums">{members}</b> üye
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 ring-1 ring-black/5">
-                      📚 <b className="tabular-nums">{picks}</b> seçki
                     </span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 ring-1 ring-black/5">
                       🗓️ <b className="tabular-nums">{events}</b> oturum

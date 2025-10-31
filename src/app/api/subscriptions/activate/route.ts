@@ -15,13 +15,28 @@ export async function POST(req: NextRequest) {
     const club = await prisma.club.findUnique({ where: { slug: clubSlug }, select: { id: true } })
     if (!club) return NextResponse.json({ ok: false, error: 'Kulüp bulunamadı' }, { status: 404 })
 
+    const requestedEventId = String(body?.clubEventId || '').trim()
+    const event =
+      requestedEventId
+        ? await prisma.clubEvent.findFirst({
+            where: { id: requestedEventId, clubId: club.id },
+            select: { id: true },
+          })
+        : await prisma.clubEvent.findFirst({
+            where: { clubId: club.id },
+            orderBy: { startsAt: 'desc' },
+            select: { id: true },
+          })
+    if (!event) return NextResponse.json({ ok: false, error: 'Etkinlik bulunamadı' }, { status: 404 })
+
     const userId = session.user.id
     const clubId = club.id
+    const clubEventId = event.id
 
     await prisma.subscription.upsert({
-      where: { userId_clubId: { userId, clubId } },
-      update: { active: true, startedAt: new Date(), canceledAt: null },
-      create: { userId, clubId, active: true, startedAt: new Date() },
+      where: { userId_clubEventId: { userId, clubEventId } },
+      update: { active: true, startedAt: new Date(), canceledAt: null, clubId },
+      create: { userId, clubId, clubEventId, active: true, startedAt: new Date() },
     })
 
     return NextResponse.json({ ok: true })

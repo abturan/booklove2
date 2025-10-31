@@ -14,11 +14,31 @@ type ClubLite = {
   priceTRY?: number | null
   capacity?: number | null
   moderator?: { id: string; name: string | null; username: string | null; avatarUrl: string | null } | null
-  _count?: { memberships: number; picks: number; events: number }
+  _count?: { memberships: number; events: number }
 }
 
-export default function SubscribedClubCard({ club }: { club: ClubLite }) {
+type EventLite = {
+  id: string
+  title: string
+  startsAt: string
+  priceTRY: number
+  capacity: number | null
+}
+
+function formatDateTimeTR(iso: string) {
+  try {
+    return new Intl.DateTimeFormat('tr-TR', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    }).format(new Date(iso))
+  } catch {
+    return iso
+  }
+}
+
+export default function SubscribedClubCard({ club, event }: { club: ClubLite; event: EventLite | null }) {
   const href = `/clubs/${club.slug}` // rotanız farklıysa burada düzeltin
+  const price = event?.priceTRY ?? club.priceTRY ?? null
 
   return (
     <div className="card p-0 overflow-hidden">
@@ -48,14 +68,20 @@ export default function SubscribedClubCard({ club }: { club: ClubLite }) {
           <p className="text-sm text-gray-700 line-clamp-2">{club.description}</p>
         ) : null}
 
+        {event && (
+          <div className="rounded-2xl bg-gray-50 border border-gray-100 p-3 text-xs text-gray-700">
+            <div className="font-semibold text-gray-900 text-sm">{event.title}</div>
+            <div className="mt-1">{formatDateTimeTR(event.startsAt)}</div>
+            {typeof event.capacity === 'number' && (
+              <div className="mt-1 text-gray-500">Kontenjan: {event.capacity > 0 ? event.capacity : '—'}</div>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center gap-4 text-xs text-gray-700">
           <span className="inline-flex items-center gap-1">
             <svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 20v-7a8 8 0 0 1 16 0v7" stroke="currentColor" strokeWidth="1.6" fill="none"/></svg>
             {club._count?.memberships ?? 0} abone
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 4h12v16H6z" stroke="currentColor" strokeWidth="1.6" fill="none"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" strokeWidth="1.6"/></svg>
-            {club._count?.picks ?? 0} seçki
           </span>
           <span className="inline-flex items-center gap-1">
             <svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 7h8M6 12h12M8 17h8" stroke="currentColor" strokeWidth="1.6" fill="none"/></svg>
@@ -65,7 +91,7 @@ export default function SubscribedClubCard({ club }: { club: ClubLite }) {
 
         <div className="flex items-center justify-between pt-1">
           <div className="text-sm font-medium">
-            {typeof club.priceTRY === 'number' ? `₺${club.priceTRY}` : ''}
+            {typeof price === 'number' ? `₺${price}` : ''}
           </div>
           <Link
             href={href}

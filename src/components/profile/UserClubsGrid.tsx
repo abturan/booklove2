@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default async function UserClubsGrid({ userId }: { userId: string }) {
-  const memberships = await prisma.membership.findMany({
+  const rawMemberships = await prisma.membership.findMany({
     where: { userId, isActive: true },
     orderBy: { joinedAt: 'desc' },
     include: {
@@ -13,11 +13,26 @@ export default async function UserClubsGrid({ userId }: { userId: string }) {
           slug: true,
           name: true,
           bannerUrl: true,
-          _count: { select: { memberships: true, picks: true, events: true } },
+          _count: { select: { memberships: true, events: true } },
+        },
+      },
+      event: {
+        select: {
+          id: true,
+          title: true,
+          startsAt: true,
         },
       },
     },
   })
+
+  const memberships = [] as typeof rawMemberships
+  const seen = new Set<string>()
+  for (const m of rawMemberships) {
+    if (seen.has(m.clubId)) continue
+    seen.add(m.clubId)
+    memberships.push(m)
+  }
 
   if (!memberships.length) {
     return (
@@ -57,10 +72,7 @@ export default async function UserClubsGrid({ userId }: { userId: string }) {
                   👥 {c._count.memberships}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-                  📚 {c._count.picks}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-                  🗓️ {c._count.events}
+                  📚 {c._count.events}
                 </span>
               </div>
             </div>

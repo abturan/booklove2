@@ -3,7 +3,7 @@ import Image from 'next/image'
 
 export default function Banner({ url }: { url: string }) {
   return (
-    <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden">
+    <div className="relative hidden h-64 overflow-hidden rounded-3xl sm:block md:h-80">
       <Image src={url} alt="" fill className="object-cover" priority />
     </div>
   )

@@ -2,53 +2,275 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-const monthRangeUTC = (k: string) => { const [y,m]=k.split('-').map(n=>parseInt(n,10)); const s=new Date(Date.UTC(y,m-1,1,0,0,0)); const e=new Date(Date.UTC(y,m,1,0,0,0)); return {start:s,end:e} }
-const monthKeyUTC = (d=new Date()) => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`
+type EventMember = {
+  id: string
+  name: string
+  username: string | null
+  slug: string | null
+  avatarUrl: string | null
+}
 
-export async function getInitial(slug: string) {
+type EventInitial = {
+  id: string
+  title: string
+  startsAt: string
+  notes: string | null
+  priceTRY: number
+  capacity: number | null
+  memberCount: number
+  members: EventMember[]
+  memberSince: string | null
+  isMember: boolean
+  chatRoomId: string | null
+  pick: {
+    title: string
+    author: string
+    translator: string | null
+    pages: number | null
+    isbn: string | null
+    coverUrl: string
+    note: string | null
+    monthKey: string | null
+  } | null
+  isSoldOut: boolean
+  status: 'upcoming' | 'past'
+}
+
+export type ClubInitial = {
+  me: {
+    id: string | null
+    name: string | null
+    email: string | null
+    avatarUrl: string | null
+    city: string | null
+    district: string | null
+    phone: string | null
+  }
+  club: {
+    id: string
+    slug: string
+    name: string
+    description: string | null
+    bannerUrl: string
+    priceTRY: number
+    moderatorName: string
+    moderatorAvatarUrl: string | null
+    moderatorUsername: string | null
+    moderatorSlug: string | null
+    activeEventId: string | null
+    events: EventInitial[]
+    isModerator: boolean
+  }
+}
+
+const fallbackBanner =
+  'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1600&auto=format&fit=crop'
+const fallbackCover =
+  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop'
+
+export async function getInitial(slug: string): Promise<ClubInitial | null> {
   const session = await auth()
-  const club = await prisma.club.findUnique({ where:{ slug }, select:{ id:true, slug:true, name:true, description:true, bannerUrl:true, priceTRY:true, moderatorId:true, capacity:true, moderator:{ select:{ name:true, avatarUrl:true, username:true, slug:true } } } })
+
+  const club = await prisma.club.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      bannerUrl: true,
+      priceTRY: true,
+      capacity: true,
+      moderatorId: true,
+      moderator: { select: { name: true, avatarUrl: true, username: true, slug: true } },
+      events: {
+        orderBy: { startsAt: 'asc' },
+        select: {
+          id: true,
+          startsAt: true,
+          title: true,
+          notes: true,
+          priceTRY: true,
+          capacity: true,
+          bookTitle: true,
+          bookAuthor: true,
+          bookTranslator: true,
+          bookPages: true,
+          bookIsbn: true,
+          bookCoverUrl: true,
+        },
+      },
+    },
+  })
+
   if (!club) return null
-  const memberCount = await prisma.membership.count({ where:{ clubId: club.id, isActive:true } })
-  const members = await prisma.membership.findMany({ where:{ clubId: club.id, isActive:true }, orderBy:{ joinedAt:'desc' }, take:30, select:{ user:{ select:{ id:true, name:true, username:true, slug:true, avatarUrl:true } } } })
-  const thisMonth = monthKeyUTC()
-  const futureNearest = await prisma.clubPick.findFirst({ where:{ clubId: club.id, monthKey:{ gte:thisMonth } }, orderBy:{ monthKey:'asc' }, select:{ monthKey:true, note:true, book:{ select:{ title:true, author:true, translator:true, pages:true, coverUrl:true, isbn:true } } } })
-  const pastNearest = futureNearest ? null : await prisma.clubPick.findFirst({ where:{ clubId: club.id, monthKey:{ lte:thisMonth } }, orderBy:{ monthKey:'desc' }, select:{ monthKey:true, note:true, book:{ select:{ title:true, author:true, translator:true, pages:true, coverUrl:true, isbn:true } } } })
-  const anchorPick = futureNearest ?? pastNearest
-  let prevPick:any=null, nextPick:any=null
-  if (anchorPick?.monthKey) {
-    prevPick = await prisma.clubPick.findFirst({ where:{ clubId: club.id, monthKey:{ lt: anchorPick.monthKey } }, orderBy:{ monthKey:'desc' }, select:{ monthKey:true, book:{ select:{ title:true, author:true, coverUrl:true } } } })
-    nextPick = await prisma.clubPick.findFirst({ where:{ clubId: club.id, monthKey:{ gt: anchorPick.monthKey } }, orderBy:{ monthKey:'asc' }, select:{ monthKey:true, book:{ select:{ title:true, author:true, coverUrl:true } } } })
-  }
+
+  const eventIds = club.events.map((e) => e.id)
   const now = new Date()
-  let nextEvent = null as null | { title: string | null, startsAt: Date }
-  if (anchorPick?.monthKey) {
-    const { start, end } = monthRangeUTC(anchorPick.monthKey)
-    const inMonth = await prisma.clubEvent.findFirst({ where:{ clubId: club.id, startsAt:{ gte:start, lt:end } }, orderBy:{ startsAt:'asc' }, select:{ title:true, startsAt:true } })
-    if (inMonth && inMonth.startsAt >= now) nextEvent = inMonth
-  }
-  if (!nextEvent) nextEvent = await prisma.clubEvent.findFirst({ where:{ clubId: club.id, startsAt:{ gte: now } }, orderBy:{ startsAt:'asc' }, select:{ title:true, startsAt:true } })
-  const room = await prisma.chatRoom.findFirst({ where:{ clubId: club.id }, select:{ id:true } })
-  const me = session?.user?.id ? await prisma.user.findUnique({ where:{ id: session.user.id }, select:{ id:true, name:true, email:true, avatarUrl:true, city:true, district:true, phone:true } }) : null
-  let myMembership:null|{since:string}=null
-  if (session?.user?.id) { const m = await prisma.membership.findUnique({ where:{ userId_clubId:{ userId: session.user.id, clubId: club.id } }, select:{ isActive:true, joinedAt:true } }); if (m?.isActive) myMembership = { since: m.joinedAt.toISOString() } }
+
+  const [memberCounts, memberPreviews, chatRooms, clubRoom, myMemberships, me] = await Promise.all([
+    eventIds.length
+      ? prisma.membership.groupBy({
+          by: ['clubEventId'],
+          where: { clubEventId: { in: eventIds }, isActive: true },
+          _count: { _all: true },
+        })
+      : Promise.resolve([]),
+    Promise.all(
+      club.events.map((event) =>
+        prisma.membership.findMany({
+          where: { clubEventId: event.id, isActive: true },
+          orderBy: { joinedAt: 'desc' },
+          take: 200,
+          select: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                slug: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        }),
+      ),
+    ),
+    eventIds.length
+      ? prisma.chatRoom.findMany({
+          where: { clubEventId: { in: eventIds } },
+          select: { id: true, clubEventId: true },
+        })
+      : Promise.resolve([]),
+    prisma.chatRoom.findUnique({
+      where: { clubId: club.id },
+      select: { id: true },
+    }),
+    session?.user?.id && eventIds.length
+      ? prisma.membership.findMany({
+          where: { userId: session.user.id, clubEventId: { in: eventIds }, isActive: true },
+          select: { clubEventId: true, joinedAt: true },
+        })
+      : Promise.resolve([]),
+    session?.user?.id
+      ? prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+            city: true,
+            district: true,
+            phone: true,
+          },
+        })
+      : Promise.resolve(null),
+  ])
+
+  const countMap = new Map<string, number>()
+  memberCounts.forEach((row) => countMap.set(row.clubEventId, row._count._all))
+
+  const memberMap = new Map<string, EventMember[]>()
+  club.events.forEach((event, idx) => {
+    const rows = memberPreviews[idx] || []
+    memberMap.set(
+      event.id,
+      rows.map((r) => ({
+        id: r.user.id,
+        name: r.user.name ?? 'Üye',
+        username: r.user.username ?? null,
+        slug: r.user.slug ?? null,
+        avatarUrl: r.user.avatarUrl ?? null,
+      })),
+    )
+  })
+
+  const chatMap = new Map<string, string>()
+  chatRooms.forEach((room) => chatMap.set(room.clubEventId, room.id))
+
+  const membershipMap = new Map<string, string>()
+  myMemberships.forEach((m) => membershipMap.set(m.clubEventId, m.joinedAt.toISOString()))
+
+  const safeBanner =
+    typeof club.bannerUrl === 'string' && club.bannerUrl.trim().length > 0
+      ? club.bannerUrl
+      : fallbackBanner
+
   const isModerator = !!(session?.user?.id && club.moderatorId === session.user.id)
-  const isMember = !!myMembership || isModerator
-  const fallbackBanner = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1600&auto=format&fit=crop'
-  const safeBannerUrl = typeof club.bannerUrl === 'string' && club.bannerUrl.trim().length>0 ? club.bannerUrl : fallbackBanner
-  const isSoldOut = typeof club.capacity === 'number' && club.capacity >= 0 ? memberCount >= (club.capacity ?? 0) : false
-  return {
-    me: { id: me?.id ?? null, name: me?.name ?? null, email: me?.email ?? null, avatarUrl: me?.avatarUrl ?? null, city: me?.city ?? null, district: me?.district ?? null, phone: me?.phone ?? null },
-    club: {
-      id: club.id, slug: club.slug, name: club.name, description: club.description, bannerUrl: safeBannerUrl, priceTRY: club.priceTRY,
-      moderatorName: club.moderator?.name ?? '—', moderatorAvatarUrl: club.moderator?.avatarUrl ?? null, moderatorUsername: club.moderator?.username ?? null, moderatorSlug: club.moderator?.slug ?? null,
-      memberCount, isMember, memberSince: myMembership?.since ?? null, chatRoomId: room?.id ?? null,
-      currentPick: anchorPick ? { title: anchorPick.book.title, author: anchorPick.book.author, translator: anchorPick.book.translator || null, pages: anchorPick.book.pages ?? null, isbn: anchorPick.book.isbn || null, coverUrl: anchorPick.book.coverUrl ?? 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop', note: anchorPick.note || null, monthKey: anchorPick.monthKey } : null,
-      prevPick: prevPick ? { monthKey: prevPick.monthKey, title: prevPick.book.title, author: prevPick.book.author, coverUrl: prevPick.book.coverUrl ?? 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop' } : null,
-      nextPick: nextPick ? { monthKey: nextPick.monthKey, title: nextPick.book.title, author: nextPick.book.author, coverUrl: nextPick.book.coverUrl ?? 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop' } : null,
-      nextEvent: nextEvent ? { title: nextEvent.title ?? 'Aylık Oturum', startsAt: nextEvent.startsAt.toISOString() } : null,
-      members: members.map(m=>({ id: m.user.id, name: m.user.name ?? 'Üye', username: m.user.username ?? null, slug: m.user.slug ?? null, avatarUrl: m.user.avatarUrl ?? null })),
-      capacity: club.capacity ?? null, isSoldOut
+
+  let activeEventId: string | null = null
+  const upcoming = club.events.find((e) => e.startsAt >= now)
+  if (upcoming) activeEventId = upcoming.id
+  else if (club.events.length > 0) activeEventId = club.events[club.events.length - 1]?.id ?? null
+
+  const events: EventInitial[] = club.events.map((event) => {
+    const memberCount = countMap.get(event.id) ?? 0
+    const memberSince = membershipMap.get(event.id) ?? null
+    const capacity =
+      typeof event.capacity === 'number' && event.capacity >= 0
+        ? event.capacity
+        : typeof club.capacity === 'number' && club.capacity >= 0
+          ? club.capacity
+          : null
+    const price = event.priceTRY ?? club.priceTRY
+    const pick = event.bookTitle
+      ? {
+          title: event.bookTitle,
+          author: event.bookAuthor ?? '—',
+          translator: event.bookTranslator ?? null,
+          pages: event.bookPages ?? null,
+          isbn: event.bookIsbn ?? null,
+          coverUrl: event.bookCoverUrl ?? fallbackCover,
+          note: event.notes ?? null,
+          monthKey: null,
+        }
+      : null
+    const isSoldOut = typeof capacity === 'number' ? memberCount >= capacity : false
+    const status = event.startsAt >= now ? 'upcoming' : 'past'
+
+    return {
+      id: event.id,
+      title: event.title ?? 'Etkinlik',
+      startsAt: event.startsAt.toISOString(),
+      notes: event.notes ?? null,
+      priceTRY: price,
+      capacity,
+      memberCount,
+      members: memberMap.get(event.id) ?? [],
+      memberSince,
+      isMember: isModerator || membershipMap.has(event.id),
+      chatRoomId: chatMap.get(event.id) ?? clubRoom?.id ?? null,
+      pick,
+      isSoldOut,
+      status,
     }
+  })
+
+  return {
+    me: {
+      id: me?.id ?? null,
+      name: me?.name ?? null,
+      email: me?.email ?? null,
+      avatarUrl: me?.avatarUrl ?? null,
+      city: me?.city ?? null,
+      district: me?.district ?? null,
+      phone: me?.phone ?? null,
+    },
+    club: {
+      id: club.id,
+      slug: club.slug,
+      name: club.name,
+      description: club.description ?? null,
+      bannerUrl: safeBanner,
+      priceTRY: club.priceTRY,
+      moderatorName: club.moderator?.name ?? '—',
+      moderatorAvatarUrl: club.moderator?.avatarUrl ?? null,
+      moderatorUsername: club.moderator?.username ?? null,
+      moderatorSlug: club.moderator?.slug ?? null,
+      activeEventId,
+      events,
+      isModerator,
+    },
   }
 }

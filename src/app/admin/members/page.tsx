@@ -30,10 +30,10 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
       email: true,
       username: true,
       createdAt: true,
+      Memberships: { where: { isActive: true }, select: { clubId: true } },
+      Subscriptions: { where: { active: true }, select: { clubEventId: true } },
       _count: {
         select: {
-          Memberships: { where: { isActive: true } as any },
-          Subscriptions: { where: { active: true } as any },
           posts: true,
           comments: true,
           likes: true,
@@ -78,8 +78,9 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
                   {u.username && <div className="text-xs text-gray-500">@{u.username}</div>}
                 </td>
                 <td className="px-4 py-3">
-                  <div>Kulüp üyeliği: {u._count.Memberships}</div>
-                  <div>Abonelik: {u._count.Subscriptions}</div>
+                  <div>Aktif etkinlik üyeliği: {u.Memberships.length}</div>
+                  <div>Katıldığı kulüp sayısı: {new Set(u.Memberships.map((m) => m.clubId)).size}</div>
+                  <div>Aktif abonelik: {u.Subscriptions.length}</div>
                   <div>Post: {u._count.posts}, Yorum: {u._count.comments}, Beğeni: {u._count.likes}</div>
                   <div>Sohbet Mesajı: {u._count.dmMessagesAuthored}</div>
                 </td>

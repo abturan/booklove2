@@ -31,7 +31,16 @@ export default async function SubscriptionsPage() {
             priceTRY: true,
             capacity: true,
             moderator: { select: { id: true, name: true, username: true, avatarUrl: true } },
-            _count: { select: { memberships: true, picks: true, events: true } },
+            _count: { select: { memberships: true, events: true } },
+          },
+        },
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startsAt: true,
+            priceTRY: true,
+            capacity: true,
           },
         },
       },
@@ -63,7 +72,11 @@ export default async function SubscriptionsPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {subs.map((s) => (
-                <SubscribedClubCard key={s.club.id} club={s.club as any} />
+                <SubscribedClubCard
+                  key={`${s.club.id}-${s.event?.id ?? 'event'}`}
+                  club={s.club as any}
+                  event={s.event ? { id: s.event.id, title: s.event.title ?? 'Etkinlik', startsAt: s.event.startsAt.toISOString(), priceTRY: s.event.priceTRY ?? s.club.priceTRY ?? 0, capacity: s.event.capacity ?? s.club.capacity ?? null } : null}
+                />
               ))}
             </div>
           )}

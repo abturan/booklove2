@@ -14,6 +14,8 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
   const [isbn, setIsbn] = React.useState('')
   const [backText, setBackText] = React.useState('')
   const [note, setNote] = React.useState('')
+  const [priceTRY, setPriceTRY] = React.useState('')
+  const [capacity, setCapacity] = React.useState('')
 
   const [saving, setSaving] = React.useState(false)
   const [err, setErr] = React.useState<string | null>(null)
@@ -57,6 +59,21 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
     setErr(null)
     setOk(null)
 
+    const priceValue = priceTRY ? Number(priceTRY.replace(',', '.')) : null
+    if (priceValue !== null && (Number.isNaN(priceValue) || priceValue < 0)) {
+      setSaving(false)
+      setErr('Geçerli bir etkinlik ücreti girin.')
+      return
+    }
+
+    const capacityValue =
+      capacity.trim() === '' ? null : Number(capacity.replace(/[^\d-]/g, ''))
+    if (capacityValue !== null && (!Number.isInteger(capacityValue) || capacityValue < 0)) {
+      setSaving(false)
+      setErr('Kapasite 0 veya pozitif tam sayı olmalı (boş = sınırsız).')
+      return
+    }
+
     let cover = coverUrl
     const uploaded = await uploadCoverIfNeeded()
     if (uploaded) cover = uploaded
@@ -73,6 +90,8 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
         isbn: isbn.trim() || null,
       },
       note: note.trim() || null,
+      priceTRY: priceValue,
+      capacity: capacityValue,
     }
 
     try {
@@ -115,6 +134,24 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">Etkinlik ücreti (₺)</label>
+          <input
+            className="w-full rounded-xl border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400"
+            value={priceTRY}
+            onChange={(e) => setPriceTRY(e.target.value.replace(/[^0-9.,]/g, ''))}
+            placeholder="Kulüp ücretini kullanmak için boş bırakın"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">Kapasite</label>
+          <input
+            className="w-full rounded-xl border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value.replace(/[^\d]/g, ''))}
+            placeholder="Sınırsız için boş bırakın"
           />
         </div>
         <div>

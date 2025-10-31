@@ -29,13 +29,13 @@ const dice = (seed) =>
   `https://api.dicebear.com/8.x/thumbs/png?seed=${encodeURIComponent(seed)}`
 
 // Aynı üyeliği iki kez eklememek için güvenli yardımcı
-async function ensureMembership(userId, clubId) {
+async function ensureMembership(userId, clubId, clubEventId) {
   try {
-    await prisma.membership.create({ data: { userId, clubId, isActive: true } })
+    await prisma.membership.create({ data: { userId, clubId, clubEventId, isActive: true } })
   } catch {
     await prisma.membership.updateMany({
-      where: { userId, clubId },
-      data: { isActive: true },
+      where: { userId, clubId, clubEventId },
+      data: { isActive: true, clubId },
     })
   }
 }
@@ -46,7 +46,6 @@ async function main() {
   const adminPass = await bcrypt.hash('admin123', 10)
   const modPass = await bcrypt.hash('moderator123', 10)
   const userPass = await bcrypt.hash('user123', 10)
-  const monthKey = new Date().toISOString().slice(0, 7) // YYYY-MM
 
   // --- Admin
   await prisma.user.upsert({
@@ -105,6 +104,7 @@ async function main() {
     'Murat Okurları',
   ]
   const clubs = []
+  const eventByClub = new Map()
   for (let i = 0; i < 10; i++) {
     const name = clubNames[i]
     const slug = slugify(name)
@@ -128,11 +128,37 @@ async function main() {
     })
     clubs.push(club)
 
-    // Sohbet odası (clubId unique olmalı)
-    const room = await prisma.chatRoom.upsert({
+    // Yaklaşan etkinlik
+    let event = await prisma.clubEvent.findFirst({
       where: { clubId: club.id },
+      orderBy: { startsAt: 'asc' },
+    })
+    if (!event) {
+      event = await prisma.clubEvent.create({
+        data: {
+          clubId: club.id,
+          startsAt: new Date(Date.now() + (i + 3) * 24 * 3600 * 1000),
+          title: 'Aylık Oturum',
+          priceTRY: club.priceTRY,
+          capacity: club.capacity,
+        },
+      })
+    } else if (event.priceTRY == null || event.capacity == null) {
+      event = await prisma.clubEvent.update({
+        where: { id: event.id },
+        data: {
+          priceTRY: event.priceTRY ?? club.priceTRY,
+          capacity: event.capacity ?? club.capacity,
+        },
+      })
+    }
+    eventByClub.set(club.id, event.id)
+
+    // Sohbet odası (etkinlik bazlı)
+    const room = await prisma.chatRoom.upsert({
+      where: { clubEventId: event.id },
       update: {},
-      create: { clubId: club.id },
+      create: { clubEventId: event.id, clubId: club.id },
     })
 
     // Sohbet mesajları (mention + cevap + emoji)
@@ -184,47 +210,6 @@ async function main() {
       },
     })
 
-    // Kitap
-    const book = await prisma.book.create({
-      data: {
-        title: `Seçki ${i + 1}`,
-        author: ['A. Kara', 'E. Mavi', 'L. Gri', 'S. Beyaz'][i % 4],
-        coverUrl:
-          'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop',
-      },
-    })
-
-    // Bu ayın seçkisi (clubId+monthKey benzersiz olmalı)
-    await prisma.clubPick.updateMany({
-      where: { clubId: club.id },
-      data: { isCurrent: false },
-    })
-    await prisma.clubPick.upsert({
-      // Prisma şemanızda şu composite unique olmalı: @@unique([clubId, monthKey], name: "clubId_monthKey")
-      where: { clubId_monthKey: { clubId: club.id, monthKey } },
-      update: { bookId: book.id, isCurrent: true, note: 'Bu ayın seçkisi' },
-      create: {
-        clubId: club.id,
-        bookId: book.id,
-        monthKey,
-        isCurrent: true,
-        note: 'Bu ayın seçkisi',
-      },
-    })
-
-    // Yaklaşan etkinlik (yoksa ekle)
-    const existingEvent = await prisma.clubEvent.findFirst({
-      where: { clubId: club.id },
-    })
-    if (!existingEvent) {
-      await prisma.clubEvent.create({
-        data: {
-          clubId: club.id,
-          startsAt: new Date(Date.now() + (i + 3) * 24 * 3600 * 1000),
-          title: 'Aylık Oturum',
-        },
-      })
-    }
   }
 
   // --- 100 kullanıcı
@@ -247,7 +232,10 @@ async function main() {
 
   // Her kulüpte en az 1 üye (dummy)
   for (let i = 0; i < clubs.length; i++) {
-    await ensureMembership(users[i].id, clubs[i].id)
+    const eventId = eventByClub.get(clubs[i].id)
+    if (eventId) {
+      await ensureMembership(users[i].id, clubs[i].id, eventId)
+    }
   }
 
   // — Üyelik dağılımı —
@@ -272,15 +260,28 @@ async function main() {
   for (let i = 0; i < singles; i++) {
     const u = shuffled[cursor++ % shuffled.length]
     const [c] = pickClubIds(1)
-    await ensureMembership(u.id, c)
+    const eventId = eventByClub.get(c)
+    if (eventId) {
+      await ensureMembership(u.id, c, eventId)
+    }
   }
   for (let i = 0; i < doubles; i++) {
     const u = shuffled[cursor++ % shuffled.length]
-    for (const c of pickClubIds(2)) await ensureMembership(u.id, c)
+    for (const c of pickClubIds(2)) {
+      const eventId = eventByClub.get(c)
+      if (eventId) {
+        await ensureMembership(u.id, c, eventId)
+      }
+    }
   }
   for (let i = 0; i < triples; i++) {
     const u = shuffled[cursor++ % shuffled.length]
-    for (const c of pickClubIds(3)) await ensureMembership(u.id, c)
+    for (const c of pickClubIds(3)) {
+      const eventId = eventByClub.get(c)
+      if (eventId) {
+        await ensureMembership(u.id, c, eventId)
+      }
+    }
   }
 
   console.log('— Seed tamamlandı —')

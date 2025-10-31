@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     const intent = await prisma.paymentIntent.findFirst({
       where: { merchantOid: p.merchant_oid },
-      select: { id: true, userId: true, clubId: true },
+      select: { id: true, userId: true, clubId: true, clubEventId: true },
     })
 
     if (intent) {
@@ -64,14 +64,25 @@ export async function POST(req: NextRequest) {
             data: { status: 'SUCCEEDED' },
           }),
           prisma.subscription.upsert({
-            where: { userId_clubId: { userId: intent.userId, clubId: intent.clubId } },
-            update: { active: true, startedAt: new Date(), canceledAt: null },
-            create: { userId: intent.userId, clubId: intent.clubId, active: true, startedAt: new Date() },
+            where: { userId_clubEventId: { userId: intent.userId, clubEventId: intent.clubEventId } },
+            update: { active: true, startedAt: new Date(), canceledAt: null, clubId: intent.clubId },
+            create: {
+              userId: intent.userId,
+              clubId: intent.clubId,
+              clubEventId: intent.clubEventId,
+              active: true,
+              startedAt: new Date(),
+            },
           }),
           prisma.membership.upsert({
-            where: { userId_clubId: { userId: intent.userId, clubId: intent.clubId } },
-            update: { isActive: true },
-            create: { userId: intent.userId, clubId: intent.clubId, isActive: true },
+            where: { userId_clubEventId: { userId: intent.userId, clubEventId: intent.clubEventId } },
+            update: { isActive: true, clubId: intent.clubId },
+            create: {
+              userId: intent.userId,
+              clubId: intent.clubId,
+              clubEventId: intent.clubEventId,
+              isActive: true,
+            },
           }),
         ])
       } else {

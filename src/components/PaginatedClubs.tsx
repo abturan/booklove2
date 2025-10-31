@@ -60,7 +60,7 @@ export default function PaginatedClubs({
           priceTRY: typeof x.priceTRY === 'number' ? x.priceTRY : 0,
           moderator: x.moderator ? { id: x.moderator.id ?? '', name: x.moderator.name ?? '', avatarUrl: x.moderator.avatarUrl ?? null } : null,
           memberCount: typeof x.memberCount === 'number' ? x.memberCount : (x._count?.memberships ?? 0),
-          pickCount: typeof x.pickCount === 'number' ? x.pickCount : (x._count?.picks ?? 0),
+          pickCount: typeof x.pickCount === 'number' ? x.pickCount : (x._count?.events ?? 0),
           capacity: typeof x.capacity === 'number' ? x.capacity : (x.capacity == null ? null : undefined),
         }))
         if (!cancelled) {

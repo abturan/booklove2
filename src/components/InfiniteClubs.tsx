@@ -59,8 +59,12 @@ function normalizeClub(x: RawClub, fallbackKey: string): Club | null {
     pickCount:
       typeof x.pickCount === 'number'
         ? x.pickCount
+        : Array.isArray(x.events)
+        ? x.events.length
         : Array.isArray(x.picks)
         ? x.picks.length
+        : typeof x._count?.events === 'number'
+        ? x._count.events
         : typeof x._count?.picks === 'number'
         ? x._count.picks
         : 0,

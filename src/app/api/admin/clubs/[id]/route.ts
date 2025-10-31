@@ -27,7 +27,6 @@ export async function GET(
       capacity: true,
       moderator: { select: { id: true, name: true, email: true } },
       _count: { select: { memberships: { where: { isActive: true } as any } } },
-      picks: { orderBy: { monthKey: 'desc' }, include: { book: true } },
       events: { orderBy: { startsAt: 'desc' }, take: 1 },
     },
   })
@@ -143,4 +142,62 @@ export async function PUT(
   })
 
   return NextResponse.json(updated)
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: { id: string } },
+) {
+  const session = await auth()
+  if (!session?.user || (session.user as any).role !== 'ADMIN') {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
+  const club = await prisma.club.findUnique({
+    where: { id: params.id },
+    select: { id: true, name: true },
+  })
+  if (!club) {
+    return NextResponse.json({ error: 'Kulüp bulunamadı' }, { status: 404 })
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const events = await tx.clubEvent.findMany({
+        where: { clubId: params.id },
+        select: { id: true },
+      })
+      const eventIds = events.map((e) => e.id)
+
+      const chatRooms = await tx.chatRoom.findMany({
+        where: {
+          OR: [
+            { clubId: params.id },
+            ...(eventIds.length ? [{ clubEventId: { in: eventIds } }] : []),
+          ],
+        },
+        select: { id: true },
+      })
+      const roomIds = chatRooms.map((r) => r.id)
+
+      if (roomIds.length) {
+        await tx.chatMessage.deleteMany({ where: { roomId: { in: roomIds } } })
+      }
+      if (chatRooms.length) {
+        await tx.chatRoom.deleteMany({ where: { id: { in: roomIds } } })
+      }
+
+      await tx.membership.deleteMany({ where: { clubId: params.id } })
+      await tx.subscription.deleteMany({ where: { clubId: params.id } })
+      await tx.paymentIntent.deleteMany({ where: { clubId: params.id } })
+      if (eventIds.length) {
+        await tx.clubEvent.deleteMany({ where: { id: { in: eventIds } } })
+      }
+      await tx.club.delete({ where: { id: params.id } })
+    })
+    return NextResponse.json({ ok: true })
+  } catch (err: any) {
+    console.error('DELETE /api/admin/clubs/[id] error:', err)
+    return NextResponse.json({ error: err?.message || 'Kulüp silinemedi' }, { status: 500 })
+  }
 }

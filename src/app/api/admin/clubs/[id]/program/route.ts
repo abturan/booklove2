@@ -2,15 +2,9 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-function monthKeyFromISO(iso: string) {
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return ''
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
-}
-
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await auth()
@@ -24,89 +18,63 @@ export async function POST(
       return NextResponse.json({ error: 'Geçersiz istek gövdesi' }, { status: 400 })
     }
 
-    // Tarih doğrulama
     const startsAt = body?.startsAt ? new Date(body.startsAt) : null
     if (!startsAt || Number.isNaN(startsAt.getTime())) {
       return NextResponse.json({ error: 'Geçerli bir oturum tarihi girin' }, { status: 400 })
     }
 
-    // Zorunlu kitap alanı
     const bookTitle: string = body?.book?.title?.trim?.() || ''
     if (!bookTitle) {
       return NextResponse.json({ error: 'Kitap adı zorunlu' }, { status: 400 })
     }
 
-    // Aynı ay tekrarı
-    const monthKey = body?.monthKey || monthKeyFromISO(startsAt.toISOString())
-    const existing = await prisma.clubPick.findUnique({
-      where: { clubId_monthKey: { clubId, monthKey } },
-    }).catch(() => null)
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Bu ay için zaten bir program kaydı var. Farklı bir tarih seçin.' },
-        { status: 409 }
-      )
+    const priceTryRaw = body?.priceTRY
+    const capacityRaw = body?.capacity
+
+    const priceTRY =
+      priceTryRaw === null || priceTryRaw === undefined || priceTryRaw === ''
+        ? null
+        : Number(priceTryRaw)
+    if (priceTRY !== null && (Number.isNaN(priceTRY) || priceTRY < 0)) {
+      return NextResponse.json({ error: 'Geçerli bir etkinlik ücreti girin' }, { status: 400 })
     }
 
-    // Kitap: mevcutsa bul, yoksa oluştur (sende "hep create" vardı)
-    let book = await prisma.book.findFirst({
-      where: {
-        title: bookTitle,
-        author: body?.book?.author || undefined,
-      },
-    })
-
-    if (!book) {
-      book = await prisma.book.create({
-        data: {
-          title: bookTitle,
-          author: body?.book?.author || null,
-          translator: body?.book?.translator || null,
-          pages: body?.book?.pages != null ? Number(body.book.pages) : null,
-          coverUrl: body?.book?.coverUrl || null,
-          isbn: body?.book?.isbn || null,
-        } as any,
-      })
-    } else {
-      // İsteğe bağlı güncelleme (yeni bilgi geldiyse)
-      const patch: any = {}
-      if (body?.book?.translator !== undefined) patch.translator = body.book.translator
-      if (body?.book?.pages !== undefined) patch.pages = body.book.pages
-      if (body?.book?.isbn !== undefined) patch.isbn = body.book.isbn
-      if (body?.book?.coverUrl !== undefined) patch.coverUrl = body.book.coverUrl
-      if (Object.keys(patch).length) {
-        book = await prisma.book.update({ where: { id: book.id }, data: patch })
-      }
+    const capacity =
+      capacityRaw === null || capacityRaw === undefined || capacityRaw === ''
+        ? null
+        : Number(capacityRaw)
+    if (capacity !== null && (!Number.isInteger(capacity) || capacity < 0)) {
+      return NextResponse.json({ error: 'Kapasite 0 veya pozitif tam sayı olmalı' }, { status: 400 })
     }
 
-    // Daha önce current olanı kapat
-    await prisma.clubPick.updateMany({
-      where: { clubId },
-      data: { isCurrent: false },
-    })
+    const pagesRaw = body?.book?.pages
+    const pages =
+      pagesRaw === null || pagesRaw === undefined || pagesRaw === ''
+        ? null
+        : Number(pagesRaw)
+    if (pages !== null && (Number.isNaN(pages) || pages < 0)) {
+      return NextResponse.json({ error: 'Geçerli bir sayfa sayısı girin' }, { status: 400 })
+    }
 
-    // Seçki
-    const pick = await prisma.clubPick.create({
-      data: {
-        clubId,
-        bookId: book.id,
-        monthKey,
-        isCurrent: true,
-        note: body?.note || body?.book?.backText || null,
-      },
-    })
-
-    // Etkinlik: *** description DEĞİL -> notes ***
-    await prisma.clubEvent.create({
+    const event = await prisma.clubEvent.create({
       data: {
         clubId,
         startsAt,
         title: 'Aylık Oturum',
         notes: body?.note || body?.book?.backText || null,
-      } as any,
+        priceTRY: priceTRY ?? undefined,
+        capacity: capacity ?? undefined,
+        bookTitle,
+        bookAuthor: body?.book?.author ? String(body.book.author) : null,
+        bookTranslator: body?.book?.translator ? String(body.book.translator) : null,
+        bookPages: pages,
+        bookIsbn: body?.book?.isbn ? String(body.book.isbn) : null,
+        bookCoverUrl: body?.book?.coverUrl ? String(body.book.coverUrl) : null,
+      },
+      select: { id: true },
     })
 
-    return NextResponse.json({ ok: true, book, pick }, { status: 201 })
+    return NextResponse.json({ ok: true, event }, { status: 201 })
   } catch (err: any) {
     console.error('POST /admin/clubs/[id]/program error:', err)
     return NextResponse.json({ error: err?.message || 'Sunucu hatası' }, { status: 500 })
