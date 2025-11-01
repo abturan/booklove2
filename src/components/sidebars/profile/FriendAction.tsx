@@ -172,7 +172,7 @@ export default function FriendAction({
 
     if (appearance === 'compact') {
       return (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={openThread}
