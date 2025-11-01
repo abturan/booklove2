@@ -54,7 +54,7 @@ export default function ContractModal({ open, data, onClose, onDownloaded }: Pro
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-3xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         <div className="p-4 border-b">
           <div className="text-lg font-semibold">Mesafeli Satış Sözleşmesi</div>

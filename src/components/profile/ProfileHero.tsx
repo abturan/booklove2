@@ -10,6 +10,7 @@ type Props = {
   avatarUrl?: string | null
   bannerUrl?: string | null
   actionSlot?: React.ReactNode
+  ctaSlot?: React.ReactNode
   counts?: Counts
 }
 
@@ -19,6 +20,7 @@ export default function ProfileHero({
   avatarUrl,
   bannerUrl,
   actionSlot,
+  ctaSlot,
   counts,
 }: Props) {
   const cover =
@@ -42,8 +44,8 @@ export default function ProfileHero({
 
       <div className="relative">
         <div className="container mx-auto px-4">
-          <div className="mt-0 flex items-start justify-between">
-            <div className="flex items-start gap-4 md:gap-6">
+          <div className="mt-0 flex items-start gap-4 md:gap-6">
+            <div className="flex items-start gap-4 md:gap-6 flex-1 min-w-0">
               <div
                 className={clsx(
                   '-mt-10 md:-mt-14 lg:-mt-20',
@@ -67,11 +69,16 @@ export default function ProfileHero({
                 />
               </div>
 
-              <div className="pt-2 md:pt-3">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-gray-900 break-words">
-                  {name}
-                </h1>
-                {username && <div className="text-gray-600 font-medium break-words">@{username}</div>}
+              <div className="pt-2 md:pt-3 flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-gray-900 break-words">
+                      {name}
+                    </h1>
+                    {username && <div className="text-gray-600 font-medium break-words">@{username}</div>}
+                  </div>
+                  {ctaSlot ? <div className="shrink-0">{ctaSlot}</div> : null}
+                </div>
                 {actionSlot ? <div className="mt-2">{actionSlot}</div> : null}
                 {showCounts && (
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -100,17 +107,10 @@ export default function ProfileHero({
                 )}
               </div>
             </div>
-
-            <div className="hidden" />
           </div>
         </div>
       </div>
     </section>
   )
 }
-
-
-
-
-
 

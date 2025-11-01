@@ -4,25 +4,25 @@
 import Link from 'next/link'
 
 export default function HeaderBar({
-  totalCount,
+  badgeCount,
 }: {
-  totalCount: number
+  badgeCount?: number
   compact: boolean
   onToggleCompact: () => void
 }) {
-  const showBadge = totalCount > 0
-  const countLabel = totalCount > 99 ? '99+' : String(totalCount)
+  const showBadge = typeof badgeCount === 'number'
+  const countLabel = showBadge ? (badgeCount! > 99 ? '99+' : String(badgeCount)) : null
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <div className="text-2xl font-extrabold tracking-tight">Book Buddy</div>
-        {showBadge && (
+        {showBadge && countLabel && (
           <Link
             href="/friends"
-            className="hidden lg:inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary text-xs font-bold"
-            aria-label={`${countLabel} bildirim (istek + okunmamış)`}
-            title="Bildirimler (istek + okunmamış)"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary text-xs font-bold"
+            aria-label={`${countLabel} takipçi`}
+            title="Takipçi sayısı"
           >
             {countLabel}
           </Link>

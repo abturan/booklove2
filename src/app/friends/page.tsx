@@ -11,7 +11,7 @@ export default async function FriendsPage() {
       {/* Mobil başlık */}
       <div className="pt-2 text-center">
         <div className="text-3xl font-extrabold tracking-tight primaryRed">Book Buddy</div>
-        <div className="text-xl font-bold -mt-1">Arkadaşlar</div>
+        <div className="text-xl font-bold -mt-1">Book Buddy bağlantıların</div>
       </div>
 
       {/* 3’lü grid: solda menü, sağda panel */}

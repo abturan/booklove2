@@ -17,15 +17,35 @@ const EMOJIS = [
   '💚','💙','💜','🖤','🤍','📚','✍️','📖'
 ]
 
+type ChatAuthor = {
+  id?: string
+  name?: string | null
+  username?: string | null
+  slug?: string | null
+  avatarUrl?: string | null
+}
+
+type ChatItem = {
+  id: string
+  body: string
+  isSecret?: boolean
+  secretMasked?: boolean
+  author?: ChatAuthor | null
+}
+
 export default function ChatPanel({
   eventId,
   enabled,
   className,
+  allowSecret = false,
+  canSeeSecret = false,
   onCountChange,
 }: {
   eventId: string | null
   enabled: boolean
   className?: string
+  allowSecret?: boolean
+  canSeeSecret?: boolean
   onCountChange?: (count: number) => void
 }) {
   const canLoad = !!eventId
@@ -33,6 +53,7 @@ export default function ChatPanel({
     refreshInterval: enabled ? 5000 : 15000,
   })
   const [text, setText] = useState('')
+  const [isSecret, setIsSecret] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const emojiRef = useRef<HTMLDivElement>(null)
@@ -66,7 +87,11 @@ export default function ChatPanel({
     }
   }, [emojiOpen])
 
-  const items: any[] = data?.items ?? []
+  useEffect(() => {
+    if (!allowSecret) setIsSecret(false)
+  }, [allowSecret])
+
+  const items: ChatItem[] = Array.isArray(data?.items) ? (data.items as ChatItem[]) : []
 
   useEffect(() => {
     scrollToBottom()
@@ -78,13 +103,18 @@ export default function ChatPanel({
     const body = text.trim()
     if (!body) return
     setText('')
+    const payload: Record<string, unknown> = { body }
+    if (allowSecret) payload.isSecret = isSecret
     scrollToBottom()
     const res = await fetch(`/api/chat/events/${eventId}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ body }),
+      body: JSON.stringify(payload),
     })
-    if (res.ok) mutate()
+    if (res.ok) {
+      mutate()
+      setIsSecret(false)
+    }
   }
 
   return (
@@ -93,17 +123,39 @@ export default function ChatPanel({
         {items.length === 0 && (
           <div className="p-2 text-sm text-slate-500">Henüz mesaj yok.</div>
         )}
-        {items.map((m) => (
-          <div key={m.id} className="flex gap-2 items-start p-2">
-            <Link href={userPath(m.author?.username, m.author?.name, m.author?.slug)} className="inline-block">
-              <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} />
-            </Link>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-slate-800">{m.author?.name ?? 'Üye'}</div>
-              <div className="text-sm text-slate-600">{m.body}</div>
+        {items.map((m) => {
+          const masked = !!m.isSecret && (!canSeeSecret || m.secretMasked)
+          return (
+            <div key={m.id} className="flex gap-2 items-start p-2">
+              <Link href={userPath(m.author?.username, m.author?.name, m.author?.slug)} className="inline-block">
+                <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} />
+              </Link>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-semibold text-slate-800">{m.author?.name ?? 'Üye'}</div>
+                  {m.isSecret && (
+                    <span className="inline-flex items-center rounded-full bg-[#fa3d30]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#fa3d30]">
+                      Gizli
+                    </span>
+                  )}
+                </div>
+                <div
+                  className={clsx(
+                    'mt-1 whitespace-pre-wrap text-sm',
+                    masked ? 'italic text-slate-400' : 'text-slate-600',
+                  )}
+                >
+                  {m.body}
+                </div>
+                {m.isSecret && (
+                  <div className="mt-1 text-xs text-slate-400">
+                    {masked ? 'Mesajı görmek için etkinliğe üye olmalısınız.' : 'Bu mesaj yalnızca etkinlik katılımcılarına görünür.'}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="relative flex gap-2 items-center">
@@ -160,6 +212,17 @@ export default function ChatPanel({
           Gönder
         </button>
       </div>
+      {allowSecret && (
+        <label className="flex items-center gap-2 pl-1 text-xs text-slate-500">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300 text-[#fa3d30] focus:ring-[#fa3d30]"
+            checked={isSecret}
+            onChange={(e) => setIsSecret(e.target.checked)}
+          />
+          <span>Gizli mesaj • Yalnızca etkinlik katılımcıları görür</span>
+        </label>
+      )}
     </div>
   )
 }

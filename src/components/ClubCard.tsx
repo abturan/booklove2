@@ -71,7 +71,7 @@ export default function ClubCard({ club }: { club: ClubItem }) {
         </div>
 
         <div className="mt-3 flex items-start gap-3 text-sm text-gray-700">
-          <span>👥 {club.memberCount} abone</span>
+          <span>👥 {club.memberCount} katılımcı</span>
           <span>📚 {club.pickCount} seçki</span>
 
           {hasCapacity && (
@@ -102,14 +102,7 @@ export default function ClubCard({ club }: { club: ClubItem }) {
             İncele
           </Link>
 
-          {isSoldOut ? (
-            <span
-              className="inline-flex h-9 items-center rounded-full px-3 text-sm font-semibold tracking-wide
-                         bg-black text-white ring-2 ring-amber-400 shadow-sm select-none"
-            >
-              Tükendi
-            </span>
-          ) : (
+          {!isSoldOut && (
             <Link
               href={`/clubs/${club.slug}#subscribe`}
               className="inline-flex h-9 items-center rounded-full bg-primary px-3 text-sm font-medium text-white hover:bg-primary/90"

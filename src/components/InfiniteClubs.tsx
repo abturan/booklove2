@@ -94,7 +94,8 @@ type Props = {
 
 export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Props) {
   const [items, setItems] = React.useState<Club[]>([])
-  const [cursor, setCursor] = React.useState<string | null>(null)
+  // we use page-number based pagination for /api/events
+  const pageRef = React.useRef<number>(1)
   const [hasMore, setHasMore] = React.useState(true)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -108,7 +109,7 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
 
   async function resetAndLoad() {
     setItems([])
-    setCursor(null)
+    pageRef.current = 1
     setHasMore(true)
     await loadMore(true)
   }
@@ -123,9 +124,9 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
         if (typeof v === 'string' && v.length) q.set(k, v)
       })
       q.set('limit', String(pageSize))
-      if (!isFirst && cursor) q.set('cursor', cursor)
+      q.set('page', String(pageRef.current))
 
-      const res = await fetch(`/api/clubs?${q.toString()}`, { cache: 'no-store' })
+      const res = await fetch(`/api/events?${q.toString()}`, { cache: 'no-store' })
       const data = await res.json()
 
       const raw = extractList(data)
@@ -145,11 +146,11 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
         return merged
       })
 
-      if ((data as any)?.nextCursor) {
-        setCursor(String((data as any).nextCursor))
-        setHasMore(true)
+      if (normalized.length < pageSize) {
+        setHasMore(false)
       } else {
-        if (normalized.length < pageSize) setHasMore(false)
+        pageRef.current += 1
+        setHasMore(true)
       }
     } catch (e: any) {
       setError(e?.message || 'Liste yüklenemedi.')
@@ -171,7 +172,7 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [sentinelRef.current, cursor, hasMore, loading])
+  }, [sentinelRef.current, hasMore, loading])
 
   const safeItems = items.filter(Boolean)
 

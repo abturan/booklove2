@@ -14,10 +14,10 @@ type Member = {
   avatarUrl: string | null
 }
 
-type BuddySets = {
-  friends: Set<string>
-  incoming: Set<string>
-  outgoing: Set<string>
+type FollowSets = {
+  mutual: Set<string>
+  following: Set<string>
+  followers: Set<string>
 }
 
 type Props = {
@@ -31,14 +31,14 @@ type Props = {
 
 export default function MembersModal({ open, onClose, members, total, isAuthenticated, clubSlug }: Props) {
   const router = useRouter()
-  const [sets, setSets] = useState<BuddySets>({ friends: new Set(), incoming: new Set(), outgoing: new Set() })
+  const [sets, setSets] = useState<FollowSets>({ mutual: new Set(), following: new Set(), followers: new Set() })
   const [busyId, setBusyId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!open) return
     if (!isAuthenticated) {
-      setSets({ friends: new Set(), incoming: new Set(), outgoing: new Set() })
+      setSets({ mutual: new Set(), following: new Set(), followers: new Set() })
       setLoading(false)
       return
     }
@@ -49,12 +49,12 @@ export default function MembersModal({ open, onClose, members, total, isAuthenti
         const r = await fetch('/api/friends/panel', { cache: 'no-store' })
         if (!r.ok) throw new Error('auth')
         const j = await r.json()
-        const friends = new Set<string>((j.friends || []).map((u: any) => String(u.id)))
-        const incoming = new Set<string>((j.incoming || []).map((u: any) => String(u.from?.id ?? u.id)))
-        const outgoing = new Set<string>((j.outgoing || []).map((u: any) => String(u.to?.id ?? u.id)))
-        if (!cancelled) setSets({ friends, incoming, outgoing })
+        const mutual = new Set<string>((j.mutual || []).map((u: any) => String(u.id)))
+        const following = new Set<string>((j.following || []).map((u: any) => String(u.id)))
+        const followers = new Set<string>((j.followers || []).map((u: any) => String(u.id)))
+        if (!cancelled) setSets({ mutual, following, followers })
       } catch {
-        if (!cancelled) setSets({ friends: new Set(), incoming: new Set(), outgoing: new Set() })
+        if (!cancelled) setSets({ mutual: new Set(), following: new Set(), followers: new Set() })
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -69,47 +69,86 @@ export default function MembersModal({ open, onClose, members, total, isAuthenti
   }
 
   const statusMap = useMemo(() => {
-    const map = new Map<string, 'friend' | 'incoming' | 'outgoing' | 'none'>()
+    const map = new Map<string, 'mutual' | 'following' | 'follower' | 'none'>()
     members.forEach((m) => {
-      if (sets.friends.has(m.id)) map.set(m.id, 'friend')
-      else if (sets.incoming.has(m.id)) map.set(m.id, 'incoming')
-      else if (sets.outgoing.has(m.id)) map.set(m.id, 'outgoing')
+      if (sets.mutual.has(m.id)) map.set(m.id, 'mutual')
+      else if (sets.following.has(m.id)) map.set(m.id, 'following')
+      else if (sets.followers.has(m.id)) map.set(m.id, 'follower')
       else map.set(m.id, 'none')
     })
     return map
   }, [members, sets])
 
-  const handleAdd = async (userId: string) => {
+  const handleFollow = async (userId: string) => {
     if (!isAuthenticated) {
       redirectToLogin()
       return
     }
     try {
-      await fetch('/api/friends/requests', {
+      const resp = await fetch('/api/friends/requests', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ userId }),
       })
-      setSets((prev) => ({ ...prev, outgoing: new Set(prev.outgoing).add(userId) }))
+      if (!resp.ok) throw new Error('follow')
+      window.dispatchEvent(new CustomEvent('friends:changed'))
+      setSets((prev) => {
+        const followers = new Set(prev.followers)
+        const mutual = new Set(prev.mutual)
+        const following = new Set(prev.following).add(userId)
+        if (followers.delete(userId)) {
+          mutual.add(userId)
+        }
+        return { mutual, followers, following }
+      })
     } catch {}
   }
 
-  const handleAccept = async (userId: string) => {
+  const handleFollowBack = async (userId: string) => {
     if (!isAuthenticated) {
       redirectToLogin()
       return
     }
     try {
-      await fetch('/api/friends/requests', {
+      const resp = await fetch('/api/friends/requests', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ userId, action: 'accept' }),
       })
+      if (!resp.ok) throw new Error('follow_back')
+      window.dispatchEvent(new CustomEvent('friends:changed'))
       setSets((prev) => {
-        const friends = new Set(prev.friends).add(userId)
-        const incoming = new Set(prev.incoming)
-        incoming.delete(userId)
-        return { ...prev, friends, incoming }
+        const followers = new Set(prev.followers)
+        followers.delete(userId)
+        const following = new Set(prev.following).add(userId)
+        const mutual = new Set(prev.mutual).add(userId)
+        return { mutual, followers, following }
+      })
+    } catch {}
+  }
+
+  const handleUnfollow = async (userId: string) => {
+    if (!isAuthenticated) {
+      redirectToLogin()
+      return
+    }
+    try {
+      const resp = await fetch('/api/friends/requests', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ userId, action: 'unfollow' }),
+      })
+      if (!resp.ok) throw new Error('unfollow')
+      window.dispatchEvent(new CustomEvent('friends:changed'))
+      setSets((prev) => {
+        const followers = new Set(prev.followers)
+        const mutual = new Set(prev.mutual)
+        const following = new Set(prev.following)
+        following.delete(userId)
+        if (mutual.delete(userId)) {
+          followers.add(userId)
+        }
+        return { mutual, followers, following }
       })
     } catch {}
   }
@@ -181,7 +220,7 @@ export default function MembersModal({ open, onClose, members, total, isAuthenti
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
-                      {status === 'friend' && (
+                      {status === 'mutual' && (
                         <button
                           type="button"
                           onClick={() => handleMessage(member.id)}
@@ -194,25 +233,31 @@ export default function MembersModal({ open, onClose, members, total, isAuthenti
                           </svg>
                         </button>
                       )}
-                      {status === 'incoming' && (
+                      {status === 'follower' && (
                         <button
                           type="button"
-                          onClick={() => handleAccept(member.id)}
+                          onClick={() => handleFollowBack(member.id)}
                           className="rounded-full bg-primary px-3 py-1 text-white hover:bg-primary/90"
                         >
-                          Kabul Et
+                          Takip et
                         </button>
                       )}
-                      {status === 'outgoing' && (
-                        <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-600">Beklemede</span>
+                      {status === 'following' && (
+                        <button
+                          type="button"
+                          onClick={() => handleUnfollow(member.id)}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:bg-slate-100"
+                        >
+                          Takibi bırak
+                        </button>
                       )}
                       {status === 'none' && (
                         <button
                           type="button"
-                          onClick={() => handleAdd(member.id)}
-                          className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:bg-slate-100"
+                          onClick={() => handleFollow(member.id)}
+                          className="rounded-full bg-primary px-3 py-1 text-white hover:bg-primary/90"
                         >
-                          Ekle
+                          Takip et
                         </button>
                       )}
                     </div>

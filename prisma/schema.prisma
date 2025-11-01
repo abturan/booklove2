@@ -39,8 +39,8 @@ model User {
   ChatMessage            ChatMessage[]
   Club                   Club?                @relation("ClubModerator")
   comments               Comment[]            @relation("UserComments")
-  sentFriendRequests     FriendRequest[]      @relation("SentRequests")
-  receivedFriendRequests FriendRequest[]      @relation("ReceivedRequests")
+  following              Follow[]             @relation("UserFollowing")
+  followers              Follow[]             @relation("UserFollowers")
   likes                  Like[]               @relation("UserLikes")
   Memberships            Membership[]
   Notifications          Notification[]
@@ -50,6 +50,7 @@ model User {
   dmMessagesAuthored     DmMessage[]          @relation("DmMessageAuthor")
   dmThreadsAsA           DmThread[]           @relation("DmThreadUserA")
   dmThreadsAsB           DmThread[]           @relation("DmThreadUserB")
+  dmThreadsRequested     DmThread[]           @relation("DmThreadRequestAuthor")
   PasswordResetTokens    PasswordResetToken[]
   DmThreadReads          DmThreadRead[]
   PostReports            PostReport[]         @relation("UserReports")
@@ -171,6 +172,7 @@ model ChatMessage {
   roomId    String
   authorId  String
   body      String
+  isSecret  Boolean       @default(false)
   quotedId  String?
   createdAt DateTime      @default(now())
   author    User          @relation(fields: [authorId], references: [id])
@@ -233,39 +235,39 @@ model Comment {
   @@index([userId])
 }
 
-model FriendRequest {
-  id          String              @id @default(cuid())
-  fromId      String
-  toId        String
-  status      FriendRequestStatus @default(PENDING)
-  createdAt   DateTime            @default(now())
-  respondedAt DateTime?
-  from        User                @relation("SentRequests", fields: [fromId], references: [id])
-  to          User                @relation("ReceivedRequests", fields: [toId], references: [id])
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
 
-  @@unique([fromId, toId])
-  @@index([toId, status])
-  @@index([fromId, status])
-}
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id])
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id])
 
-enum FriendRequestStatus {
-  PENDING
-  ACCEPTED
-  DECLINED
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@index([followerId])
 }
 
 model DmThread {
-  id          String      @id @default(cuid())
-  userAId     String
-  userBId     String
-  lastMessage DateTime    @default(now())
-  userA       User        @relation("DmThreadUserA", fields: [userAId], references: [id])
-  userB       User        @relation("DmThreadUserB", fields: [userBId], references: [id])
-  messages    DmMessage[]
-  reads       DmThreadRead[]
+  id             String          @id @default(cuid())
+  userAId        String
+  userBId        String
+  lastMessage    DateTime        @default(now())
+  status         DmThreadStatus  @default(ACTIVE)
+  requestedById  String?
+  requestedAt    DateTime?
+  lastDecisionAt DateTime?
+  userA          User            @relation("DmThreadUserA", fields: [userAId], references: [id])
+  userB          User            @relation("DmThreadUserB", fields: [userBId], references: [id])
+  requestedBy    User?           @relation("DmThreadRequestAuthor", fields: [requestedById], references: [id])
+  messages       DmMessage[]
+  reads          DmThreadRead[]
 
   @@unique([userAId, userBId])
   @@index([lastMessage])
+  @@index([status])
+  @@index([requestedById])
 }
 
 model DmMessage {
@@ -316,4 +318,10 @@ model PostReport {
 
   @@index([postId, createdAt])
   @@index([userId, createdAt])
+}
+
+enum DmThreadStatus {
+  ACTIVE
+  REQUESTED
+  ARCHIVED
 }

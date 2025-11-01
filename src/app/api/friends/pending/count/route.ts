@@ -11,8 +11,12 @@ export async function GET() {
     return NextResponse.json({ count: 0 }, { status: 200 })
   }
   const meId = session.user.id
-  const count = await prisma.friendRequest.count({
-    where: { toId: meId, status: 'PENDING' },
+  const count = await prisma.dmThread.count({
+    where: {
+      status: 'REQUESTED',
+      requestedById: { not: meId },
+      OR: [{ userAId: meId }, { userBId: meId }],
+    },
   })
   return NextResponse.json({ count })
 }

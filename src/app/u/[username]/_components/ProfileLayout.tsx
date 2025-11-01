@@ -8,6 +8,8 @@ import { prisma } from '@/lib/prisma'
 import FriendAction from '@/components/sidebars/profile/FriendAction'
 import ModeratorClubCard from '@/components/clubs/ModeratorClubCard'
 import ProfileAboutButton from '@/components/profile/ProfileAboutButton'
+import { getFollowRelation } from '@/lib/follow'
+import ProfileMessageButton from '@/components/profile/ProfileMessageButton'
 
 type ModClub = { id: string; name: string; slug: string; bannerUrl: string | null } | null
 
@@ -17,54 +19,27 @@ export default async function ProfileLayout({
   const session = await auth()
   const meId = session?.user?.id || null
 
-  let mode: 'none' | 'message' | 'sent' | 'pending' | 'canSend' = 'none'
+  let mode: 'none' | 'message' | 'follow' | 'following' | 'followBack' = 'none'
   if (meId && meId !== user.id) {
-    const accepted = await prisma.friendRequest.findFirst({
-      where: {
-        status: 'ACCEPTED',
-        OR: [
-          { fromId: meId, toId: user.id },
-          { fromId: user.id, toId: meId },
-        ],
-      },
-      select: { id: true },
-    })
-
-    if (accepted) {
-      mode = 'message'
-    } else {
-      const mine = await prisma.friendRequest.findFirst({
-        where: { fromId: meId, toId: user.id },
-        orderBy: { createdAt: 'desc' },
-        select: { status: true },
-      })
-      if (mine?.status === 'PENDING') {
-        mode = 'sent'
-      } else {
-        const theirs = await prisma.friendRequest.findFirst({
-          where: { fromId: user.id, toId: meId },
-          orderBy: { createdAt: 'desc' },
-          select: { status: true, respondedAt: true },
-        })
-        mode =
-          theirs?.status === 'PENDING' && !theirs.respondedAt
-            ? 'pending'
-            : 'canSend'
-      }
-    }
+    const relation = await getFollowRelation(meId, user.id)
+    if (relation === 'mutual') mode = 'message'
+    else if (relation === 'following') mode = 'following'
+    else if (relation === 'follower') mode = 'followBack'
+    else mode = 'follow'
   }
 
   const actionButtons =
     user.bio && user.bio.trim().length > 0
       ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <ProfileAboutButton bio={user.bio} />
-          {mode !== 'none' ? <FriendAction mode={mode} userId={user.id} /> : null}
+          {mode !== 'none' ? <FriendAction mode={mode} userId={user.id} showMessageButton={false} /> : null}
         </div>
       )
       : mode !== 'none'
-        ? <FriendAction mode={mode} userId={user.id} />
+        ? <FriendAction mode={mode} userId={user.id} showMessageButton={false} />
         : null
+  const messageButton = mode === 'message' ? <ProfileMessageButton userId={user.id} /> : null
 
   return (
     <div className="space-y-6">
@@ -74,6 +49,7 @@ export default async function ProfileLayout({
         avatarUrl={user.avatarUrl}
         bannerUrl={user.bannerUrl}
         actionSlot={actionButtons}
+        ctaSlot={messageButton}
       />
 
      

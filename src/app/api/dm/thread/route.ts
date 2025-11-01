@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getFollowRelation } from '@/lib/follow'
 
 export async function GET(req: Request) {
   const session = await auth()
@@ -20,11 +21,15 @@ export async function GET(req: Request) {
       userBId: true,
       userA: { select: { id: true, name: true, username: true, avatarUrl: true } },
       userB: { select: { id: true, name: true, username: true, avatarUrl: true } },
+      status: true,
+      requestedById: true,
+      requestedAt: true,
     },
   })
   if (!thread) return NextResponse.json({ error: 'Not Found' }, { status: 404 })
 
   const peer = thread.userAId === meId ? thread.userB : thread.userA
+  const relation = await getFollowRelation(meId, peer.id)
 
   const messages = await prisma.dmMessage.findMany({
     where: { threadId: thread.id },
@@ -33,5 +38,14 @@ export async function GET(req: Request) {
     select: { id: true, body: true, createdAt: true, authorId: true },
   })
 
-  return NextResponse.json({ threadId: thread.id, peer, messages })
+  return NextResponse.json({
+    threadId: thread.id,
+    peer,
+    status: thread.status,
+    requestedById: thread.requestedById,
+    requestedAt: thread.requestedAt,
+    relation,
+    canMessage: relation === 'mutual',
+    messages,
+  })
 }

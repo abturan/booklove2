@@ -7,7 +7,7 @@ import HeroSlider from '@/components/HeroSlider'
 import SearchFilters from '@/components/SearchFilters'
 import InfiniteClubs from '@/components/InfiniteClubs'
 import Tabs from '@/components/ui/Tabs'
-import PaginatedClubs from '@/components/PaginatedClubs'
+// import PaginatedClubs from '@/components/PaginatedClubs'
 import GlobalFeed from '@/components/feed/GlobalFeed'
 import BookBuddyPanel from '@/components/friends/BookBuddyPanel'
 import BookBuddyTab from '@/components/home/BookBuddyTab'
@@ -48,15 +48,17 @@ function HomeBody() {
     const q = params.get('q')
     const sort = params.get('sort')
     const subscribed = params.get('subscribed')
+    const soldout = params.get('soldout')
     if (q) obj.q = q
     if (sort) obj.sort = sort
     if (subscribed === '1') obj.subscribed = '1'
+    if (soldout === '1') obj.soldout = '1'
     return obj
   }, [params])
 
   const tabParam = params.get('tab') as 'clubs' | 'bookie' | 'buddy' | null
   const urlTab = tabParam ?? 'bookie'
-  const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1)
+  // Mobile artık sayfalama kullanmıyor; page paramı gereksiz
 
   const [isDesktop, setIsDesktop] = useState(false)
   useEffect(() => {
@@ -78,12 +80,7 @@ function HomeBody() {
     router.replace(`/?${s.toString()}`, { scroll: true })
   }
 
-  function onPageChange(nextPage: number) {
-    const s = new URLSearchParams(params.toString())
-    s.set('tab', 'clubs')
-    s.set('page', String(nextPage))
-    router.replace(`/?${s.toString()}`, { scroll: true })
-  }
+  // Not: Mobilde sayfalama iptal — infinite scroll kullanılacak
 
   const activeTab = isDesktop ? urlTab : mobileTab
 
@@ -106,7 +103,7 @@ function HomeBody() {
         </div>
         <div aria-hidden={activeTab !== 'clubs'} className={activeTab === 'clubs' ? 'block' : 'hidden'}>
           <SearchFilters />
-          <PaginatedClubs initialQuery={initialQuery} pageSize={6} page={page} onPageChange={onPageChange} />
+          <InfiniteClubs initialQuery={initialQuery} pageSize={6} />
         </div>
         <div aria-hidden={activeTab !== 'buddy'} className={activeTab === 'buddy' ? 'block' : 'hidden'}>
           <BookBuddyTab active={activeTab === 'buddy'} />

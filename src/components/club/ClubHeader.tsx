@@ -105,11 +105,9 @@ export default function ClubHeader(props: Props) {
         )}
       </div>
 
-      <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:items-start sm:gap-8">
-        <div className="space-y-6">
-          <div className="text-4xl font-extrabold uppercase tracking-[0.3em] text-slate-900">
-            {props.clubName ? props.clubName.toLocaleUpperCase('tr-TR') : ''}
-          </div>
+      <div className="hidden sm:block space-y-6">
+        <div className="text-4xl font-extrabold uppercase tracking-[0.3em] text-slate-900">
+          {props.clubName ? props.clubName.toLocaleUpperCase('tr-TR') : ''}
         </div>
         <div className="flex items-center gap-6">
           <Link href={userPath(props.moderatorUsername, props.moderatorName, props.moderatorSlug)} className="shrink-0">
@@ -137,7 +135,7 @@ export default function ClubHeader(props: Props) {
           </div>
         </div>
         {props.description && (
-          <p className="col-span-2 text-base leading-relaxed text-slate-600">{props.description}</p>
+          <p className="text-base leading-relaxed text-slate-600">{props.description}</p>
         )}
       </div>
     </>

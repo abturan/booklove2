@@ -21,15 +21,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: 'Geçersiz kullanıcı' }, { status: 400 })
   }
 
-  const isFriend = await prisma.friendRequest.findFirst({
-    where: {
-      status: 'ACCEPTED',
-      OR: [{ fromId: meId, toId: peerId }, { fromId: peerId, toId: meId }],
-    },
-    select: { id: true },
-  })
-  if (!isFriend) return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
-
   const [userAId, userBId] = orderIds(meId, peerId)
 
   const thread = await prisma.dmThread.findUnique({

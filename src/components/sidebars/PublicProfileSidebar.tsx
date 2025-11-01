@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import ModeratorClubCard from '@/components/sidebars/profile/ModeratorClubCard'
 import FriendCloud from '@/components/sidebars/profile/FriendCloud'
 import MemberClubsList from '@/components/sidebars/profile/MemberClubsList'
+import { getFollowCounts, listFollowData } from '@/lib/follow'
 
 export default async function PublicProfileSidebar({ userId }: { userId: string }) {
   const user = await prisma.user.findUnique({
@@ -15,6 +16,7 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
       bio: true,
       Club: {
         select: {
+          id: true,
           slug: true,
           name: true,
           bannerUrl: true,
@@ -38,23 +40,13 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
   })
   if (!user) return null
 
-  const accepted = await prisma.friendRequest.findMany({
-    where: { status: 'ACCEPTED', OR: [{ fromId: user.id }, { toId: user.id }] },
-    orderBy: { createdAt: 'desc' },
-    take: 24,
-    select: { fromId: true, toId: true },
-  })
-  const peerIds = Array.from(new Set(accepted.map((r) => (r.fromId === user.id ? r.toId : r.fromId))))
-  const friends = peerIds.length
-    ? await prisma.user.findMany({
-        where: { id: { in: peerIds.slice(0, 12) } },
-        select: { id: true, name: true, username: true, slug: true, avatarUrl: true },
-      })
-    : []
+  let participantCount = 0
+  if (user.Club?.id) {
+    participantCount = await prisma.membership.count({ where: { clubId: user.Club.id } })
+  }
 
-  const friendCount = await prisma.friendRequest.count({
-    where: { status: 'ACCEPTED', OR: [{ fromId: user.id }, { toId: user.id }] },
-  })
+  const { followers, following, mutual } = await listFollowData(user.id)
+  const followCounts = await getFollowCounts(user.id)
 
   const memberships = (user.Memberships || []).map((m) => m.club)
 
@@ -67,13 +59,18 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
           ownerName={user.name || ''}
           ownerUsername={user.username || ''}
           counts={{
-            memberships: user.Club._count?.memberships ?? 0,
-            picks: user.Club._count?.events ?? 0,
-            events: user.Club._count?.events ?? 0,
+            participants: participantCount,
           }}
         />
       )}
-      <FriendCloud title="Arkadaşlar" count={friendCount} friends={friends} userId={user.id} />
+      <FriendCloud
+        title="Book Buddy"
+        count={followCounts.followers}
+        friends={followers.slice(0, 12)}
+        followers={followers.slice(0, 12)}
+        mutual={mutual.slice(0, 12)}
+        userId={user.id}
+      />
       <MemberClubsList items={memberships} />
     </div>
   )

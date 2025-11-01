@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ensureFollow } from '@/lib/follow'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,47 +12,45 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
   const meId = session.user.id
-  const { requestId, action } = await req.json().catch(() => ({} as any))
-  if (!requestId || !['ACCEPT', 'DECLINE', 'CANCEL'].includes(action)) {
+  const { threadId, action } = await req.json().catch(() => ({} as any))
+  if (!threadId || !['ACCEPT', 'DECLINE'].includes(action)) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 })
   }
 
-  const fr = await prisma.friendRequest.findUnique({ where: { id: requestId } })
-  if (!fr) return NextResponse.json({ error: 'not_found' }, { status: 404 })
+  const thread = await prisma.dmThread.findFirst({
+    where: { id: threadId, OR: [{ userAId: meId }, { userBId: meId }] },
+    select: { id: true, status: true, requestedById: true, userAId: true, userBId: true },
+  })
+  if (!thread) return NextResponse.json({ error: 'not_found' }, { status: 404 })
+  const peerId = thread.userAId === meId ? thread.userBId : thread.userAId
+
+  const now = new Date()
 
   if (action === 'ACCEPT') {
-    if (fr.toId !== meId || fr.status !== 'PENDING') {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    }
-    await prisma.friendRequest.update({
-      where: { id: fr.id },
-      data: { status: 'ACCEPTED', respondedAt: new Date() },
+    await ensureFollow({ followerId: meId, followingId: peerId })
+
+    const updated = await prisma.dmThread.update({
+      where: { id: thread.id },
+      data: {
+        status: 'ACTIVE',
+        requestedById: null,
+        requestedAt: null,
+        lastDecisionAt: now,
+      },
+      select: { id: true },
     })
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, threadId: updated.id })
   }
 
-  if (action === 'DECLINE') {
-    if (fr.toId !== meId || fr.status !== 'PENDING') {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    }
-    await prisma.friendRequest.update({
-      where: { id: fr.id },
-      data: { status: 'DECLINED', respondedAt: new Date() },
-    })
-    return NextResponse.json({ ok: true })
-  }
-
-  // CANCEL (gönderen iptal eder)
-  if (action === 'CANCEL') {
-    if (fr.fromId !== meId || fr.status !== 'PENDING') {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    }
-    await prisma.friendRequest.update({
-      where: { id: fr.id },
-      data: { status: 'DECLINED', respondedAt: new Date() },
-    })
-    return NextResponse.json({ ok: true })
-  }
-
-  return NextResponse.json({ error: 'unknown' }, { status: 400 })
+  // DECLINE
+  await prisma.dmThread.update({
+    where: { id: thread.id },
+    data: {
+      status: 'ARCHIVED',
+      requestedById: null,
+      requestedAt: null,
+      lastDecisionAt: now,
+    },
+  })
+  return NextResponse.json({ ok: true })
 }

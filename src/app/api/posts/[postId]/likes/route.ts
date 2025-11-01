@@ -27,37 +27,26 @@ export async function GET(_req: Request, { params }: { params: { postId: string 
 
   const users = likesList.map((l) => l.user)
 
-  let relationships: Record<string, 'self' | 'friend' | 'outgoing' | 'incoming' | 'none'> = {}
+  let relationships: Record<string, 'self' | 'mutual' | 'following' | 'follower' | 'none'> = {}
   if (meId) {
     const otherIds = users.filter((u) => u.id !== meId).map((u) => u.id)
     if (otherIds.length > 0) {
-      const relations = await prisma.friendRequest.findMany({
+      const relations = await prisma.follow.findMany({
         where: {
           OR: [
-            { fromId: meId, toId: { in: otherIds } },
-            { fromId: { in: otherIds }, toId: meId },
+            { followerId: meId, followingId: { in: otherIds } },
+            { followerId: { in: otherIds }, followingId: meId },
           ],
         },
-        select: { fromId: true, toId: true, status: true, respondedAt: true },
-        orderBy: { createdAt: 'desc' },
+        select: { followerId: true, followingId: true },
       })
-      const grouped = new Map<string, typeof relations>()
-      for (const r of relations) {
-        const other = r.fromId === meId ? r.toId : r.fromId
-        if (!grouped.has(other)) grouped.set(other, [])
-        grouped.get(other)!.push(r)
-      }
-      relationships = otherIds.reduce<Record<string, 'self' | 'friend' | 'outgoing' | 'incoming' | 'none'>>((acc, id) => {
-        const rels = grouped.get(id) || []
-        let mode: 'self' | 'friend' | 'outgoing' | 'incoming' | 'none' = 'none'
-        if (rels.some((r) => r.status === 'ACCEPTED')) {
-          mode = 'friend'
-        } else {
-          const mine = rels.find((r) => r.fromId === meId && r.toId === id)
-          const theirs = rels.find((r) => r.toId === meId && r.fromId === id)
-          if (mine?.status === 'PENDING') mode = 'outgoing'
-          else if (theirs?.status === 'PENDING' && !theirs.respondedAt) mode = 'incoming'
-        }
+      relationships = otherIds.reduce<Record<string, 'self' | 'mutual' | 'following' | 'follower' | 'none'>>((acc, id) => {
+        const viewerFollows = relations.some((r) => r.followerId === meId && r.followingId === id)
+        const targetFollows = relations.some((r) => r.followerId === id && r.followingId === meId)
+        let mode: 'self' | 'mutual' | 'following' | 'follower' | 'none' = 'none'
+        if (viewerFollows && targetFollows) mode = 'mutual'
+        else if (viewerFollows) mode = 'following'
+        else if (targetFollows) mode = 'follower'
         acc[id] = mode
         return acc
       }, {})

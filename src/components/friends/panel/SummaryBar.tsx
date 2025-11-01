@@ -28,7 +28,7 @@ export default function SummaryBar({
                   <circle cx="12" cy="7" r="1.5" fill="currentColor" />
                 </svg>
               </span>
-              {pendingCount} bekleyen Book Buddy isteğiniz var
+              {pendingCount} bekleyen Book Buddy mesaj isteğiniz var
             </Link>
           )}
           {unreadDm > 0 && (

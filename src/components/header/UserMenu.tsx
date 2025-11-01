@@ -32,7 +32,7 @@ export default function UserMenu() {
   const [signingOut, setSigningOut] = useState(false)
 
   const [dmUnread, setDmUnread] = useState(0)
-  const [friendPending, setFriendPending] = useState(0)
+  const [followRequests, setFollowRequests] = useState(0)
 
   useEffect(() => {
     let alive = true
@@ -46,7 +46,7 @@ export default function UserMenu() {
         const fr = await frRes.json().catch(() => null)
         if (alive) {
           if (dmRes.ok) setDmUnread(Number(dm?.total || 0))
-          if (frRes.ok) setFriendPending(Number(fr?.count || 0))
+          if (frRes.ok) setFollowRequests(Number(fr?.count ?? fr?.total ?? 0))
         }
       } catch {}
     }
@@ -79,7 +79,7 @@ export default function UserMenu() {
     }
   }
 
-  const totalBadge = dmUnread + friendPending
+  const totalBadge = dmUnread + followRequests
 
   return (
     <div className="relative">
@@ -107,7 +107,7 @@ export default function UserMenu() {
 
           <Link href="/friends" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">
             <span className="inline-flex items-center gap-2"><IBuddy /> Book Buddy</span>
-            <CountBadge count={friendPending} />
+            <CountBadge count={followRequests} />
           </Link>
 
           <Link href="/messages" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">

@@ -144,11 +144,12 @@ export default function MobileAppFooter() {
         <div className={`${isAuth ? 'grid-cols-7' : 'grid-cols-4'} grid items-center px-2 py-2 text-primary gap-2`}>
           {isAuth ? (
             <>
-              <Link href="/?tab=clubs" scroll={false} className="grid place-content-center h-12" aria-label="Kulüpler">
-                <IClubs />
-              </Link>
+             
               <Link href="/?tab=bookie" scroll={false} className="grid place-content-center h-12" aria-label="Bookie">
                 <IBookie />
+              </Link>
+               <Link href="/?tab=clubs" scroll={false} className="grid place-content-center h-12" aria-label="Kulüpler">
+                <IClubs />
               </Link>
               <Link href="/?tab=buddy" scroll={false} className="relative grid place-content-center h-12" aria-label="Buddy">
                 <IBuddy />

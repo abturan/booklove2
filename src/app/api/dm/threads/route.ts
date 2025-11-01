@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getFollowRelation } from '@/lib/follow'
 
 export async function GET() {
   const session = await auth()
@@ -25,7 +26,17 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
         select: { body: true, createdAt: true, authorId: true },
       })
-      return { threadId: t.id, peer, last }
+      const relation = await getFollowRelation(me, peer.id)
+      return {
+        threadId: t.id,
+        peer,
+        last,
+        status: t.status,
+        requestedById: t.requestedById,
+        requestedAt: t.requestedAt,
+        relation,
+        canMessage: relation === 'mutual',
+      }
     })
   )
 

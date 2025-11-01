@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import Avatar from '@/components/Avatar'
 import FriendAction from '@/components/sidebars/profile/FriendAction'
 
-type Relationship = 'self' | 'friend' | 'outgoing' | 'incoming' | 'none'
+type Relationship = 'self' | 'mutual' | 'following' | 'follower' | 'none'
 type LikeUser = {
   id: string
   name: string | null
@@ -56,13 +56,13 @@ export default function LikeListModal({ postId }: { postId: string }) {
                 <div className="shrink-0">
                   <FriendAction
                     mode={
-                      u.relationship === 'friend'
+                      u.relationship === 'mutual'
                         ? 'message'
-                        : u.relationship === 'outgoing'
-                        ? 'sent'
-                        : u.relationship === 'incoming'
-                        ? 'pending'
-                        : 'canSend'
+                        : u.relationship === 'following'
+                        ? 'following'
+                        : u.relationship === 'follower'
+                        ? 'followBack'
+                        : 'follow'
                     }
                     userId={u.id}
                     appearance="compact"

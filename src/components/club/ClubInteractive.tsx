@@ -22,6 +22,9 @@ type Pending = { merchant_oid: string; iframe_url: string; createdAt: number } |
 
 const pendingKeyFor = (eventId: string) => `paytr_pending_${eventId}`
 
+const CHAT_HEADER_HEIGHT = 56
+const FOOTER_HEIGHT_VAR = 'var(--mobile-footer-height, 72px)'
+
 export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
   const search = useSearchParams()
   const events = initial.club.events
@@ -59,6 +62,8 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
   const [mobilePanelTab, setMobilePanelTab] = useState<'chat' | 'ticket'>('ticket')
   const [desktopNavOffset, setDesktopNavOffset] = useState(0)
   const chatDragStartY = useRef<number | null>(null)
+  const mobileAvatarRowRef = useRef<HTMLDivElement | null>(null)
+  const [mobileAvatarLimit, setMobileAvatarLimit] = useState(0)
 
   const pendingKey = activeEvent ? pendingKeyFor(activeEvent.id) : null
 
@@ -330,6 +335,41 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
     setDesktopNavOffset((prev) => ensureDesktopNavRange(activeEvent?.id ?? null, navItems, prev, 2))
   }, [activeEvent?.id, ensureDesktopNavRange, navItems])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const el = mobileAvatarRowRef.current
+    if (!el) {
+      setMobileAvatarLimit(0)
+      return
+    }
+
+    const AVATAR_SIZE = 36
+    const GAP = 8
+
+    const computeLimit = () => {
+      if (!membersPreview.length) {
+        setMobileAvatarLimit(0)
+        return
+      }
+      const width = el.clientWidth
+      if (width <= 0) return
+      const perRow = Math.max(1, Math.floor((width + GAP) / (AVATAR_SIZE + GAP)))
+      setMobileAvatarLimit(Math.min(perRow, membersPreview.length))
+    }
+
+    computeLimit()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => computeLimit())
+      observer.observe(el)
+      return () => observer.disconnect()
+    }
+
+    const handle = () => computeLimit()
+    window.addEventListener('resize', handle)
+    return () => window.removeEventListener('resize', handle)
+  }, [membersPreview.length, activeEvent?.id])
+
   const activeIndex = navItems.findIndex((item) => item.id === activeEvent?.id)
   const resolvedActiveIndex = activeIndex === -1 ? 0 : activeIndex
   const desktopNavHasPrev = resolvedActiveIndex > 0
@@ -346,6 +386,11 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
       setDesktopNavOffset((prev) => ensureDesktopNavRange(target.id, navItems, prev, 2))
     }
   }
+
+  const mobileVisibleCount = mobileAvatarLimit > 0 ? mobileAvatarLimit : membersPreview.length
+  const mobileVisibleMembers =
+    mobileVisibleCount > 0 ? membersPreview.slice(0, mobileVisibleCount) : membersPreview
+  const mobileHiddenCount = Math.max(memberCount - mobileVisibleMembers.length, 0)
 
 
   useEffect(() => {
@@ -374,9 +419,6 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
       controller?.abort()
     }
   }, [activeEvent?.id])
-
-  const CHAT_HEADER_HEIGHT = 56
-  const FOOTER_HEIGHT_VAR = 'var(--mobile-footer-height, 72px)'
 
   const handleChatPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null
@@ -446,35 +488,6 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
           description={initial.club.description}
         />
 
-        {memberCount > 0 && (
-          <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 rounded-[28px] border border-slate-200/70 bg-white px-5 py-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Katılımcılar</h3>
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-                {membersPreviewDesktop.map((member) => (
-                  <Avatar
-                    key={`desk-strip-${member.id}`}
-                    src={member.avatarUrl}
-                    size={40}
-                    alt={member.name}
-                    className="border border-white/70 bg-white shadow-sm"
-                  />
-                ))}
-                <span className="shrink-0 rounded-full border border-slate-200 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Toplam {memberCount}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setMobileMembersOpen(true)}
-              className="ml-4 inline-flex items-center gap-2 rounded-full border border-[#fa3d30]/40 bg-[#fa3d30]/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#fa3d30] transition hover:bg-[#fa3d30]/15"
-            >
-              Tümünü görüntüle
-            </button>
-          </div>
-        )}
-
         <EventNavigation
           events={navItems}
           activeId={activeEvent?.id ?? null}
@@ -482,26 +495,60 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
           className="lg:hidden"
         />
 
-        {/* Katılımcı önizlemesi mobilde kaldırıldı */}
+        {memberCount > 0 && (
+          <div className="lg:hidden rounded-[24px] border border-slate-200/70 bg-white px-4 py-4 shadow-soft">
+            <div className="flex flex-wrap items-center gap-3">
+              <div ref={mobileAvatarRowRef} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                {mobileVisibleMembers.map((member) => (
+                  <Avatar
+                    key={`mobile-cloud-${member.id}`}
+                    src={member.avatarUrl}
+                    size={36}
+                    alt={member.name}
+                    className="border border-white/70 bg-white shadow-sm"
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              {mobileHiddenCount > 0 && (
+                <span className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  +{mobileHiddenCount} katılımcı
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setMobileMembersOpen(true)}
+                className={clsx(
+                  'inline-flex items-center gap-2 rounded-full border border-[#fa3d30]/40 bg-[#fa3d30]/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#fa3d30] transition hover:bg-[#fa3d30]/15',
+                  mobileHiddenCount === 0 ? 'ml-auto' : '',
+                )}
+              >
+                Tümünü listele
+              </button>
+            </div>
+          </div>
+        )}
 
-        <EventOverviewCard
-          title={activeEvent.title}
-          notes={activeEvent.notes}
-          startsAt={activeEvent.startsAt}
-          status={activeEvent.status}
-          memberCount={memberCount}
-          capacity={capacity}
-          book={book}
-        >
-          <ChatSection
-            enabled={canPostToChat}
-            eventId={activeEvent.id}
-            isMember={isMember || initial.club.isModerator}
-            messageCount={chatMessageCount}
-            onCountChange={setChatMessageCount}
-          />
-        </EventOverviewCard>
-      </div>
+          <EventOverviewCard
+            title={activeEvent.title}
+            notes={activeEvent.notes}
+            startsAt={activeEvent.startsAt}
+            status={activeEvent.status}
+            memberCount={memberCount}
+            capacity={capacity}
+            book={book}
+          >
+            <ChatSection
+              enabled={canPostToChat}
+              eventId={activeEvent.id}
+              isMember={isMember || initial.club.isModerator}
+              isModerator={initial.club.isModerator}
+              messageCount={chatMessageCount}
+              onCountChange={setChatMessageCount}
+            />
+          </EventOverviewCard>
+        </div>
 
       <aside className="hidden space-y-4 lg:block lg:min-w-0">
         <EventNavigation
@@ -562,6 +609,37 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
             />
           </div>
         </div>
+
+        {memberCount > 0 && (
+          <div className="hidden lg:flex flex-col gap-4 rounded-[28px] border border-slate-200/70 bg-white px-5 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Katılımcılar</h3>
+              <span className="shrink-0 rounded-full border border-slate-200 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Toplam {memberCount}
+              </span>
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              {membersPreviewDesktop.map((member) => (
+                <Avatar
+                  key={`desk-strip-${member.id}`}
+                  src={member.avatarUrl}
+                  size={40}
+                  alt={member.name}
+                  className="border border-white/70 bg-white shadow-sm"
+                />
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setMobileMembersOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-[#fa3d30]/40 bg-[#fa3d30]/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#fa3d30] transition hover:bg-[#fa3d30]/15"
+              >
+                Tümünü listele
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
 
       <ProfileInfoModal
@@ -611,7 +689,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
           style={{
             bottom: 'env(safe-area-inset-bottom)',
             transform: mobileChatOpen
-              ? `translateY(calc(-0.9 * (${FOOTER_HEIGHT_VAR})))`
+              ? `translateY(calc(-1 * (${FOOTER_HEIGHT_VAR})))`
               : `translateY(calc(100% - (${CHAT_HEADER_HEIGHT}px + ${FOOTER_HEIGHT_VAR})))`,
           }}
         >
@@ -679,7 +757,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
             </div>
             <div
               className={clsx(
-                'flex min-h-[310px] flex-col bg-white px-4 transition-[max-height] duration-300 ease-out',
+                'flex min-h-[320px] flex-col bg-white px-4 transition-[max-height] duration-300 ease-out',
                 mobileChatExpanded ? 'max-h-none' : '',
               )}
               style={{
@@ -696,6 +774,8 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
                     enabled={canPostToChat}
                     eventId={activeEvent.id}
                     className="flex-1 min-h-0 max-h-none"
+                    allowSecret={initial.club.isModerator}
+                    canSeeSecret={isMember || initial.club.isModerator}
                     onCountChange={setChatMessageCount}
                   />
                   {!canPostToChat && (

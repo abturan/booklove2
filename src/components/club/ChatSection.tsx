@@ -8,12 +8,14 @@ export default function ChatSection({
   enabled,
   eventId,
   isMember,
+  isModerator,
   messageCount,
   onCountChange,
 }: {
   enabled: boolean
   eventId: string | null
   isMember: boolean
+  isModerator: boolean
   messageCount?: number
   onCountChange?: (count: number) => void
 }) {
@@ -39,12 +41,14 @@ export default function ChatSection({
           <ChatPanel
             enabled={enabled && hasRoom}
             eventId={hasRoom ? eventId : null}
+            allowSecret={isModerator}
+            canSeeSecret={isMember}
             onCountChange={onCountChange}
           />
         </div>
         {!isMember && (
           <div className="rounded-xl border border-[#fa3d30]/20 bg-[#fa3d30]/5 px-4 py-3 text-xs text-[#a52a23]">
-            Mesajlar herkese görünür; yalnızca katılımcılar yazabilir. Birini <code>@isim</code> ile etiketlediğinde bildirim oluşturulur.
+            Genel mesajlar herkese görünür; moderatörün gizli notları yalnızca katılımcılar tarafından okunabilir. Katılımcılar mesaj yazabilir. Birini <code>@isim</code> ile etiketlediğinde bildirim oluşturulur.
           </div>
         )}
       </div>

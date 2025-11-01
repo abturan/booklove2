@@ -37,8 +37,24 @@ export async function GET(
   { params }: { params: { eventId: string } },
 ) {
   try {
-    const { room } = await findRoom(params.eventId)
-    if (!room) return NextResponse.json({ items: [] })
+    const session = await auth()
+    const { event, room } = await findRoom(params.eventId)
+    if (!room || !event) return NextResponse.json({ items: [] })
+
+    const viewerId = session?.user?.id ?? null
+    const isAdmin = session?.user?.role === 'ADMIN'
+    const isModerator = !!(viewerId && event.club?.moderatorId === viewerId)
+    let isMember = false
+
+    if (!isAdmin && !isModerator && viewerId) {
+      const membership = await prisma.membership.findUnique({
+        where: { userId_clubEventId: { userId: viewerId, clubEventId: event.id } },
+        select: { isActive: true },
+      })
+      isMember = !!membership?.isActive
+    }
+
+    const canSeeSecret = isAdmin || isModerator || isMember
 
     const items = await prisma.chatMessage.findMany({
       where: { roomId: room.id },
@@ -47,7 +63,17 @@ export async function GET(
       include: { author: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } } },
     })
 
-    return NextResponse.json({ items })
+    const responseItems = items.map((item) => {
+      const secretMasked = item.isSecret && !canSeeSecret
+      return {
+        ...item,
+        body: secretMasked ? '**** Gizli mesaj' : item.body,
+        isSecret: item.isSecret,
+        secretMasked,
+      }
+    })
+
+    return NextResponse.json({ items: responseItems })
   } catch (err: any) {
     console.error('chat GET error', err)
     return NextResponse.json({ items: [] }, { status: 500 })
@@ -69,9 +95,11 @@ export async function POST(
       return NextResponse.json({ ok: false, error: 'Etkinlik bulunamadı.' }, { status: 404 })
     }
 
-    let canPost = session.user.role === 'ADMIN'
+    const isAdmin = session.user.role === 'ADMIN'
+    const isModerator = event.club.moderatorId === session.user.id
+    let canPost = isAdmin
 
-    if (!canPost && event.club.moderatorId === session.user.id) {
+    if (!canPost && isModerator) {
       canPost = true
     }
 
@@ -87,13 +115,18 @@ export async function POST(
       return NextResponse.json({ ok: false, error: 'Abonelik gerekli.' }, { status: 403 })
     }
 
-    const { body } = await req.json()
-    if (typeof body !== 'string' || !body.trim()) {
+    const payload = await req.json()
+    const body = typeof payload?.body === 'string' ? payload.body : ''
+    if (!body.trim()) {
       return NextResponse.json({ ok: false, error: 'Mesaj boş olamaz.' }, { status: 400 })
     }
 
+    const wantsSecret = !!payload?.isSecret
+    const allowSecret = isAdmin || isModerator
+    const isSecret = allowSecret && wantsSecret
+
     const msg = await prisma.chatMessage.create({
-      data: { roomId: room.id, authorId: session.user.id, body: body.trim() },
+      data: { roomId: room.id, authorId: session.user.id, body: body.trim(), isSecret },
       include: { author: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } } },
     })
 

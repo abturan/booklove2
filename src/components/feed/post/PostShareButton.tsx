@@ -116,14 +116,15 @@ export default function PostShareButton({
           setMessage(null)
           setOpen(true)
         }}
-        className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10"
+        className="inline-flex items-center justify-center rounded-full border border-primary/30 px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 gap-0 sm:gap-2 sm:px-3"
+        aria-label="Paylaş"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
           <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
           <path d="M12 16V4" strokeLinecap="round" />
           <path d="m8 8 4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        Paylaş
+        <span className="hidden sm:inline">Paylaş</span>
       </button>
 
       <BareModal open={open} onClose={() => setOpen(false)}>

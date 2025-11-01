@@ -9,19 +9,18 @@ type UserLite = {
   username: string | null
   slug: string | null
   avatarUrl: string | null
-}
-
-type BuddySets = {
-  friends: Set<string>
-  incoming: Set<string>
-  outgoing: Set<string>
+  relationship?: 'self' | 'mutual' | 'following' | 'follower' | 'none'
 }
 
 export function useBuddyPanelLists(enabled: boolean) {
-  const [friends, setFriends] = useState<UserLite[]>([])
-  const [incoming, setIncoming] = useState<UserLite[]>([])
-  const [outgoing, setOutgoing] = useState<UserLite[]>([])
-  const [sets, setSets] = useState<BuddySets>({ friends: new Set(), incoming: new Set(), outgoing: new Set() })
+  const [mutual, setMutual] = useState<UserLite[]>([])
+  const [following, setFollowing] = useState<UserLite[]>([])
+  const [followers, setFollowers] = useState<UserLite[]>([])
+  const [sets, setSets] = useState({
+    mutual: new Set<string>(),
+    following: new Set<string>(),
+    followers: new Set<string>(),
+  })
   const loaded = useRef(false)
 
   const toLite = (u: any): UserLite => ({
@@ -30,6 +29,7 @@ export function useBuddyPanelLists(enabled: boolean) {
     username: u.username ?? null,
     slug: u.slug ?? null,
     avatarUrl: u.avatarUrl ?? null,
+    relationship: typeof u.relationship === 'string' ? u.relationship : undefined,
   })
 
   async function reload() {
@@ -38,23 +38,23 @@ export function useBuddyPanelLists(enabled: boolean) {
       const j = await r.json()
       if (!r.ok) throw new Error('panel')
 
-      const f: UserLite[] = Array.isArray(j.friends) ? (j.friends as any[]).map(toLite) : []
-      const o: UserLite[] = (Array.isArray(j.outgoing) ? (j.outgoing as any[]) : []).map((x: any) => toLite(x.to || x))
-      const i: UserLite[] = (Array.isArray(j.incoming) ? (j.incoming as any[]) : []).map((x: any) => toLite(x.from || x))
+      const mutualList: UserLite[] = Array.isArray(j.mutual) ? (j.mutual as any[]).map(toLite) : []
+      const followingList: UserLite[] = Array.isArray(j.following) ? (j.following as any[]).map(toLite) : []
+      const followersList: UserLite[] = Array.isArray(j.followers) ? (j.followers as any[]).map(toLite) : []
 
-      setFriends(f)
-      setOutgoing(o)
-      setIncoming(i)
+      setMutual(mutualList)
+      setFollowing(followingList)
+      setFollowers(followersList)
       setSets({
-        friends: new Set(f.map((x: UserLite) => x.id)),
-        outgoing: new Set(o.map((x: UserLite) => x.id)),
-        incoming: new Set(i.map((x: UserLite) => x.id)),
+        mutual: new Set(mutualList.map((x) => x.id)),
+        following: new Set(followingList.map((x) => x.id)),
+        followers: new Set(followersList.map((x) => x.id)),
       })
     } catch {
-      setFriends([])
-      setOutgoing([])
-      setIncoming([])
-      setSets({ friends: new Set(), incoming: new Set(), outgoing: new Set() })
+      setMutual([])
+      setFollowing([])
+      setFollowers([])
+      setSets({ mutual: new Set(), following: new Set(), followers: new Set() })
     }
   }
 
@@ -65,7 +65,7 @@ export function useBuddyPanelLists(enabled: boolean) {
     })
   }, [enabled])
 
-  async function addFriend(userId: string) {
+  async function followUser(userId: string) {
     if (!userId) return
     try {
       const r = await fetch('/api/friends/requests', {
@@ -73,12 +73,13 @@ export function useBuddyPanelLists(enabled: boolean) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ userId }),
       })
-      if (!r.ok) throw new Error('add')
+      if (!r.ok) throw new Error('follow')
       await reload()
+      window.dispatchEvent(new CustomEvent('friends:changed'))
     } catch {}
   }
 
-  async function acceptIncoming(userId: string) {
+  async function followBack(userId: string) {
     if (!userId) return
     try {
       const r = await fetch('/api/friends/requests', {
@@ -86,29 +87,36 @@ export function useBuddyPanelLists(enabled: boolean) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ userId, action: 'accept' }),
       })
-      if (!r.ok) throw new Error('accept')
+      if (!r.ok) throw new Error('follow_back')
       await reload()
+      window.dispatchEvent(new CustomEvent('friends:changed'))
     } catch {}
   }
 
-  async function cancelOutgoing(userId: string) {
+  async function unfollowUser(userId: string) {
     if (!userId) return
     try {
       const r = await fetch('/api/friends/requests', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ userId, action: 'cancel' }),
+        body: JSON.stringify({ userId, action: 'unfollow' }),
       })
-      if (!r.ok) throw new Error('cancel')
+      if (!r.ok) throw new Error('unfollow')
       await reload()
+      window.dispatchEvent(new CustomEvent('friends:changed'))
     } catch {}
   }
 
-  return { friends, incoming, outgoing, sets, addFriend, acceptIncoming, cancelOutgoing }
+  return {
+    mutual,
+    following,
+    followers,
+    sets,
+    followUser,
+    followBack,
+    unfollowUser,
+    reload,
+  }
 }
-
-
-
-
 
 

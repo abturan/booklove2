@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { listFollowData } from '@/lib/follow'
 
 export async function GET(req: Request) {
   const session = await auth()
@@ -12,20 +13,15 @@ export async function GET(req: Request) {
   const q = String(searchParams.get('q') || '').trim()
   const take = Math.min(Number(searchParams.get('take') || 20), 50)
 
-  const links = await prisma.friendRequest.findMany({
-    where: { status: 'ACCEPTED', OR: [{ fromId: me }, { toId: me }] },
-    select: { fromId: true, toId: true },
-  })
+  const { followers, following } = await listFollowData(me)
+  const followerSet = new Set(followers.map((f) => f.id))
+  const mutualIds = following.filter((f) => followerSet.has(f.id)).map((f) => f.id)
 
-  if (links.length === 0) return NextResponse.json({ items: [] })
-
-  const peerIds = Array.from(
-    new Set(links.map(l => (l.fromId === me ? l.toId : l.fromId)))
-  )
+  if (mutualIds.length === 0) return NextResponse.json({ items: [] })
 
   const users = await prisma.user.findMany({
     where: {
-      id: { in: peerIds },
+      id: { in: mutualIds },
       ...(q
         ? {
             OR: [

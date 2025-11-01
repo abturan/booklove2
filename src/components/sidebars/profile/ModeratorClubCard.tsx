@@ -1,6 +1,6 @@
 // src/components/sidebars/profile/ModeratorClubCard.tsx
 import Link from 'next/link'
-type Counts = { memberships: number; picks: number; events: number }
+type Counts = { participants: number }
 
 export default function ModeratorClubCard({
   name,
@@ -26,30 +26,19 @@ export default function ModeratorClubCard({
             {ownerUsername && <div className="truncate">@{ownerUsername}</div>}
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2 relative z-10">
+          <div className="mt-4 flex flex-wrap items-center gap-3 relative z-10">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-gray-900 text-sm ring-1 ring-black/10 shadow-sm">
               <span aria-hidden>👥</span>
-              <span className="font-semibold tabular-nums">{counts.memberships}</span>
-              <span className="text-gray-700">Üye</span>
+              <span className="font-semibold tabular-nums">{counts.participants}</span>
+              <span className="text-gray-700">Katılımcı</span>
             </span>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-gray-900 text-sm ring-1 ring-black/10 shadow-sm">
-              <span aria-hidden>📚</span>
-              <span className="font-semibold tabular-nums">{counts.picks}</span>
-              <span className="text-gray-700">Seçki</span>
-            </span>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-gray-900 text-sm ring-1 ring-black/10 shadow-sm">
-              <span aria-hidden>🗓️</span>
-              <span className="font-semibold tabular-nums">{counts.events}</span>
-              <span className="text-gray-700">Oturum</span>
-            </span>
+            <Link
+              href={`/clubs/${slug}`}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white text-primary px-5 py-2 text-sm font-semibold hover:bg-white/90 transition"
+            >
+              Kulübe git →
+            </Link>
           </div>
-
-          <Link
-            href={`/clubs/${slug}`}
-            className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-white text-primary px-5 py-2 text-sm font-semibold hover:bg-white/90 transition"
-          >
-            Klube git →
-          </Link>
         </div>
       </div>
     </section>

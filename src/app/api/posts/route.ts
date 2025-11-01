@@ -32,20 +32,28 @@ export async function GET(req: Request) {
       if (!meId) {
         ownerFilter = undefined
       } else {
-        let friendIds = new Set<string>([meId])
         try {
-          const accepted = await prisma.friendRequest.findMany({
-            where: { status: 'ACCEPTED', OR: [{ fromId: meId }, { toId: meId }] },
-            select: { fromId: true, toId: true }
-          })
-          for (const fr of accepted) {
-            if (fr.fromId !== meId) friendIds.add(fr.fromId)
-            if (fr.toId !== meId) friendIds.add(fr.toId)
+          const [followingRows, followerRows] = await Promise.all([
+            prisma.follow.findMany({
+              where: { followerId: meId },
+              select: { followingId: true },
+            }),
+            prisma.follow.findMany({
+              where: { followingId: meId },
+              select: { followerId: true },
+            }),
+          ])
+          const followerSet = new Set(followerRows.map((row) => row.followerId))
+          const friendIds = new Set<string>([meId])
+          for (const row of followingRows) {
+            if (followerSet.has(row.followingId)) {
+              friendIds.add(row.followingId)
+            }
           }
+          ownerFilter = { in: Array.from(friendIds) }
         } catch {
-          friendIds = new Set<string>([meId])
+          ownerFilter = { in: [meId] }
         }
-        ownerFilter = { in: Array.from(friendIds) }
       }
     }
 

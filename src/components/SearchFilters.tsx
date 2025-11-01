@@ -21,17 +21,21 @@ export default function SearchFilters() {
 
   const initialQ = params.get('q') ?? ''
   const initialSort = (params.get('sort') as SortKey) || 'members_desc'
+  // 'soldout=1' means: hide sold-out sessions
+  const initialHideSoldOut = params.get('soldout') === '1'
 
   const [q, setQ] = useState(initialQ)
   const [sort, setSort] = useState<SortKey>(initialSort)
+  const [hideSoldOut, setHideSoldOut] = useState<boolean>(initialHideSoldOut)
   const debouncedQ = useDebounce(q, 250)
 
   useEffect(() => {
     const s = new URLSearchParams(params.toString())
     debouncedQ ? s.set('q', debouncedQ) : s.delete('q')
     sort ? s.set('sort', sort) : s.delete('sort')
+    hideSoldOut ? s.set('soldout', '1') : s.delete('soldout')
     router.replace(`${pathname}?${s.toString()}`, { scroll: false })
-  }, [debouncedQ, sort]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedQ, sort, hideSoldOut]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="top-[72px] z-20 mb-4 md:mb-6">
@@ -70,12 +74,29 @@ export default function SearchFilters() {
               <option value="created_asc">En eskiler</option>
             </Select>
           </div>
+
+          <label className="ml-auto hidden md:inline-flex items-center gap-2 text-sm text-gray-700 select-none">
+            <input
+              type="checkbox"
+              checked={hideSoldOut}
+              onChange={(e) => setHideSoldOut(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <span>Dolu oturumları gizle</span>
+          </label>
         </div>
+        <label className="md:hidden mt-2 inline-flex items-center gap-2 text-sm text-gray-700 select-none">
+          <input
+            type="checkbox"
+            checked={hideSoldOut}
+            onChange={(e) => setHideSoldOut(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          <span>Dolu oturumları gizle</span>
+        </label>
       </div>
     </div>
   )
 }
-
-
 
 

@@ -44,11 +44,11 @@ export default function PaginatedClubs({
         Object.entries(initialQuery).forEach(([k, v]) => v && q.set(k, v))
         q.set('limit', String(pageSize))
         q.set('page', String(page))
-        const res = await fetch(`/api/clubs?${q.toString()}`, { cache: 'no-store' })
+        const res = await fetch(`/api/events?${q.toString()}`, { cache: 'no-store' })
         const data = await res.json()
         if (!res.ok) throw new Error(data?.error || 'Liste yüklenemedi')
         const arr = Array.isArray(data?.items) ? data.items
-          : Array.isArray(data?.clubs) ? data.clubs
+          : Array.isArray(data?.events) ? data.events
           : Array.isArray(data) ? data
           : []
         const norm: Club[] = arr.map((x: any, i: number) => ({
@@ -65,7 +65,9 @@ export default function PaginatedClubs({
         }))
         if (!cancelled) {
           setItems(norm)
-          setTotal(typeof data?.total === 'number' ? data.total : null)
+          // Backend may not provide total; if fewer than pageSize, infer last page
+          const inferredTotal = typeof data?.total === 'number' ? data.total : (norm.length < pageSize ? page * pageSize - (pageSize - norm.length) : null)
+          setTotal(inferredTotal)
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || 'Liste yüklenemedi')

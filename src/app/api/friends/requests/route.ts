@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ensureFollow, removeFollow } from '@/lib/follow'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,71 +35,51 @@ export async function POST(req: NextRequest) {
 
   const now = new Date()
 
-  // --- ACCEPT ---
+  // --- ACCEPT (follow back) ---
   if (action === 'accept') {
-    const pending = await prisma.friendRequest.findFirst({
-      where: { fromId: targetId, toId: meId, status: 'PENDING' },
-      select: { id: true },
-    })
-    if (!pending) return NextResponse.json({ status: 'NONE' })
-    await prisma.friendRequest.update({
-      where: { id: pending.id },
-      data: { status: 'ACCEPTED', respondedAt: now },
-    })
-    return NextResponse.json({ status: 'ACCEPTED' })
+    const result = await ensureFollow({ followerId: meId, followingId: targetId })
+    if (result.mutual) {
+      await prisma.dmThread.updateMany({
+        where: {
+          OR: [
+            { userAId: meId, userBId: targetId },
+            { userAId: targetId, userBId: meId },
+          ],
+        },
+        data: {
+          status: 'ACTIVE',
+          requestedById: null,
+          requestedAt: null,
+          lastDecisionAt: now,
+        },
+      })
+    }
+    return NextResponse.json({ status: result.mutual ? 'MUTUAL' : 'FOLLOWING', mutual: result.mutual })
   }
 
-  // --- CANCEL ---
-  if (action === 'cancel') {
-    const mine = await prisma.friendRequest.findFirst({
-      where: { fromId: meId, toId: targetId, status: 'PENDING' },
-      select: { id: true },
-    })
-    if (!mine) return NextResponse.json({ status: 'NONE' })
-    await prisma.friendRequest.delete({ where: { id: mine.id } })
-    return NextResponse.json({ status: 'CANCELED' })
+  // --- CANCEL (unfollow) ---
+  if (action === 'cancel' || action === 'unfollow') {
+    await removeFollow({ followerId: meId, followingId: targetId })
+    return NextResponse.json({ status: 'UNFOLLOWED' })
   }
 
-  // --- SEND / UPSERT ---
-  const accepted = await prisma.friendRequest.findFirst({
-    where: {
-      status: 'ACCEPTED',
-      OR: [
-        { fromId: meId, toId: targetId },
-        { fromId: targetId, toId: meId },
-      ],
-    },
-    select: { id: true },
-  })
-  if (accepted) return NextResponse.json({ status: 'ACCEPTED' })
-
-  const incoming = await prisma.friendRequest.findFirst({
-    where: { fromId: targetId, toId: meId, status: 'PENDING' },
-    select: { id: true },
-  })
-  if (incoming) {
-    await prisma.friendRequest.update({
-      where: { id: incoming.id },
-      data: { status: 'ACCEPTED', respondedAt: now },
+  // --- FOLLOW / UPSERT ---
+  const result = await ensureFollow({ followerId: meId, followingId: targetId })
+  if (result.mutual) {
+    await prisma.dmThread.updateMany({
+      where: {
+        OR: [
+          { userAId: meId, userBId: targetId },
+          { userAId: targetId, userBId: meId },
+        ],
+      },
+      data: {
+        status: 'ACTIVE',
+        requestedById: null,
+        requestedAt: null,
+        lastDecisionAt: now,
+      },
     })
-    return NextResponse.json({ status: 'ACCEPTED' })
   }
-
-  const mine = await prisma.friendRequest.findFirst({
-    where: { fromId: meId, toId: targetId },
-    select: { id: true, status: true },
-  })
-  if (mine?.status === 'PENDING') return NextResponse.json({ status: 'PENDING' })
-  if (mine?.status === 'DECLINED') {
-    await prisma.friendRequest.update({
-      where: { id: mine.id },
-      data: { status: 'PENDING', createdAt: now, respondedAt: null },
-    })
-    return NextResponse.json({ status: 'PENDING' })
-  }
-
-  await prisma.friendRequest.create({
-    data: { fromId: meId, toId: targetId, status: 'PENDING' },
-  })
-  return NextResponse.json({ status: 'PENDING' })
+  return NextResponse.json({ status: result.mutual ? 'MUTUAL' : 'FOLLOWING', mutual: result.mutual })
 }

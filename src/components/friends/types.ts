@@ -5,10 +5,11 @@ export type UserLite = {
   username: string | null
   slug: string | null
   avatarUrl: string | null
+  relationship?: 'self' | 'mutual' | 'following' | 'follower' | 'none'
 }
 
 export type BuddySets = {
-  friends: Set<string>
-  incoming: Set<string>
-  outgoing: Set<string>
+  mutual: Set<string>
+  following: Set<string>
+  followers: Set<string>
 }
