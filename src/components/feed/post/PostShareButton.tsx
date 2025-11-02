@@ -131,7 +131,7 @@ export default function PostShareButton({
       const htmlToImage = await loadHtmlToImage()
       if (!htmlToImage) throw new Error('Dış hizmet yüklenemedi')
       await waitForImages()
-      const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 0.98, pixelRatio: 2, cacheBust: true })
+      const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 0.98, pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' })
       const link = document.createElement('a')
       link.href = dataUrl
       link.download = `bookie-${postId}.png`
@@ -268,14 +268,20 @@ function renderMosaic(urls: string[]) {
 
   const tile = (src: string, key: string) => (
     <div key={key} className="relative w-full h-full">
-      <img src={src} alt="" className={one ? 'max-h-48 w-full object-contain' : 'absolute inset-0 h-full w-full object-cover'} />
+      <img
+        src={`/api/img-proxy?u=${encodeURIComponent(src)}`}
+        alt=""
+        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
+        className={one ? 'max-h-48 w-full object-contain' : 'absolute inset-0 h-full w-full object-cover'}
+      />
     </div>
   )
 
   if (one) {
     return (
       <div className="flex items-center justify-center">
-        <img src={list[0]} alt="" className="max-h-48 w-full object-contain" />
+        <img src={`/api/img-proxy?u=${encodeURIComponent(list[0])}`} alt="" crossOrigin="anonymous" referrerPolicy="no-referrer" className="max-h-48 w-full object-contain" />
       </div>
     )
   }

@@ -69,7 +69,12 @@ export default function SharePageContent({
       const htmlToImage = await loadHtmlToImage()
       if (!htmlToImage) throw new Error('Dış hizmet yüklenemedi')
       await waitForImages()
-      const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 0.98, pixelRatio: 2, cacheBust: true })
+      const dataUrl = await htmlToImage.toPng(cardRef.current, {
+        quality: 0.98,
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+      } as any)
       const link = document.createElement('a')
       link.href = dataUrl
       link.download = `bookie-${postId}.png`
@@ -150,6 +155,8 @@ export default function SharePageContent({
     return undefined
   }, [instagramMode])
 
+  const proxied = (u: string) => `/api/img-proxy?u=${encodeURIComponent(u)}`
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-100 via-white to-primary/10 py-6 px-3 md:py-10">
       <div className="mx-auto w-full max-w-screen-sm space-y-6">
@@ -167,7 +174,15 @@ export default function SharePageContent({
             {/* Owner */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 48, height: 48, borderRadius: 999, overflow: 'hidden', boxShadow: '0 0 0 3px rgba(250,61,48,.25)' }}>
-                <img src={safeAvatarUrl(ownerAvatar, ownerName) || ''} alt={ownerName || 'Kullanıcı'} width={48} height={48} style={{ width: 48, height: 48, objectFit: 'cover' }} />
+                <img
+                  src={safeAvatarUrl(ownerAvatar, ownerName) || ''}
+                  alt={ownerName || 'Kullanıcı'}
+                  width={48}
+                  height={48}
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
+                  style={{ width: 48, height: 48, objectFit: 'cover' }}
+                />
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 700, color: '#111827' }}>{ownerName || 'Bir okur'}</div>
@@ -194,7 +209,7 @@ export default function SharePageContent({
             {/* Image area with contain fit */}
             {Array.isArray(imageUrls) && imageUrls.length > 0 && (
               <div style={{ flex: '0 0 auto', height: 520, borderRadius: 20, background: '#f3f4f6', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)' }}>
-                {renderMosaic(imageUrls)}
+                {renderMosaic(imageUrls.map(proxied))}
               </div>
             )}
 
@@ -258,14 +273,26 @@ function renderMosaic(urls: string[]) {
 
   const tile = (src: string, key: string, style: React.CSSProperties = {}) => (
     <div key={key} style={{ position: 'relative', width: '100%', height: '100%', ...style }}>
-      <img src={src} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: one ? 'contain' : 'cover' }} />
+      <img
+        src={src}
+        alt=""
+        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: one ? 'contain' : 'cover' }}
+      />
     </div>
   )
 
   if (one) {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <img src={list[0]} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        <img
+          src={list[0]}
+          alt=""
+          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
+          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+        />
       </div>
     )
   }
