@@ -171,9 +171,7 @@ export default function MobileAppFooter() {
               <Link href="/messages" scroll={false} className="relative grid place-content-center h-12" aria-label="Mesajlar">
                 <IMessages />
                 {dmUnread + notifUnread > 0 && (
-                  <span className="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
-                    {dmUnread + notifUnread > 99 ? '99+' : dmUnread + notifUnread}
-                  </span>
+                  <span className="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4 inline-block h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_2px_white]" />
                 )}
               </Link>
               <Link href="/subscriptions" scroll={false} className="grid place-content-center h-12" aria-label="Kulüplerim">

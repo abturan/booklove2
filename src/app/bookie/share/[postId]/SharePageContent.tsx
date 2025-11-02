@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Image from 'next/image'
+// Use native <img> for reliable html-to-image capture
 import { safeAvatarUrl } from '@/lib/avatar'
 import { loadHtmlToImage } from '@/lib/htmlToImage'
 
@@ -45,6 +45,22 @@ export default function SharePageContent({
     return lines.join('\n')
   }, [profileUrl, sharePreview])
 
+  async function waitForImages() {
+    const node = cardRef.current
+    if (!node) return
+    const imgs = Array.from(node.querySelectorAll('img'))
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete && img.naturalWidth > 0
+          ? Promise.resolve()
+          : new Promise<void>((res) => {
+              img.addEventListener('load', () => res(), { once: true })
+              img.addEventListener('error', () => res(), { once: true })
+            }),
+      ),
+    )
+  }
+
   async function handleSaveImage(auto = false) {
     if (!cardRef.current) return
     if (!auto) setFeedback(null)
@@ -52,6 +68,7 @@ export default function SharePageContent({
     try {
       const htmlToImage = await loadHtmlToImage()
       if (!htmlToImage) throw new Error('Dış hizmet yüklenemedi')
+      await waitForImages()
       const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 0.98, pixelRatio: 2, cacheBust: true })
       const link = document.createElement('a')
       link.href = dataUrl
@@ -139,7 +156,7 @@ export default function SharePageContent({
         <div ref={cardRef} className="rounded-3xl bg-white/90 p-6 shadow-2xl ring-1 ring-black/5 backdrop-blur">
           <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
             <div className="h-12 w-12 overflow-hidden rounded-full ring-2 ring-primary/30">
-              <Image src={safeAvatarUrl(ownerAvatar, ownerName)} alt={ownerName || 'Kullanıcı'} width={48} height={48} className="h-12 w-12 object-cover" />
+              <img src={safeAvatarUrl(ownerAvatar, ownerName) || ''} alt={ownerName || 'Kullanıcı'} width={48} height={48} className="h-12 w-12 object-cover" />
             </div>
             <div>
               <div className="text-sm font-semibold text-primary">Bookie!</div>
@@ -152,7 +169,7 @@ export default function SharePageContent({
             <p className="whitespace-pre-line text-[15px] leading-7 text-gray-800">{body}</p>
             {imageUrl ? (
               <div className="mt-4 overflow-hidden rounded-2xl">
-                <Image src={imageUrl} alt="" width={900} height={900} className="h-auto w-full object-cover" unoptimized />
+                <img src={imageUrl} alt="" width={900} height={900} className="h-auto w-full object-cover" />
               </div>
             ) : null}
           </article>

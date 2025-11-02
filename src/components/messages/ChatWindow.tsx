@@ -67,6 +67,15 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
               requestedById: j.requestedById ?? null,
               requestedAt: j.requestedAt ?? null,
             })
+            // Mark thread as read when opened/loaded
+            try {
+              await fetch('/api/dm/mark-read', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ threadId }),
+              })
+              window.dispatchEvent(new Event('dm:counts'))
+            } catch {}
           } else {
             setState({
               status: 'loaded',
@@ -120,6 +129,14 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
           requestedById: j.requestedById ?? null,
           requestedAt: j.requestedAt ?? null,
         })
+        try {
+          await fetch('/api/dm/mark-read', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ threadId }),
+          })
+          window.dispatchEvent(new Event('dm:counts'))
+        } catch {}
       }
     } catch {}
   }
@@ -246,13 +263,30 @@ export default function ChatWindow({ threadId }: { threadId: string }) {
             const isMine = meId && m.authorId === meId
             return (
               <div key={m.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[70%] rounded-2xl px-3 py-2 text-sm ${
-                    isMine ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
+                <div className={`group relative max-w-[70%] rounded-2xl px-3 py-2 text-sm ${isMine ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
                   <div>{m.body}</div>
                   <div className="text-[10px] opacity-70 mt-1">{new Date(m.createdAt).toLocaleString('tr-TR')}</div>
+                  {isMine && (
+                    <div className="absolute -top-2 right-0 hidden gap-2 group-hover:flex">
+                      <button
+                        className="rounded-full bg-white/80 text-gray-700 px-2 py-0.5 text-[11px] hover:bg-white"
+                        onClick={async () => {
+                          const text = prompt('Mesajı düzenle', m.body)
+                          if (text == null) return
+                          await fetch(`/api/dm/message/${m.id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ body: text }) })
+                          await refresh()
+                        }}
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        className="rounded-full bg-white/80 text-red-600 px-2 py-0.5 text-[11px] hover:bg-white"
+                        onClick={async () => { if (confirm('Silinsin mi?')) { await fetch(`/api/dm/message/${m.id}`, { method: 'DELETE' }); await refresh() } }}
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )

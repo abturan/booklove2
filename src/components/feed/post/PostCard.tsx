@@ -176,6 +176,7 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
               // yorum sayısı badge'i anında güncellensin
             }}
             canInteract={canInteract}
+            reload={c.load}
           />
         </>
       )}

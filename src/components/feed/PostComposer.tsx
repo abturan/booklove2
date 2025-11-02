@@ -14,6 +14,21 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
   const maxImages = 5
   const { verified } = useVerifyStatus()
   const canPost = verified === true
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const emojiRef = useRef<HTMLDivElement | null>(null)
+  const emojiBtnRef = useRef<HTMLButtonElement | null>(null)
+  const EMOJIS = ['🙂','😀','😁','😂','😅','😉','😊','😍','🤩','😜','😎','😇','🤗','🥳','🙌','🙏','👏','👍','👌','🔥','✨','🎉','❤️','💛','💚','💙','💜','🖤','🤍','📚','✍️','📖']
+  function onDocClick(e: MouseEvent) {
+    const t = e.target as Node
+    if (!emojiOpen) return
+    if (emojiRef.current?.contains(t)) return
+    if (emojiBtnRef.current?.contains(t)) return
+    setEmojiOpen(false)
+  }
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('click', onDocClick as any)
+    document.addEventListener('click', onDocClick as any)
+  }
 
   async function onSelectFiles(files: FileList | null) {
     if (!files || files.length === 0 || !canPost) return
@@ -135,6 +150,20 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
           >
             Görsel ekle ({images.length}/{maxImages})
           </button>
+          <div className="relative">
+            <button ref={emojiBtnRef} type="button" disabled={!canPost} onClick={() => setEmojiOpen(v=>!v)} className="text-2xl leading-none text-slate-500 hover:text-slate-700 disabled:text-slate-300" aria-label="Emoji seç">🙂</button>
+            {emojiOpen && (
+              <div ref={emojiRef} className="absolute bottom-9 left-0 z-10 w-56 rounded-2xl border bg-white p-2 shadow-soft">
+                <div className="grid grid-cols-8 gap-1">
+                  {EMOJIS.map(e => (
+                    <button key={e} type="button" className="h-8 w-8 grid place-items-center rounded-md hover:bg-gray-100 text-xl" onClick={() => { setText(t=>t+e); setEmojiOpen(false) }}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <button
           type="button"
@@ -148,4 +177,3 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
     </div>
   )
 }
-

@@ -57,7 +57,6 @@ export default function Footer() {
             >
               Manifesto
             </button>
-            <a href="/mesafeli-satis-sozlesmesi" className="hover:text-black text-neutral-700">Mesafeli Satış Sözleşmesi</a>
             <a href="/gizlilik-sozlesmesi" className="hover:text-black text-neutral-700">Gizlilik Sözleşmesi</a>
             <a href="/iletisim" className="hover:text-black text-neutral-700">İletişim</a>
           </nav>
@@ -77,7 +76,6 @@ export default function Footer() {
     </>
   )
 }
-
 
 
 

@@ -13,14 +13,9 @@ export default function NotificationBadge({
   if (!count) return null
   return (
     <span
-      className={clsx(
-        'inline-flex min-w-[18px] h-[18px] text-[11px] px-1 rounded-full bg-primary text-white items-center justify-center',
-        placement
-      )}
-      aria-label={`${count} bekleyen istek`}
-      title={`${count} bekleyen istek`}
-    >
-      {count}
-    </span>
+      className={clsx('inline-block h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_2px_white]', placement)}
+      aria-label={`Bekleyen isteğin var`}
+      title={`Bekleyen isteğin var`}
+    />
   )
 }

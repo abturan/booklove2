@@ -721,7 +721,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
                         : 'text-white/80 hover:bg-white/10',
                     )}
                   >
-                    Etkinlik Sohbeti
+                    Sohbet
                     {chatMessageCount > 0 && (
                       <span className="grid h-5 min-w-[20px] place-items-center rounded-full border border-white/70 bg-white px-1 text-[10px] font-semibold leading-none text-[#fa3d30] shadow-[0_0_0_1px_rgba(250,61,48,0.35)]">
                         {Math.min(chatMessageCount, 999)}
@@ -738,7 +738,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
                         : 'text-white/80 hover:bg-white/10',
                     )}
                   >
-                    Bilet İşlemleri
+                    Bilet
                   </button>
                 </div>
               </div>

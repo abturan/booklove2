@@ -4,6 +4,8 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Avatar from '@/components/Avatar'
+import Link from 'next/link'
+import { userPath } from '@/lib/userPath'
 import FriendAction from '@/components/sidebars/profile/FriendAction'
 
 type Relationship = 'self' | 'mutual' | 'following' | 'follower' | 'none'
@@ -46,9 +48,11 @@ export default function LikeListModal({ postId }: { postId: string }) {
           {items.map(u => (
             <div key={u.id} className="flex items-center justify-between gap-3 py-2">
               <div className="flex items-center gap-3 min-w-0">
-                <Avatar src={u.avatarUrl || undefined} size={40} alt={u.name || 'Kullanıcı'} />
+                <Link href={userPath(u.username ?? undefined, u.name ?? undefined, u.slug ?? undefined)} className="shrink-0">
+                  <Avatar src={u.avatarUrl || undefined} size={40} alt={u.name || 'Kullanıcı'} />
+                </Link>
                 <div className="min-w-0">
-                  <div className="font-medium truncate">{u.name || 'Kullanıcı'}</div>
+                  <Link href={userPath(u.username ?? undefined, u.name ?? undefined, u.slug ?? undefined)} className="font-medium truncate hover:underline">{u.name || 'Kullanıcı'}</Link>
                   <div className="text-xs text-gray-500 truncate">@{u.username || u.slug || '—'}</div>
                 </div>
               </div>

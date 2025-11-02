@@ -1,11 +1,12 @@
 // src/components/feed/post/PostComments.tsx
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Avatar from '@/components/Avatar'
 import { userPath } from '@/lib/userPath'
 
 export default function PostComments({
-  open, loading, items, text, setText, onSend, canInteract
+  open, loading, items, text, setText, onSend, canInteract, reload
 }: {
   open: boolean
   loading: boolean
@@ -14,8 +15,13 @@ export default function PostComments({
   setText: (v: string)=>void
   onSend: ()=>void
   canInteract: boolean
+  reload?: () => void
 }) {
+  const { data } = useSession()
+  const meId = (data?.user as any)?.id || null
   const [showAll, setShowAll] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editText, setEditText] = useState('')
   const visible = showAll ? items : items.slice(0, 3)
 
   if (!open) return null
@@ -28,21 +34,41 @@ export default function PostComments({
         <div className="text-xs text-gray-500">Henüz yorum yok.</div>
       ) : (
         <div className="space-y-2">
-          {visible.map((c) => (
-            <div key={c.id} className="rounded-2xl bg-gray-50 p-2">
-              <div className="flex items-start gap-2">
-                <Avatar src={c.user?.avatarUrl || undefined} size={28} alt={c.user?.name || 'Kullanıcı'} />
-                <div className="min-w-0">
-                  <div className="text-xs text-gray-500">
-                    <Link href={userPath(c.user?.username, c.user?.name, c.user?.slug)} className="font-medium hover:underline">
-                      {c.user?.name || 'Kullanıcı'}
-                    </Link>{' '}· {new Date(c.createdAt).toLocaleString()}
+          {visible.map((c) => {
+            const isMine = meId && c.user?.id === meId
+            const inEdit = editId === c.id
+            return (
+              <div key={c.id} className="rounded-2xl bg-gray-50 p-2">
+                <div className="flex items-start gap-2">
+                  <Link href={userPath(c.user?.username, c.user?.name, c.user?.slug)} className="shrink-0">
+                    <Avatar src={c.user?.avatarUrl || undefined} size={28} alt={c.user?.name || 'Kullanıcı'} />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Link href={userPath(c.user?.username, c.user?.name, c.user?.slug)} className="font-medium hover:underline">
+                        {c.user?.name || 'Kullanıcı'}
+                      </Link>
+                      <span>· {new Date(c.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                      {isMine && !inEdit && (
+                        <span className="ml-auto inline-flex items-center gap-2">
+                          <button type="button" onClick={() => { setEditId(c.id); setEditText(c.body || '') }} className="text-gray-600 hover:underline">Düzenle</button>
+                          <button type="button" onClick={async () => { await fetch(`/api/comments/${c.id}`, { method: 'DELETE' }); reload?.() }} className="text-red-600 hover:underline">Sil</button>
+                        </span>
+                      )}
+                    </div>
+                    {!inEdit && <div className="text-sm whitespace-pre-wrap break-words">{c.body}</div>}
+                    {inEdit && (
+                      <div className="mt-1 flex items-center gap-2">
+                        <textarea value={editText} onChange={(e)=>setEditText(e.target.value)} rows={2} className="flex-1 rounded-xl border px-3 py-2 text-sm" />
+                        <button type="button" onClick={async () => { await fetch(`/api/comments/${c.id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ body: editText }) }); setEditId(null); reload?.() }} className="rounded-full bg-gray-900 text-white px-3 py-1 text-xs">Kaydet</button>
+                        <button type="button" onClick={()=>{ setEditId(null); setEditText('') }} className="rounded-full border px-3 py-1 text-xs">Vazgeç</button>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-sm whitespace-pre-wrap break-words">{c.body}</div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
           {items.length > 3 && !showAll && (
             <button
               type="button"
@@ -64,6 +90,15 @@ export default function PostComments({
           disabled={!canInteract}
           className="flex-1 resize-none rounded-xl border border-gray-200 p-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 disabled:bg-gray-50 disabled:opacity-60"
         />
+        <button
+          type="button"
+          onClick={() => canInteract && setText(text + '🙂')}
+          disabled={!canInteract}
+          className="self-end text-xl leading-none text-gray-500 hover:text-gray-700 disabled:text-gray-300"
+          aria-label="Emoji ekle"
+        >
+          🙂
+        </button>
         <button
           type="button"
           onClick={canInteract ? onSend : undefined}

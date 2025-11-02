@@ -46,33 +46,27 @@ export default function PostShareButton({
 
   const handleNativeShare = async () => {
     const { url, profileUrl } = buildShareUrls(postId, owner)
-    const text = [
+    const lines = [
       `${owner.name || 'Bir okur'} Bookie paylaştı.`,
       owner.username ? `@${owner.username}` : '',
       profileUrl,
       '',
       sharePreview,
-      '',
-      url,
-    ]
-      .filter(Boolean)
-      .join('\n')
+    ].filter(Boolean)
+    const text = lines.join('\n')
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `${owner.name || 'Bookie'} paylaşımı`,
-          text,
-          url,
-        })
+        await navigator.share({ title: `${owner.name || 'Bookie'} paylaşımı`, text, url })
         setMessage('Paylaşım gönderildi.')
         return
       } catch (err) {
         if ((err as any)?.name === 'AbortError') return
       }
     }
-    await copyToClipboard(url)
-    setMessage('Bağlantı panoya kopyalandı.')
+    // Fallback: linki kopyala + bilgi ver
+    await copyToClipboard(url + '\n\n' + text)
+    setMessage('Bağlantı ve metin panoya kopyalandı.')
   }
 
   const handleInstagramShare = () => {
@@ -80,6 +74,22 @@ export default function PostShareButton({
     const { url } = buildShareUrls(postId, owner)
     const target = `${url}?instagram=1`
     window.open(target, '_blank', 'noopener,noreferrer')
+  }
+
+  async function waitForImages() {
+    const node = cardRef.current
+    if (!node) return
+    const imgs = Array.from(node.querySelectorAll('img'))
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete && img.naturalWidth > 0
+          ? Promise.resolve()
+          : new Promise<void>((res) => {
+              img.addEventListener('load', () => res(), { once: true })
+              img.addEventListener('error', () => res(), { once: true })
+            }),
+      ),
+    )
   }
 
   const handleDownloadImage = async () => {
@@ -94,6 +104,7 @@ export default function PostShareButton({
     try {
       const htmlToImage = await loadHtmlToImage()
       if (!htmlToImage) throw new Error('Dış hizmet yüklenemedi')
+      await waitForImages()
       const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 0.98, pixelRatio: 2, cacheBust: true })
       const link = document.createElement('a')
       link.href = dataUrl

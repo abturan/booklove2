@@ -31,6 +31,7 @@ type ChatItem = {
   isSecret?: boolean
   secretMasked?: boolean
   author?: ChatAuthor | null
+  createdAt?: string
 }
 
 export default function ChatPanel({
@@ -127,7 +128,7 @@ export default function ChatPanel({
           const masked = !!m.isSecret && (!canSeeSecret || m.secretMasked)
           return (
             <div key={m.id} className="flex gap-2 items-start p-2">
-              <Link href={userPath(m.author?.username, m.author?.name, m.author?.slug)} className="inline-block">
+              <Link href={userPath(m.author?.username, m.author?.name, m.author?.slug)} className="inline-block shrink-0">
                 <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} />
               </Link>
               <div className="min-w-0 flex-1">
@@ -137,6 +138,11 @@ export default function ChatPanel({
                     <span className="inline-flex items-center rounded-full bg-[#fa3d30]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#fa3d30]">
                       Gizli
                     </span>
+                  )}
+                  {m.createdAt && (
+                    <time className="ml-auto text-[11px] text-slate-400">
+                      {new Date(m.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </time>
                   )}
                 </div>
                 <div
@@ -173,7 +179,6 @@ export default function ChatPanel({
             ref={emojiBtnRef}
             type="button"
             onClick={() => enabled && setEmojiOpen((v) => !v)}
-            
             aria-label="Emoji seç"
             disabled={!enabled}
             className="text-2xl leading-none text-slate-500 transition hover:text-slate-700 disabled:text-slate-300"
@@ -206,10 +211,13 @@ export default function ChatPanel({
         </div>
         <button
           onClick={send}
-          className="h-11 px-4 rounded-xl bg-gray-900 text-white disabled:opacity-60"
+          className="h-11 px-3 sm:px-4 rounded-xl bg-gray-900 text-white disabled:opacity-60 flex items-center justify-center"
           disabled={!enabled || !eventId}
+          aria-label="Gönder"
+          title="Gönder"
         >
-          Gönder
+          <span className="sm:hidden">➤</span>
+          <span className="hidden sm:inline">Gönder</span>
         </button>
       </div>
       {allowSecret && (
