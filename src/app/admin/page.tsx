@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import AdminCharts from '@/components/admin/AdminCharts'
+import ActiveUsersModalButton from '@/components/admin/ActiveUsersModalButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -83,6 +84,11 @@ export default async function AdminHome() {
         <Card title="Yaklaşan Etkinlik" value={fmt(upcomingEventCount)} href="/admin/clubs" />
         <Card title="Toplam Ciro (₺)" value={fmt(revenueTRY)} />
       </section>
+
+      {/* Aktif kullanıcı listesi */}
+      <div>
+        <ActiveUsersModalButton />
+      </div>
 
       {/* Büyük linkler */}
       <section className="grid gap-4 sm:grid-cols-3">
