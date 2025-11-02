@@ -1,5 +1,6 @@
 // src/components/feed/post/PostComments.tsx
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import EmojiPicker from '@/components/EmojiPicker'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Avatar from '@/components/Avatar'
@@ -23,6 +24,8 @@ export default function PostComments({
   const [editId, setEditId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const visible = showAll ? items : items.slice(0, 3)
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const emojiBtnRef = useRef<HTMLButtonElement | null>(null)
 
   if (!open) return null
 
@@ -90,15 +93,19 @@ export default function PostComments({
           disabled={!canInteract}
           className="flex-1 resize-none rounded-xl border border-gray-200 p-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 disabled:bg-gray-50 disabled:opacity-60"
         />
-        <button
-          type="button"
-          onClick={() => canInteract && setText(text + '🙂')}
-          disabled={!canInteract}
-          className="self-end text-xl leading-none text-gray-500 hover:text-gray-700 disabled:text-gray-300"
-          aria-label="Emoji ekle"
-        >
-          🙂
-        </button>
+        <div className="relative self-end">
+          <button
+            ref={emojiBtnRef}
+            type="button"
+            onClick={() => canInteract && setEmojiOpen(v=>!v)}
+            disabled={!canInteract}
+            className="text-xl leading-none text-gray-500 hover:text-gray-700 disabled:text-gray-300"
+            aria-label="Emoji ekle"
+          >
+            🙂
+          </button>
+          <EmojiPicker open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(e)=>{ setText((text || '') + e); setEmojiOpen(false) }} anchorRef={emojiBtnRef} />
+        </div>
         <button
           type="button"
           onClick={canInteract ? onSend : undefined}

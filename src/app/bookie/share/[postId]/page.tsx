@@ -11,7 +11,7 @@ export default async function BookieSharePage({ params, searchParams }: { params
       id: true,
       body: true,
       owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
-      images: { take: 1, select: { url: true } },
+      images: { select: { url: true } },
     },
   })
   if (!post) return notFound()
@@ -35,7 +35,7 @@ export default async function BookieSharePage({ params, searchParams }: { params
       ownerName={post.owner.name || 'Bir okur'}
       ownerUsername={post.owner.username || post.owner.slug || null}
       ownerAvatar={post.owner.avatarUrl}
-      imageUrl={post.images[0]?.url ?? null}
+      imageUrls={(post.images || []).map(i => i?.url).filter(Boolean) as string[]}
       profileUrl={profileUrl}
       shareUrl={shareUrl}
       sharePreview={sharePreview}

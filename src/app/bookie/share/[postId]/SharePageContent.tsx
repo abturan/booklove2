@@ -11,7 +11,7 @@ type Props = {
   ownerName: string
   ownerUsername: string | null
   ownerAvatar: string | null
-  imageUrl: string | null
+  imageUrls: string[]
   profileUrl: string
   shareUrl: string
   sharePreview: string
@@ -25,7 +25,7 @@ export default function SharePageContent({
   ownerName,
   ownerUsername,
   ownerAvatar,
-  imageUrl,
+  imageUrls,
   profileUrl,
   shareUrl,
   sharePreview,
@@ -151,35 +151,60 @@ export default function SharePageContent({
   }, [instagramMode])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-100 via-white to-primary/10 py-8 px-4 sm:px-6 md:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-rose-100 via-white to-primary/10 py-6 px-3 md:py-10">
       <div className="mx-auto w-full max-w-screen-sm space-y-6">
-        <div ref={cardRef} className="rounded-3xl bg-white/90 p-6 shadow-2xl ring-1 ring-black/5 backdrop-blur">
-          <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
-            <div className="h-12 w-12 overflow-hidden rounded-full ring-2 ring-primary/30">
-              <img src={safeAvatarUrl(ownerAvatar, ownerName) || ''} alt={ownerName || 'Kullanıcı'} width={48} height={48} className="h-12 w-12 object-cover" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-primary">Bookie!</div>
-              <div className="text-lg font-bold text-gray-900">{ownerName || 'Bir okur'}</div>
-              {ownerUsername && <div className="text-sm text-gray-500">@{ownerUsername}</div>}
-            </div>
-          </header>
-
-          <article className="rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-inner">
-            <p className="whitespace-pre-line text-[15px] leading-7 text-gray-800">{body}</p>
-            {imageUrl ? (
-              <div className="mt-4 overflow-hidden rounded-2xl">
-                <img src={imageUrl} alt="" width={900} height={900} className="h-auto w-full object-cover" />
+        {/* Fixed-size story card (9:16) for consistent exports */}
+        <div
+          ref={cardRef}
+          style={{ width: 720, height: 1280, background: '#fff', borderRadius: 28, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.14)', position: 'relative' }}
+        >
+          {/* Brand header */}
+          <div style={{ height: 84, background: '#fa3d30', color: '#fff', display: 'flex', alignItems: 'center', padding: '0 24px', fontWeight: 800, letterSpacing: '.3px' }}>
+            boook.love
+          </div>
+          {/* Content */}
+          <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, height: 1280 - 84, boxSizing: 'border-box' }}>
+            {/* Owner */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 999, overflow: 'hidden', boxShadow: '0 0 0 3px rgba(250,61,48,.25)' }}>
+                <img src={safeAvatarUrl(ownerAvatar, ownerName) || ''} alt={ownerName || 'Kullanıcı'} width={48} height={48} style={{ width: 48, height: 48, objectFit: 'cover' }} />
               </div>
-            ) : null}
-          </article>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{ownerName || 'Bir okur'}</div>
+                {ownerUsername && <div style={{ fontSize: 13, color: '#6b7280' }}>@{ownerUsername}</div>}
+              </div>
+            </div>
 
-          <footer className="mt-4 text-xs text-gray-500">
-            Profil:{' '}
-            <a href={profileUrl} className="font-semibold text-primary hover:underline" target="_blank" rel="noopener noreferrer">
-              {profileUrl}
-            </a>
-          </footer>
+            {/* Body text (clamped) */}
+            <div
+              style={{
+                fontSize: 18,
+                lineHeight: 1.7,
+                color: '#1f2937',
+                whiteSpace: 'pre-wrap',
+                display: '-webkit-box',
+                WebkitLineClamp: 8,
+                WebkitBoxOrient: 'vertical' as any,
+                overflow: 'hidden',
+              }}
+            >
+              {body}
+            </div>
+
+            {/* Image area with contain fit */}
+            {Array.isArray(imageUrls) && imageUrls.length > 0 && (
+              <div style={{ flex: '0 0 auto', height: 520, borderRadius: 20, background: '#f3f4f6', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)' }}>
+                {renderMosaic(imageUrls)}
+              </div>
+            )}
+
+            {/* Footer pinned to bottom */}
+            <div style={{ marginTop: 'auto', fontSize: 12, color: '#6b7280' }}>
+              <span>@{ownerUsername || 'booklover'}</span>
+              <span> • </span>
+              <span>{profileUrl}</span>
+            </div>
+          </div>
         </div>
 
         <div className="rounded-2xl bg-white/90 p-4 text-sm text-gray-700 shadow ring-1 ring-black/5 backdrop-blur">
@@ -219,6 +244,60 @@ export default function SharePageContent({
             </li>
           </ul>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function renderMosaic(urls: string[]) {
+  const list = urls.filter(Boolean)
+  const one = list.length === 1
+  const two = list.length === 2
+  const three = list.length === 3
+  const fourOrMore = list.length >= 4
+
+  const tile = (src: string, key: string, style: React.CSSProperties = {}) => (
+    <div key={key} style={{ position: 'relative', width: '100%', height: '100%', ...style }}>
+      <img src={src} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: one ? 'contain' : 'cover' }} />
+    </div>
+  )
+
+  if (one) {
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img src={list[0]} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+      </div>
+    )
+  }
+  if (two) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', width: '100%', height: '100%', gap: 6 }}>
+        {tile(list[0], 'i0')}
+        {tile(list[1], 'i1')}
+      </div>
+    )
+  }
+  if (three) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', width: '100%', height: '100%', gap: 6 }}>
+        <div style={{ gridRow: '1 / span 2' }}>{tile(list[0], 'i0')}</div>
+        {tile(list[1], 'i1')}
+        {tile(list[2], 'i2')}
+      </div>
+    )
+  }
+  // 4+ : first 4 in 2x2 grid, last tile shows "+N"
+  const extra = list.length - 4
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', width: '100%', height: '100%', gap: 6 }}>
+      {tile(list[0], 'i0')}
+      {tile(list[1], 'i1')}
+      {tile(list[2], 'i2')}
+      <div style={{ position: 'relative' }}>
+        {tile(list[3], 'i3')}
+        {extra > 0 && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.35)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 48 }}>+{extra}</div>
+        )}
       </div>
     </div>
   )

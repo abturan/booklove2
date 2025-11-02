@@ -75,7 +75,9 @@ export default function ProfileHero({
                     <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-gray-900 break-words">
                       {name}
                     </h1>
-                    {username && <div className="text-gray-600 font-medium break-words">@{username}</div>}
+                    {username && (
+                      <div className="text-gray-600 font-medium truncate whitespace-nowrap overflow-hidden">@{username}</div>
+                    )}
                   </div>
                   {ctaSlot ? <div className="shrink-0">{ctaSlot}</div> : null}
                 </div>
@@ -113,4 +115,3 @@ export default function ProfileHero({
     </section>
   )
 }
-

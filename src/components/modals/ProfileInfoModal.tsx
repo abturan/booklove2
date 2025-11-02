@@ -229,7 +229,7 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-lg p-5" onClick={(e) => e.stopPropagation()}>
         <div className="text-lg font-semibold">Üyelik için kısa bilgi</div>
         <p className="text-sm text-gray-600 mt-1">

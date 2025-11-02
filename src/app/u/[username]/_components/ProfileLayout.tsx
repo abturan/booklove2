@@ -28,18 +28,17 @@ export default async function ProfileLayout({
     else mode = 'follow'
   }
 
-  const actionButtons =
-    user.bio && user.bio.trim().length > 0
-      ? (
-        <div className="flex items-center gap-2">
-          <ProfileAboutButton bio={user.bio} />
-          {mode !== 'none' ? <FriendAction mode={mode} userId={user.id} showMessageButton={false} /> : null}
-        </div>
-      )
-      : mode !== 'none'
-        ? <FriendAction mode={mode} userId={user.id} showMessageButton={false} />
-        : null
-  const messageButton = mode === 'message' ? <ProfileMessageButton userId={user.id} /> : null
+  const actionButtons = (
+    <div className="flex flex-wrap items-center gap-2">
+      {user.bio && user.bio.trim().length > 0 ? <ProfileAboutButton bio={user.bio} /> : null}
+      {mode !== 'none' ? (
+        <>
+          <FriendAction mode={mode} userId={user.id} showMessageButton={false} />
+          {mode === 'message' ? <ProfileMessageButton userId={user.id} /> : null}
+        </>
+      ) : null}
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -49,7 +48,7 @@ export default async function ProfileLayout({
         avatarUrl={user.avatarUrl}
         bannerUrl={user.bannerUrl}
         actionSlot={actionButtons}
-        ctaSlot={messageButton}
+        ctaSlot={undefined}
       />
 
      

@@ -35,13 +35,15 @@ export default function PostShareButton({
     return `${text.slice(0, 277)}…`
   }, [body])
 
-  const previewImage = useMemo(() => {
-    if (!Array.isArray(images)) return null
-    for (const img of images) {
-      const url = typeof img?.url === 'string' ? img.url.trim() : ''
-      if (url) return url
+  const previewImages = useMemo(() => {
+    const arr: string[] = []
+    if (Array.isArray(images)) {
+      for (const img of images) {
+        const url = typeof img?.url === 'string' ? img.url.trim() : ''
+        if (url) arr.push(url)
+      }
     }
-    return null
+    return arr
   }, [images])
 
   const handleNativeShare = async () => {
@@ -55,6 +57,30 @@ export default function PostShareButton({
     ].filter(Boolean)
     const text = lines.join('\n')
 
+    // 1) Prefer sharing branded image if possible (Web Share with Files)
+    try {
+      const canFiles = typeof (navigator as any).canShare === 'function'
+      if (canFiles && cardRef.current) {
+        // ensure images loaded and node visible
+        cardRef.current.scrollIntoView({ block: 'center' })
+        await waitForImages()
+        const htmlToImage = await loadHtmlToImage()
+        if (htmlToImage) {
+          const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 0.98, pixelRatio: 2, backgroundColor: '#ffffff' })
+          const blob = dataUrlToBlob(dataUrl)
+          const file = new File([blob], `bookie-${postId}.png`, { type: 'image/png' })
+          if ((navigator as any).canShare({ files: [file] })) {
+            await (navigator as any).share({ files: [file], text })
+            setMessage('Paylaşım gönderildi.')
+            return
+          }
+        }
+      }
+    } catch (e) {
+      // ignore and fallback
+    }
+
+    // 2) Fallback: native share with url+text if supported
     if (navigator.share) {
       try {
         await navigator.share({ title: `${owner.name || 'Bookie'} paylaşımı`, text, url })
@@ -64,7 +90,7 @@ export default function PostShareButton({
         if ((err as any)?.name === 'AbortError') return
       }
     }
-    // Fallback: linki kopyala + bilgi ver
+    // 3) Fallback: panoya kopyala
     await copyToClipboard(url + '\n\n' + text)
     setMessage('Bağlantı ve metin panoya kopyalandı.')
   }
@@ -119,6 +145,16 @@ export default function PostShareButton({
     }
   }
 
+  function dataUrlToBlob(dataUrl: string) {
+    const arr = dataUrl.split(',')
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) u8arr[n] = bstr.charCodeAt(n)
+    return new Blob([u8arr], { type: mime })
+  }
+
   return (
     <>
       <button
@@ -141,16 +177,18 @@ export default function PostShareButton({
       <BareModal open={open} onClose={() => setOpen(false)}>
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Bookie paylaş</h3>
-          <div ref={cardRef} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Boook.love</div>
-            <div className="text-[15px] leading-7 text-gray-800 whitespace-pre-line">{sharePreview}</div>
-            {previewImage && (
-              <div className="mt-3 overflow-hidden rounded-xl">
-                <img src={previewImage} alt="" className="block w-full max-h-48 rounded-xl object-cover" loading="lazy" />
+          <div ref={cardRef} className="rounded-2xl border border-gray-200 bg-white p-0 shadow-sm overflow-hidden">
+            <div className="h-10 bg-primary text-white flex items-center px-3 text-xs font-extrabold tracking-wide">boook.love</div>
+            <div className="p-4 space-y-3">
+              <div className="text-[15px] leading-7 text-gray-800 whitespace-pre-line">{sharePreview}</div>
+              {previewImages.length > 0 && (
+                <div className="mt-1 overflow-hidden rounded-xl bg-gray-100">
+                  {renderMosaic(previewImages)}
+                </div>
+              )}
+              <div className="text-xs text-gray-500">
+                @{owner.username || owner.slug || 'booklover'} • {buildShareUrls(postId, owner).profileUrl}
               </div>
-            )}
-            <div className="mt-3 text-xs text-gray-500">
-              @{owner.username || owner.slug || 'booklover'} • {buildShareUrls(postId, owner).profileUrl}
             </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -219,4 +257,57 @@ async function copyToClipboard(text: string) {
       document.body.removeChild(textarea)
     }
   }
+}
+
+function renderMosaic(urls: string[]) {
+  const list = urls.filter(Boolean)
+  const one = list.length === 1
+  const two = list.length === 2
+  const three = list.length === 3
+  const fourOrMore = list.length >= 4
+
+  const tile = (src: string, key: string) => (
+    <div key={key} className="relative w-full h-full">
+      <img src={src} alt="" className={one ? 'max-h-48 w-full object-contain' : 'absolute inset-0 h-full w-full object-cover'} />
+    </div>
+  )
+
+  if (one) {
+    return (
+      <div className="flex items-center justify-center">
+        <img src={list[0]} alt="" className="max-h-48 w-full object-contain" />
+      </div>
+    )
+  }
+  if (two) {
+    return (
+      <div className="grid grid-cols-2 gap-1 h-48">
+        {tile(list[0], 'i0')}
+        {tile(list[1], 'i1')}
+      </div>
+    )
+  }
+  if (three) {
+    return (
+      <div className="grid grid-cols-2 grid-rows-2 gap-1 h-48">
+        <div className="row-span-2 relative">{tile(list[0], 'i0')}</div>
+        {tile(list[1], 'i1')}
+        {tile(list[2], 'i2')}
+      </div>
+    )
+  }
+  const extra = list.length - 4
+  return (
+    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-48">
+      {tile(list[0], 'i0')}
+      {tile(list[1], 'i1')}
+      {tile(list[2], 'i2')}
+      <div className="relative">
+        {tile(list[3], 'i3')}
+        {extra > 0 && (
+          <div className="absolute inset-0 bg-black/40 text-white grid place-items-center font-extrabold text-2xl">+{extra}</div>
+        )}
+      </div>
+    </div>
+  )
 }

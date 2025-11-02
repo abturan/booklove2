@@ -29,7 +29,9 @@ export default function HeaderSection({
 
       <div className="min-w-0">
         <div className="text-xl font-extrabold leading-tight break-words">{name || '—'}</div>
-        {username && <div className="text-sm text-gray-500 break-words">@{username}</div>}
+        {username && (
+          <div className="text-sm text-gray-500 truncate whitespace-nowrap overflow-hidden">@{username}</div>
+        )}
       </div>
 
       {children ? <div className="ml-auto">{children}</div> : null}
