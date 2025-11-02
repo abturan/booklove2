@@ -114,6 +114,17 @@ async function buildEmail(type: NotificationType, payload: Record<string, any>) 
         <p>Merhaba,</p>
         <p><strong>${escapeHtml(clubName)}</strong> kulübünde yeni bir etkinlik eklendi.</p>
       `, 'Etkinliğe göz at', url)
+    case 'dm_message': {
+      const snippet = makeSnippet(String(payload.body || ''))
+      const heading = `${byName} sana mesaj gönderdi`
+      const html = `
+        <p>Merhaba,</p>
+        <p><strong>${escapeHtml(byName)}</strong> sana bir mesaj gönderdi.</p>
+        ${snippet ? labeledCard('Mesaj', snippet) : ''}
+      `
+      // DM e-postasında bağlantı istemiyoruz; CTA yok
+      return wrap(heading, html)
+    }
     default:
       return { subject: '', html: '' }
   }

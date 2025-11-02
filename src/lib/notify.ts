@@ -10,6 +10,7 @@ export type NotificationType =
   | 'club_new_messages_daily'
   | 'club_created'
   | 'club_new_event'
+  | 'dm_message'
 
 export async function createNotification(opts: {
   userId: string

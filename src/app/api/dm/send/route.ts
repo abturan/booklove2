@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { dmEmitter } from '@/lib/realtime'
 import { getFollowRelation } from '@/lib/follow'
+import { createNotification } from '@/lib/notify'
 
 function order(a: string, b: string) {
   return a < b ? [a, b] : [b, a]
@@ -87,6 +88,22 @@ export async function POST(req: Request) {
   await prisma.dmThread.update({ where: { id: tid! }, data: { lastMessage: new Date() } })
 
   dmEmitter.emit('message', { threadId: tid!, message: msg })
+
+  // Bildirim + e-posta (link içermeyen) — alıcı için
+  try {
+    const payload = {
+      byId: me,
+      byName: session.user?.name || undefined,
+      threadId: tid!,
+      messageId: msg.id,
+      body: msg.body,
+    }
+    await createNotification({ userId: peer, type: 'dm_message', payload })
+    const { sendNotificationEmail } = await import('@/lib/notify-email')
+    sendNotificationEmail(peer, 'dm_message', payload).catch(() => {})
+  } catch (e) {
+    // Email/notification hatası DM akışını engellemesin
+  }
 
   return NextResponse.json({ ok: true, message: msg })
 }

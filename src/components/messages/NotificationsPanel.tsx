@@ -16,6 +16,8 @@ function titleFor(n: Row): string {
       return `${p.byName || 'Bir kullanıcı'} Bookie'ni beğendi`
     case 'post_comment':
       return `${p.byName || 'Bir kullanıcı'} Bookie'ne yorum yaptı`
+    case 'dm_message':
+      return `${p.byName || 'Bir kullanıcı'} sana mesaj gönderdi`
     case 'club_moderator_post':
       return 'Moderatör yeni bir mesaj paylaştı'
     case 'club_moderator_secret':
