@@ -17,6 +17,7 @@ import SubscriptionCard from './SubscriptionCard'
 import EventOverviewCard from './UpcomingSessionCard'
 import EventNavigation from './EventNavigation'
 import ChatPanel from '@/components/ChatPanel'
+import useOnlineMap from '@/lib/hooks/useOnlineMap'
 
 type Pending = { merchant_oid: string; iframe_url: string; createdAt: number } | null
 
@@ -94,6 +95,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
   )
   const membersPreviewDesktop = useMemo(() => membersPreview.slice(0, 15), [membersPreview])
   const allMembers = activeEvent?.members ?? []
+  const onlineMap = useOnlineMap(allMembers.map((m: any) => m.id))
 
   const readPending = (key: string | null): Pending => {
     if (!key) return null
@@ -509,6 +511,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
                     size={36}
                     alt={member.name}
                     className="border border-white/70 bg-white shadow-sm"
+                    online={!!onlineMap[member.id]}
                   />
                 ))}
               </div>
@@ -629,6 +632,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
                   size={40}
                   alt={member.name}
                   className="border border-white/70 bg-white shadow-sm"
+                  online={!!onlineMap[member.id]}
                 />
               ))}
             </div>

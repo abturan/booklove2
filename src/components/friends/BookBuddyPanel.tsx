@@ -14,6 +14,7 @@ import SummaryBar from './panel/SummaryBar'
 import CollapsibleSection from './panel/CollapsibleSection'
 import EmptyRow from './panel/EmptyRow'
 import FriendRow from './panel/FriendRow'
+import useOnlineMap from '@/lib/hooks/useOnlineMap'
 
 export default function BookBuddyPanel({ active = true }: { active?: boolean }) {
   const { authed } = useAuth()
@@ -29,6 +30,9 @@ export default function BookBuddyPanel({ active = true }: { active?: boolean }) 
 
   const totalHeaderCount = pendingCount + unreadDm
 
+  const allIds = [...lists.following, ...lists.followers].map((u) => u.id)
+  const online = useOnlineMap(allIds)
+
   if (authed === false) return null
 
   const sections = (
@@ -36,13 +40,13 @@ export default function BookBuddyPanel({ active = true }: { active?: boolean }) 
       <CollapsibleSection title="Takip" count={lists.following.length} defaultOpen>
         {lists.following.length === 0 && <EmptyRow text="Henüz kimseyi takip etmiyorsun." />}
         {lists.following.map((u) => (
-          <FriendRow key={`follow-${u.id}`} u={u} userPath={userPath} allowUnfollow />
+          <FriendRow key={`follow-${u.id}`} u={u} userPath={userPath} allowUnfollow online={!!online[u.id]} />
         ))}
       </CollapsibleSection>
       <CollapsibleSection title="Takipçi" count={lists.followers.length}>
         {lists.followers.length === 0 && <EmptyRow text="Henüz takipçin yok." />}
         {lists.followers.map((u) => (
-          <FriendRow key={`follower-${u.id}`} u={u} userPath={userPath} allowUnfollow={false} />
+          <FriendRow key={`follower-${u.id}`} u={u} userPath={userPath} allowUnfollow={false} online={!!online[u.id]} />
         ))}
         {lists.followers.length > 0 && (
           <p className="px-1 pt-1 text-xs text-gray-500">

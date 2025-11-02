@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Avatar from '@/components/Avatar'
 import { userPath } from '@/lib/userPath'
 import clsx from 'clsx'
+import useOnlineMap from '@/lib/hooks/useOnlineMap'
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -93,6 +94,7 @@ export default function ChatPanel({
   }, [allowSecret])
 
   const items: ChatItem[] = Array.isArray(data?.items) ? (data.items as ChatItem[]) : []
+  const online = useOnlineMap(items.map((m) => String(m.author?.id || ''))) 
 
   useEffect(() => {
     scrollToBottom()
@@ -129,7 +131,7 @@ export default function ChatPanel({
           return (
             <div key={m.id} className="flex gap-2 items-start p-2">
               <Link href={userPath(m.author?.username, m.author?.name, m.author?.slug)} className="inline-block shrink-0">
-                <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} />
+                <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} online={!!online[String(m.author?.id || '')]} />
               </Link>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">

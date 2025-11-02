@@ -1,16 +1,25 @@
 // src/lib/mail.ts
-function resolveFrom(): string | { name: string; address: string } {
-  const envFrom = process.env.MAIL_FROM?.trim()
-  const name = (process.env.MAIL_FROM_NAME || 'Boook Love').trim()
-  const address = (process.env.MAIL_FROM_ADDRESS || 'no-reply@boook.love').trim()
-  // If MAIL_FROM provided as full "Name <addr@host>" use as-is
-  if (envFrom) {
-    if (envFrom.includes('@')) return envFrom
-    // Looks like only a display name was provided (or something like "Book Love <>")
-    // Fall back to structured object to avoid "<>"
-    return { name: envFrom.replace(/[<>]/g, ''), address }
+function resolveFrom(): { name: string; address: string } {
+  const raw = (process.env.MAIL_FROM || '').trim()
+  const fallbackName = (process.env.MAIL_FROM_NAME || 'Boook Love').trim()
+  const fallbackAddr = (process.env.MAIL_FROM_ADDRESS || 'noreply@boook.love').trim()
+
+  if (raw) {
+    // Try to parse formats like: "Name <addr@host>" or just "addr@host"
+    const m = raw.match(/^(.*)<\s*([^>]+)\s*>\s*$/)
+    if (m) {
+      const name = (m[1] || '').replace(/[<>]/g, '').trim() || fallbackName
+      const address = (m[2] || '').trim() || fallbackAddr
+      return { name, address }
+    }
+    if (raw.includes('@')) {
+      // just address provided
+      return { name: fallbackName, address: raw }
+    }
+    // just name provided
+    return { name: raw.replace(/[<>]/g, '').trim() || fallbackName, address: fallbackAddr }
   }
-  return { name, address }
+  return { name: fallbackName, address: fallbackAddr }
 }
 
 export async function sendMail(to: string, subject: string, html: string) {

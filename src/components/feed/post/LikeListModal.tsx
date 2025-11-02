@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar'
 import Link from 'next/link'
 import { userPath } from '@/lib/userPath'
 import FriendAction from '@/components/sidebars/profile/FriendAction'
+import useOnlineMap from '@/lib/hooks/useOnlineMap'
 
 type Relationship = 'self' | 'mutual' | 'following' | 'follower' | 'none'
 type LikeUser = {
@@ -23,6 +24,7 @@ export default function LikeListModal({ postId }: { postId: string }) {
   const meId = (data?.user as any)?.id || null
   const [items, setItems] = useState<LikeUser[]>([])
   const [loading, setLoading] = useState(false)
+  const online = useOnlineMap(items.map((u) => u.id))
 
   useEffect(() => {
     let cancelled = false
@@ -49,7 +51,7 @@ export default function LikeListModal({ postId }: { postId: string }) {
             <div key={u.id} className="flex items-center justify-between gap-3 py-2">
               <div className="flex items-center gap-3 min-w-0">
                 <Link href={userPath(u.username ?? undefined, u.name ?? undefined, u.slug ?? undefined)} className="shrink-0">
-                  <Avatar src={u.avatarUrl || undefined} size={40} alt={u.name || 'Kullanıcı'} />
+                  <Avatar src={u.avatarUrl || undefined} size={40} alt={u.name || 'Kullanıcı'} online={!!online[u.id]} />
                 </Link>
                 <div className="min-w-0">
                   <Link href={userPath(u.username ?? undefined, u.name ?? undefined, u.slug ?? undefined)} className="font-medium truncate hover:underline">{u.name || 'Kullanıcı'}</Link>

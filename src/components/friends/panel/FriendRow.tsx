@@ -10,10 +10,12 @@ export default function FriendRow({
   u,
   userPath,
   allowUnfollow = true,
+  online,
 }: {
   u: UserLite
   userPath: (u?: string | null, n?: string | null, s?: string | null) => string
   allowUnfollow?: boolean
+  online?: boolean
 }) {
   const relationship = u.relationship ?? 'mutual'
   let mode: 'none' | 'message' | 'follow' | 'following' | 'followBack' = 'follow'
@@ -24,7 +26,7 @@ export default function FriendRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl ring-1 ring-black/5 px-3 py-2">
       <Link href={userPath(u.username, u.name, u.slug)} className="flex items-center gap-3 min-w-0">
-        <Avatar src={u.avatarUrl ?? null} size={36} alt={u.name || 'Kullanıcı'} seed={u.username || u.slug || u.id} />
+        <Avatar src={u.avatarUrl ?? null} size={36} alt={u.name || 'Kullanıcı'} seed={u.username || u.slug || u.id} online={online} />
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">{u.name || 'Kullanıcı'}</div>
           <div className="truncate text-xs text-gray-500">{u.username ? `@${u.username}` : u.slug ? `@${u.slug}` : ''}</div>

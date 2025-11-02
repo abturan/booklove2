@@ -5,6 +5,7 @@ import * as React from 'react'
 import FriendRow from './panel/FriendRow'
 import { userPath } from '@/lib/userPath'
 import type { UserLite } from './types'
+import useOnlineMap from '@/lib/hooks/useOnlineMap'
 
 type ApiShape = {
   mutual: UserLite[]
@@ -43,6 +44,11 @@ export default function FriendsPanel() {
     return () => window.removeEventListener('friends:changed', h)
   }, [load])
 
+  const online = useOnlineMap([
+    ...data.following.map((u) => u.id),
+    ...data.followers.map((u) => u.id),
+  ])
+
   const sections: Array<{ title: string; empty: string; list: UserLite[]; info?: string; allowUnfollow: boolean }> = [
     { title: 'Takip', empty: 'Henüz kimseyi takip etmiyorsun.', list: data.following, allowUnfollow: true },
     { title: 'Takipçi', empty: 'Henüz takipçin yok.', list: data.followers, info: '', allowUnfollow: false },
@@ -59,7 +65,7 @@ export default function FriendsPanel() {
             ) : list.length === 0 ? (
               <div className="px-1 py-3 text-sm text-gray-600">{empty}</div>
             ) : (
-              list.map((u) => <FriendRow key={u.id} u={u} userPath={userPath} allowUnfollow={allowUnfollow} />)
+              list.map((u) => <FriendRow key={u.id} u={u} userPath={userPath} allowUnfollow={allowUnfollow} online={!!online[u.id]} />)
             )}
             {info && list.length > 0 && <p className="px-1 text-xs text-gray-500">{info}</p>}
           </div>
