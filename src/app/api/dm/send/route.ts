@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { dmEmitter } from '@/lib/realtime'
 import { getFollowRelation } from '@/lib/follow'
 import { createNotification } from '@/lib/notify'
+import { alertDmMessage, alertError } from '@/lib/adminAlert'
 
 function order(a: string, b: string) {
   return a < b ? [a, b] : [b, a]
@@ -104,6 +105,8 @@ export async function POST(req: Request) {
   } catch (e) {
     // Email/notification hatası DM akışını engellemesin
   }
+
+  try { alertDmMessage({ fromUserId: me, toUserId: peer, messageId: msg.id, body: msg.body }).catch(() => {}) } catch {}
 
   return NextResponse.json({ ok: true, message: msg })
 }

@@ -5,6 +5,7 @@ import { createNotification } from '@/lib/notify'
 import { isEmailVerifiedOrLegacy } from '@/lib/guards'
 import { sendNotificationEmail } from '@/lib/notify-email'
 import { auth } from '@/lib/auth'
+import { alertLike } from '@/lib/adminAlert'
 
 export async function GET(_req: Request, { params }: { params: { postId: string } }) {
   const session = await auth()
@@ -90,6 +91,7 @@ export async function POST(_req: Request, { params }: { params: { postId: string
   }
 
   await prisma.like.create({ data: { postId, userId: meId } })
+  try { alertLike({ userId: meId, postId }).catch(() => {}) } catch {}
   // notify post owner (if not self)
   try {
     const post = await prisma.post.findUnique({ where: { id: postId }, select: { ownerId: true } })

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { alertTicket, alertError } from '@/lib/adminAlert'
 import {
   getPaytrEnv,
   getClientIp,
@@ -144,6 +145,7 @@ export async function POST(req: NextRequest) {
           merchantOid: merchant_oid,
         },
       })
+      try { alertTicket({ userId, clubId, eventId: clubEventId, amountTRY: amount, status: 'REQUIRES_PAYMENT', merchantOid: merchant_oid }).catch(() => {}) } catch {}
     }
 
     const form = new URLSearchParams({
@@ -189,6 +191,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (err: any) {
           console.log(err?.message)
+    try { alertError('paytr_get_token', err).catch(() => {}) } catch {}
 
     return NextResponse.json({ error: err?.message || 'Sunucu hatası' }, { status: 500 })
   }

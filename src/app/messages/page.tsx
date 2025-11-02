@@ -7,6 +7,8 @@ import ThreadList from '@/components/messages/ThreadList'
 import NewChatPicker from '@/components/messages/NewChatPicker'
 import NotificationsPanel from '@/components/messages/NotificationsPanel'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MessagesPage() {
   const session = await auth()
   if (!session?.user?.id) return <div className="p-6">Lütfen giriş yapın.</div>

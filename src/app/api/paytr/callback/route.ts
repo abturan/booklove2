@@ -1,6 +1,7 @@
 // src/app/api/paytr/callback/route.ts
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { alertTicket } from '@/lib/adminAlert'
 import { getPaytrEnv, verifyCallbackHash } from '@/lib/paytr'
 
 export const runtime = 'nodejs'
@@ -85,11 +86,13 @@ export async function POST(req: NextRequest) {
             },
           }),
         ])
+        try { alertTicket({ userId: intent.userId, clubId: intent.clubId, eventId: intent.clubEventId, amountTRY: Number(p.total_amount) / 100, status: 'SUCCEEDED', merchantOid: p.merchant_oid }).catch(() => {}) } catch {}
       } else {
         await prisma.paymentIntent.update({
           where: { id: intent.id },
           data: { status: 'FAILED' },
         })
+        try { alertTicket({ userId: intent.userId, clubId: intent.clubId, eventId: intent.clubEventId, amountTRY: Number(p.total_amount) / 100, status: 'FAILED', merchantOid: p.merchant_oid }).catch(() => {}) } catch {}
       }
     }
 

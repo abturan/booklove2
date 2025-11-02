@@ -5,6 +5,7 @@ import { createNotification } from '@/lib/notify'
 import { isEmailVerifiedOrLegacy } from '@/lib/guards'
 import { sendNotificationEmail } from '@/lib/notify-email'
 import { auth } from '@/lib/auth'
+import { alertComment, alertError } from '@/lib/adminAlert'
 
 export async function GET(req: Request, { params }: { params: { postId: string } }) {
   const { searchParams } = new URL(req.url)
@@ -51,5 +52,6 @@ export async function POST(req: Request, { params }: { params: { postId: string 
       sendNotificationEmail(post.ownerId, 'post_comment', payload).catch(() => {})
     }
   } catch {}
+  try { alertComment({ userId: meId, postId, ownerId: undefined, commentId: c.id, body: payload.body.trim() }).catch(() => {}) } catch {}
   return NextResponse.json({ ok: true })
 }

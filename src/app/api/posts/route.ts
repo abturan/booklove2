@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isEmailVerifiedOrLegacy } from '@/lib/guards'
 import { auth } from '@/lib/auth'
+import { alertPostCreated, alertError } from '@/lib/adminAlert'
 
 type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN' | 'REPORTED'
 
@@ -132,6 +133,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ items: posts, nextCursor })
   } catch (e: any) {
+    try { alertError('posts_list', e).catch(() => {}) } catch {}
     return NextResponse.json({ error: e?.message || 'Feed yüklenemedi' }, { status: 500 })
   }
 }
@@ -209,5 +211,6 @@ export async function POST(req: Request) {
     select: { id: true, status: true }
   })
 
+  try { alertPostCreated({ userId: meId, postId: post.id, body: bodyText, images: images.length }).catch(() => {}) } catch {}
   return NextResponse.json({ ok: true, id: post.id, status: post.status })
 }

@@ -6,6 +6,7 @@ import { renderEmail } from '@/lib/emailTemplates'
 import { sendMail } from '@/lib/mail'
 import crypto from 'crypto'
 import { verifyRecaptcha } from '@/lib/recaptcha'
+import { alertUserRegistered, alertError } from '@/lib/adminAlert'
 
 export async function POST(req: Request) {
   try {
@@ -86,9 +87,11 @@ export async function POST(req: Request) {
       ctaUrl: verifyUrl.toString(),
     })
     await sendMail(user.email, 'Boook.love — E‑posta doğrulaması', html)
+    alertUserRegistered({ id: user.id, name: user.name, email: user.email, username: uname }).catch(() => {})
 
     return NextResponse.json({ ok: true })
   } catch (e) {
+    alertError('register', e as any).catch(() => {})
     return NextResponse.json(
       { ok: false, message: 'Sunucu hatası' },
       { status: 500 }

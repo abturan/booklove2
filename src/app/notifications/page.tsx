@@ -5,6 +5,8 @@ import ProfileBanner from '@/components/profile/ProfileBanner'
 import LeftSidebar from '@/components/sidebars/LeftSidebar'
 import NotificationsPanel from '@/components/messages/NotificationsPanel'
 
+export const dynamic = 'force-dynamic'
+
 export default async function NotificationsPage() {
   const session = await auth()
   if (!session?.user?.id) return <div className="p-6">Lütfen giriş yapın.</div>
@@ -27,4 +29,3 @@ export default async function NotificationsPage() {
     </div>
   )
 }
-

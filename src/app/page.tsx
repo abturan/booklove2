@@ -30,6 +30,8 @@ function usePendingBuddyCount() {
   return count
 }
 
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
   return (
     <Suspense fallback={<div className="p-6">Yükleniyor…</div>}>

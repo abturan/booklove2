@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notify'
+import { alertChatMessage, alertError } from '@/lib/adminAlert'
 
 export const dynamic = 'force-dynamic'
 
@@ -165,9 +166,12 @@ export async function POST(
       console.error('chat notify error', err)
     }
 
+    try { alertChatMessage({ userId: session.user.id, clubId: event.clubId, eventId: event.id, clubName: event.club?.name, body: body.trim(), isSecret }).catch(() => {}) } catch {}
+
     return NextResponse.json({ ok: true, item: msg })
   } catch (err: any) {
     console.error('chat POST error', err)
+    try { alertError('chat_message', err).catch(() => {}) } catch {}
     return NextResponse.json({ ok: false, error: 'Sunucu hatası' }, { status: 500 })
   }
 }
