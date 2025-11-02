@@ -11,9 +11,10 @@ type Props = {
   alt?: string
   className?: string
   seed?: string
+  online?: boolean
 }
 
-export default function Avatar({ src, size = 36, alt = 'Avatar', className, seed }: Props) {
+export default function Avatar({ src, size = 36, alt = 'Avatar', className, seed, online }: Props) {
   const fallbackSeed = (seed || alt || 'user').toString()
   const fallbackUrl = useMemo(
     () => `https://api.dicebear.com/8.x/thumbs/png?seed=${encodeURIComponent(fallbackSeed)}`,
@@ -56,6 +57,13 @@ export default function Avatar({ src, size = 36, alt = 'Avatar', className, seed
         <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-700 text-sm font-semibold">
           {initials}
         </div>
+      )}
+      {online && (
+        <span
+          className="absolute right-0 bottom-0 inline-block h-2.5 w-2.5 rounded-full border border-white bg-emerald-500 shadow"
+          aria-label="online"
+          title="Çevrimiçi"
+        />
       )}
     </div>
   )

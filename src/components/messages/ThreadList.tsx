@@ -34,6 +34,7 @@ export default function ThreadList({
   const [loading, setLoading] = React.useState(true)
   const [counts, setCounts] = React.useState<Record<string, number>>({})
   const [respondingId, setRespondingId] = React.useState<string | null>(null)
+  const [online, setOnline] = React.useState<Record<string, boolean>>({})
 
   async function load() {
     setLoading(true)
@@ -55,6 +56,16 @@ export default function ThreadList({
       const res = await fetch('/api/dm/unread-counts', { cache: 'no-store' })
       const j = await res.json().catch(() => null)
       if (res.ok) setCounts(j?.items || {})
+    } catch {}
+  }
+
+  async function loadOnline(peers: Item[]) {
+    try {
+      const ids = Array.from(new Set(peers.map((it) => it.peer.id))).filter(Boolean)
+      if (ids.length === 0) return
+      const res = await fetch(`/api/presence/lookup?ids=${encodeURIComponent(ids.join(','))}`, { cache: 'no-store' })
+      const j = await res.json().catch(() => null)
+      if (res.ok && j?.items) setOnline(j.items)
     } catch {}
   }
 
@@ -99,6 +110,13 @@ export default function ThreadList({
     }
   }, [])
 
+  React.useEffect(() => {
+    if (items.length === 0) return
+    loadOnline(items)
+    const id = setInterval(() => loadOnline(items), 60_000)
+    return () => clearInterval(id)
+  }, [items])
+
   return (
     <div className="card p-0 overflow-hidden">
       <div className="border-b px-4 py-4 font-medium text-lg font-semibold">Mesajlar</div>
@@ -114,6 +132,7 @@ export default function ThreadList({
               activeThreadId={activeThreadId}
               activePeerId={activePeerId}
               meId={meId}
+              online={online}
             />
           </>
         )}
@@ -197,12 +216,14 @@ function ActiveThreadsSection({
   activeThreadId,
   activePeerId,
   meId,
+  online,
 }: {
   items: Item[]
   counts: Record<string, number>
   activeThreadId?: string
   activePeerId?: string
   meId: string | null
+  online?: Record<string, boolean>
 }) {
   const threads = items.filter((it) => {
     if (it.status === 'ARCHIVED') return false
@@ -226,7 +247,7 @@ function ActiveThreadsSection({
               prefetch
               className={`flex items-center gap-3 px-3 py-3 hover:bg-gray-50 ${active ? 'bg-gray-50' : ''}`}
             >
-              <Avatar src={it.peer.avatarUrl ?? null} size={40} alt={it.peer.name || 'Kullanıcı'} />
+              <Avatar src={it.peer.avatarUrl ?? null} size={40} alt={it.peer.name || 'Kullanıcı'} online={!!(online && online[it.peer.id])} />
               <div className="min-w-0">
                 <div className="text-sm font-medium truncate">{it.peer.name || 'Kullanıcı'}</div>
                 <div className="text-xs text-gray-600 truncate">

@@ -7,6 +7,7 @@ import Providers from '@/components/Providers'
 import MobileAppFooter from '@/components/mobile/MobileAppFooter'
 import ShareModal from '@/components/modals/ShareModal'
 import GlobalVerifyBanner from '@/components/GlobalVerifyBanner'
+import PresencePinger from '@/components/PresencePinger'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="tr">
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <Providers>
+          <PresencePinger />
           <Header />
           <GlobalVerifyBanner />
           <main className="container mx-auto px-4 py-6 flex-1 pb-24 sm:pb-6">{children}</main>
@@ -42,7 +44,6 @@ export default function RootLayout({
     </html>
   )
 }
-
 
 
 

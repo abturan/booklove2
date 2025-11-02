@@ -15,7 +15,9 @@ export default async function AdminHome() {
 
   // ----- üst kart metrikleri
   const now = new Date()
-  const [userCount, clubCount, activeClubCount, paidIntents, subsCount, upcomingEventCount] = await Promise.all([
+  const thresholdMin = 5
+  const since = new Date(now.getTime() - thresholdMin * 60 * 1000)
+  const [userCount, clubCount, activeClubCount, paidIntents, subsCount, upcomingEventCount, onlineCount] = await Promise.all([
     prisma.user.count(),
     prisma.club.count(),
     prisma.club.count({ where: { published: true } }),
@@ -25,6 +27,7 @@ export default async function AdminHome() {
     }),
     prisma.subscription.count({ where: { active: true } }),
     prisma.clubEvent.count({ where: { startsAt: { gte: now } } }),
+    prisma.user.count({ where: { lastSeenAt: { gte: since } } }),
   ])
 
   const revenueTRY = paidIntents.reduce((sum, p) => sum + (p.amountTRY ?? 0), 0) // ❗ bölme yok
@@ -74,6 +77,7 @@ export default async function AdminHome() {
       {/* Üst kartlar */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card title="Toplam Üye" value={fmt(userCount)} href="/admin/members" />
+        <Card title={`Aktif Kullanıcı (~${thresholdMin}dk)`} value={fmt(onlineCount)} />
         <Card title="Kulüp (aktif)" value={`${fmt(activeClubCount)} / ${fmt(clubCount)}`} href="/admin/clubs" />
         <Card title="Etkinlik Aboneliği (aktif)" value={fmt(subsCount)} href="/admin/members" />
         <Card title="Yaklaşan Etkinlik" value={fmt(upcomingEventCount)} href="/admin/clubs" />
