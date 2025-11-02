@@ -88,42 +88,40 @@ export default function SharePageContent({
     }
   }
 
-  const handleInstagram = async () => {
+  const shareToInstagram = async () => {
     setFeedback(null)
-    const storyUrl = 'https://www.instagram.com/create/story/'
-
-    let opened = false
-    let appWindow: Window | null = null
     try {
-      appWindow = window.open('instagram://story-camera', '_blank')
-      opened = !!appWindow
-    } catch {
-      opened = false
+      const htmlToImage = await loadHtmlToImage()
+      if (!htmlToImage || !cardRef.current) throw new Error('Hazırlık başarısız')
+      await waitForImages()
+      const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 0.98, pixelRatio: 2, backgroundColor: '#ffffff' } as any)
+      const blob = await (async () => {
+        const arr = dataUrl.split(',')
+        const bstr = atob(arr[1])
+        const u8 = new Uint8Array(bstr.length)
+        for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i)
+        return new Blob([u8], { type: 'image/png' })
+      })()
+      const file = new File([blob], `bookie-${postId}.png`, { type: 'image/png' })
+      const canFiles = typeof (navigator as any).canShare === 'function' && (navigator as any).canShare({ files: [file] })
+      if (canFiles && typeof (navigator as any).share === 'function') {
+        await (navigator as any).share({ files: [file], text: messageToCopy })
+        setFeedback('Paylaşım ekranı açıldı. Instagram’ı seçebilirsiniz.')
+        return
+      }
+    } catch (e) {
+      // Sessiz düş
     }
 
-    setTimeout(() => {
-      if (!opened || (document.visibilityState === 'visible')) {
-        try {
-          window.open(storyUrl, '_blank', 'noopener,noreferrer')
-        } catch (err) {
-          console.warn('[share] instagram web fallback unavailable', err)
-        }
-      }
-    }, 600)
-
+    // Dosya ile paylaşım mümkün değilse: Önce indirt, sonra Instagram web sayfasını tek seferde aç, metni kopyala.
+    await handleSaveImage(true)
+    try {
+      const storyUrl = 'https://www.instagram.com/create/story/'
+      window.open(storyUrl, '_blank', 'noopener,noreferrer')
+    } catch {}
     if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(messageToCopy)
-        setFeedback('Metin panoya kopyalandı. Instagram hikayelerinde paylaşabilirsiniz.')
-      } catch (err) {
-        console.warn('[share] clipboard error', err)
-        setFeedback('Metin kopyalanamadı, lütfen metni elle kopyalayın.')
-      }
-    } else {
-      setFeedback('Tarayıcı panoya kopyalamayı desteklemiyor, lütfen metni elle kopyalayın.')
+      try { await navigator.clipboard.writeText(messageToCopy); setFeedback('Metin kopyalandı. Instagram’da görseli galeriden seçin.') } catch {}
     }
-
-    return appWindow
   }
 
   const handleOpenSharePage = () => {
@@ -146,16 +144,12 @@ export default function SharePageContent({
   }, [downloadMode])
 
   useEffect(() => {
-    if (instagramMode) {
-      const timer = setTimeout(() => {
-        handleInstagram()
-      }, 200)
-      return () => clearTimeout(timer)
-    }
-    return undefined
+    if (!instagramMode) return
+    const t = setTimeout(() => { void shareToInstagram() }, 200)
+    return () => clearTimeout(t)
   }, [instagramMode])
 
-  const proxied = (u: string) => `/api/img-proxy?u=${encodeURIComponent(u)}`
+  const maybeProxy = (u: string) => (u && /^https?:\/\//i.test(u) ? `/api/img-proxy?u=${encodeURIComponent(u)}` : u)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-100 via-white to-primary/10 py-6 px-3 md:py-10">
@@ -209,7 +203,7 @@ export default function SharePageContent({
             {/* Image area with contain fit */}
             {Array.isArray(imageUrls) && imageUrls.length > 0 && (
               <div style={{ flex: '0 0 auto', height: 520, borderRadius: 20, background: '#f3f4f6', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)' }}>
-                {renderMosaic(imageUrls.map(proxied))}
+                {renderMosaic(imageUrls.map(maybeProxy))}
               </div>
             )}
 
@@ -234,7 +228,7 @@ export default function SharePageContent({
             </button>
             <button
               type="button"
-              onClick={handleInstagram}
+              onClick={() => void shareToInstagram()}
               className="rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
             >
               Instagram’ı aç

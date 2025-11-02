@@ -95,11 +95,10 @@ export default function PostShareButton({
     setMessage('Bağlantı ve metin panoya kopyalandı.')
   }
 
-  const handleInstagramShare = () => {
-    if (!canInstagramShare) return
-    const { url } = buildShareUrls(postId, owner)
-    const target = `${url}?instagram=1`
-    window.open(target, '_blank', 'noopener,noreferrer')
+  const handleInstagramShare = async () => {
+    // Instagram için en iyi yol: Web Share + Files ile sistem paylaşma sayfasını açmak.
+    // Kullanıcı Instagram'ı seçer ve görsel doğrudan aktarılır.
+    await handleNativeShare()
   }
 
   async function waitForImages() {
@@ -266,10 +265,11 @@ function renderMosaic(urls: string[]) {
   const three = list.length === 3
   const fourOrMore = list.length >= 4
 
+  const maybeProxy = (u: string) => (u && /^https?:\/\//i.test(u) ? `/api/img-proxy?u=${encodeURIComponent(u)}` : u)
   const tile = (src: string, key: string) => (
     <div key={key} className="relative w-full h-full">
       <img
-        src={`/api/img-proxy?u=${encodeURIComponent(src)}`}
+        src={maybeProxy(src)}
         alt=""
         crossOrigin="anonymous"
         referrerPolicy="no-referrer"
@@ -281,7 +281,7 @@ function renderMosaic(urls: string[]) {
   if (one) {
     return (
       <div className="flex items-center justify-center">
-        <img src={`/api/img-proxy?u=${encodeURIComponent(list[0])}`} alt="" crossOrigin="anonymous" referrerPolicy="no-referrer" className="max-h-48 w-full object-contain" />
+        <img src={maybeProxy(list[0])} alt="" crossOrigin="anonymous" referrerPolicy="no-referrer" className="max-h-48 w-full object-contain" />
       </div>
     )
   }

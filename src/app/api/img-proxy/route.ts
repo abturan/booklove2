@@ -20,7 +20,14 @@ export async function GET(req: Request) {
     const url = new URL(req.url)
     const u = url.searchParams.get('u')
     if (!u) return NextResponse.json({ error: 'missing url' }, { status: 400 })
-    const target = new URL(u)
+    let target: URL
+    try {
+      target = new URL(u)
+    } catch {
+      // allow same-origin relative path
+      const origin = url.origin
+      target = new URL(u, origin)
+    }
     if (!isAllowed(target)) return NextResponse.json({ error: 'forbidden host' }, { status: 403 })
 
     const res = await fetch(target.toString(), { cache: 'no-store' })
@@ -39,4 +46,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'bad request' }, { status: 400 })
   }
 }
-
