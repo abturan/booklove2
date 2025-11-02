@@ -54,7 +54,8 @@ export default function LeftSidebar() {
     (pathname?.startsWith('/profile/settings') ||
       pathname?.startsWith('/subscriptions') ||
       pathname?.startsWith('/friends') ||
-      pathname?.startsWith('/messages')) ?? false
+      pathname?.startsWith('/messages') ||
+      pathname?.startsWith('/notifications')) ?? false
 
   return (
     <div className="space-y-3">

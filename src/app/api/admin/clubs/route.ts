@@ -57,6 +57,23 @@ export async function POST(req: Request) {
       select: { id: true, slug: true },
     })
 
+    // Optional: notify all users about new club
+    try {
+      const users = await prisma.user.findMany({ select: { id: true } })
+      if (users.length > 0) {
+        const payloadObj = { clubId: created.id, clubName: name, url: `/clubs/${slug}` }
+        const payload = JSON.stringify(payloadObj)
+        await prisma.notification.createMany({ data: users.map((u) => ({ userId: u.id, type: 'club_created', payload })) })
+        // email broadcast (lightweight: cap at 500 to avoid long response)
+        const { sendNotificationEmail } = await import('@/lib/notify-email')
+        for (const u of users.slice(0, 500)) {
+          sendNotificationEmail(u.id, 'club_created', payloadObj).catch(() => {})
+        }
+      }
+    } catch (err) {
+      console.error('notify club created error', err)
+    }
+
     return NextResponse.json(created, { status: 201 })
   } catch (err: any) {
     // Yarış koşullarında yine de P2002 düşebilir

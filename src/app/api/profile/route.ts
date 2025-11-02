@@ -2,10 +2,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { renderEmail } from '@/lib/emailTemplates'
+import { sendMail } from '@/lib/mail'
+import crypto from 'crypto'
 
 export async function POST(req: Request) {
   const session = await auth()
-  if (!session?.user?.email) return new Response('Unauthorized', { status: 401 })
+  if (!session?.user?.id) return new Response('Unauthorized', { status: 401 })
 
   const wantsJson = req.headers.get('accept')?.includes('application/json')
   const form = await req.formData()
@@ -18,8 +21,8 @@ export async function POST(req: Request) {
   const id = getStr('id') || ''
 
   const me = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
+    where: { id: session.user.id },
+    select: { id: true, email: true, emailVerifiedAt: true, name: true, username: true },
   })
   if (!me || (id && me.id !== id)) {
     return wantsJson
@@ -28,6 +31,9 @@ export async function POST(req: Request) {
   }
 
   const data: Record<string, any> = {}
+  let emailChanged = false
+  let newEmail: string | null = null
+  let requestIncludedEmail = false
 
   if (form.has('name')) data.name = getStr('name') ?? ''
   if (form.has('city')) data.city = (getStr('city') ?? null)
@@ -62,6 +68,31 @@ export async function POST(req: Request) {
     // Boş username gönderildiyse eskisi korunur (eski davranışa uyum)
   }
 
+  // Allow changing email only if current email is NOT verified
+  if (form.has('email')) {
+    requestIncludedEmail = true
+    const raw = (getStr('email') || '').trim()
+    if (raw && raw !== me.email) {
+      if (me.emailVerifiedAt) {
+        const body = { ok: false, error: 'Doğrulanmış e‑posta değiştirilemez.' }
+        return wantsJson
+          ? NextResponse.json(body, { status: 400 })
+          : new Response(JSON.stringify(body), { status: 400, headers: { 'content-type': 'application/json' } })
+      }
+      const exists = await prisma.user.findUnique({ where: { email: raw } })
+      if (exists) {
+        const body = { ok: false, error: 'Bu e‑posta zaten kullanılıyor.' }
+        return wantsJson
+          ? NextResponse.json(body, { status: 409 })
+          : new Response(JSON.stringify(body), { status: 409, headers: { 'content-type': 'application/json' } })
+      }
+      data.email = raw
+      data.emailVerifiedAt = null
+      emailChanged = true
+      newEmail = raw
+    }
+  }
+
   if (Object.keys(data).length === 0) {
     const body = { ok: false, error: 'No fields provided' }
     return wantsJson
@@ -71,7 +102,30 @@ export async function POST(req: Request) {
 
   try {
     await prisma.user.update({ where: { id: me.id }, data })
-    if (wantsJson) return NextResponse.json({ ok: true })
+
+    // If email changed OR user explicitly submitted email while unverified, send verification mail
+    if ((emailChanged && newEmail) || (requestIncludedEmail && !me.emailVerifiedAt)) {
+      const sendTo = emailChanged && newEmail ? newEmail : me.email!
+      const token = crypto.randomBytes(24).toString('hex')
+      const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 48)
+      await (prisma as any).emailVerificationToken.create({ data: { userId: me.id, email: sendTo, token, expiresAt } })
+
+      const base = (() => {
+        try { return new URL(req.url).origin } catch { return process.env.NEXT_PUBLIC_SITE_URL || '' }
+      })()
+      const verifyUrl = new URL('/api/auth/verify-email', base || 'http://localhost:3000')
+      verifyUrl.searchParams.set('token', token)
+      const greet = me.username ? `@${me.username}` : (me.name || sendTo)
+      const html = renderEmail({
+        title: 'Boook.love — E‑posta doğrulaması',
+        bodyHtml: `<p>Merhaba <b>${greet}</b>,<br/>Yeni e‑posta adresini doğrulamalısın.</p>`,
+        ctaLabel: 'E‑postamı doğrula',
+        ctaUrl: verifyUrl.toString(),
+      })
+      await sendMail(sendTo, 'Boook.love — E‑posta doğrulaması', html)
+    }
+
+    if (wantsJson) return NextResponse.json({ ok: true, emailChanged })
     return new Response(null, { status: 302, headers: { Location: '/profile/settings' } })
   } catch (e: any) {
     const msg: string = String(e?.message || '')

@@ -86,9 +86,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: 'E-posta', type: 'email' },
         password: { label: 'Şifre', type: 'password' },
+        captchaToken: { label: 'captcha', type: 'text' },
       },
       async authorize(creds) {
         if (!creds?.email || !creds?.password) return null
+        // reCAPTCHA kontrolü (opsiyonel)
+        const { verifyRecaptcha } = await import('./recaptcha')
+        const okCaptcha = await verifyRecaptcha((creds as any).captchaToken)
+        if (!okCaptcha) return null
         const email = String(creds.email || '').trim()
         const password = String(creds.password || '')
 

@@ -59,7 +59,7 @@ export default function PostComments({
         <textarea
           value={text}
           onChange={(e)=>setText(e.target.value)}
-          placeholder={canInteract ? 'Yorumun…' : 'Giriş yapmadan yorum yapamazsın'}
+          placeholder={canInteract ? 'Yorumun…' : 'Tüm özelliklerden faydalanmak için e‑postanızı doğrulayın'}
           rows={2}
           disabled={!canInteract}
           className="flex-1 resize-none rounded-xl border border-gray-200 p-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 disabled:bg-gray-50 disabled:opacity-60"

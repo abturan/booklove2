@@ -2,6 +2,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import useVerifyStatus from '@/lib/hooks/useVerifyStatus'
 
 export default function PostComposer({ onPosted }: { onPosted: (id: string) => void }) {
   const [text, setText] = useState('')
@@ -11,9 +12,11 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
   const [okMsg, setOkMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const maxImages = 5
+  const { verified } = useVerifyStatus()
+  const canPost = verified === true
 
   async function onSelectFiles(files: FileList | null) {
-    if (!files || files.length === 0) return
+    if (!files || files.length === 0 || !canPost) return
     setError(null)
     const roomLeft = Math.max(0, maxImages - images.length)
     const arr = Array.from(files).slice(0, roomLeft)
@@ -45,6 +48,10 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
   async function submit() {
     if (busy) return
     const body = text.trim()
+    if (!canPost) {
+      setError('Tüm özelliklerden faydalanmak için e‑postanızı doğrulayın.')
+      return
+    }
     if (!body && images.length === 0) {
       setError('Lütfen bir şeyler yazın veya görsel ekleyin.')
       return
@@ -59,7 +66,9 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
         body: JSON.stringify({ body, images }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Gönderilemedi')
+      if (!res.ok) {
+        throw new Error(data?.error || 'Gönderilemedi')
+      }
       setText('')
       setImages([])
       const status = String(data?.status || '').toUpperCase()
@@ -81,10 +90,11 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Ne düşünüyorsun?"
+        placeholder={canPost ? 'Ne düşünüyorsun?' : 'Tüm özelliklerden faydalanmak için e‑postanızı doğrulayın'}
         className="w-full resize-y rounded-2xl border border-gray-200 p-3 outline-none focus:ring-2 focus:ring-rose-200"
         rows={2}
         maxLength={5000}
+        disabled={!canPost}
       />
       {images.length > 0 && (
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -117,11 +127,11 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
           />
           <button
             type="button"
-            onClick={() => fileRef.current?.click()}
+            onClick={() => canPost && fileRef.current?.click()}
             className="rounded-full border px-3 py-1.5 text-sm hover:bg-gray-50"
-            disabled={images.length >= maxImages}
-            aria-disabled={images.length >= maxImages}
-            title={images.length >= maxImages ? 'En fazla 5 görsel' : 'Görsel ekle'}
+            disabled={images.length >= maxImages || !canPost}
+            aria-disabled={images.length >= maxImages || !canPost}
+            title={!canPost ? 'Önce e‑postanızı doğrulayın' : images.length >= maxImages ? 'En fazla 5 görsel' : 'Görsel ekle'}
           >
             Görsel ekle ({images.length}/{maxImages})
           </button>
@@ -129,7 +139,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
         <button
           type="button"
           onClick={submit}
-          disabled={busy}
+          disabled={busy || !canPost}
           className="rounded-full bg-rose-600 text-white px-4 py-1.5 text-sm font-medium hover:bg-rose-700 disabled:opacity-60"
         >
           Paylaş
@@ -138,6 +148,4 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
     </div>
   )
 }
-
-
 

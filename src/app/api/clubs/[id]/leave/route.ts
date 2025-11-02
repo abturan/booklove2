@@ -6,8 +6,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
-  if (!session?.user?.email) return Response.json({ ok: false }, { status: 401 })
-  const me = await prisma.user.findUnique({ where: { email: session.user.email } })
+  if (!session?.user?.id) return Response.json({ ok: false }, { status: 401 })
+  const me = await prisma.user.findUnique({ where: { id: session.user.id } })
   if (!me) return Response.json({ ok: false }, { status: 404 })
 
   await prisma.membership.updateMany({

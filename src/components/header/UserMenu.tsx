@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import Avatar from '@/components/Avatar'
 import { useMe } from './useMe'
+import useNotificationCount from '@/lib/hooks/useNotificationCount'
 import AuthButtons from './AuthButtons'
 
 const IProfile = () => (<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>)
@@ -33,6 +34,7 @@ export default function UserMenu() {
 
   const [dmUnread, setDmUnread] = useState(0)
   const [followRequests, setFollowRequests] = useState(0)
+  const { count: notifUnread } = useNotificationCount()
 
   useEffect(() => {
     let alive = true
@@ -79,7 +81,7 @@ export default function UserMenu() {
     }
   }
 
-  const totalBadge = dmUnread + followRequests
+  const totalBadge = dmUnread + followRequests + notifUnread
 
   return (
     <div className="relative">
@@ -113,6 +115,11 @@ export default function UserMenu() {
           <Link href="/messages" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">
             <span className="inline-flex items-center gap-2"><IMessages /> Mesajlar</span>
             <CountBadge count={dmUnread} />
+          </Link>
+
+          <Link href="/notifications" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">
+            <span className="inline-flex items-center gap-2"><IMessages /> Bildirimler</span>
+            <CountBadge count={notifUnread} />
           </Link>
 
           <button

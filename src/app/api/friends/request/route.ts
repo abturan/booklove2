@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ensureFollow, removeFollow } from '@/lib/follow'
+import { createNotification } from '@/lib/notify'
+import { sendNotificationEmail } from '@/lib/notify-email'
 
 export async function POST(req: Request) {
   const session = await auth()
@@ -37,6 +39,13 @@ export async function POST(req: Request) {
       },
     })
   }
+
+  // notify target user about new follower (or mutual)
+  try {
+    const payload = { byId: meId, url: `/u/${session.user.username || ''}` }
+    await createNotification({ userId: toUserId, type: 'follow', payload })
+    sendNotificationEmail(toUserId, 'follow', payload).catch(() => {})
+  } catch {}
 
   return NextResponse.json({ ok: true, status: result.mutual ? 'MUTUAL' : 'FOLLOWING' })
 }

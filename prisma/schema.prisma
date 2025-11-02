@@ -29,6 +29,8 @@ model User {
   bannerUrl              String?
   district               String?
   phone                  String?
+  phoneVerifiedAt        DateTime?
+  emailVerifiedAt        DateTime?
   bio                    String?
   about                  String?
   website                String?
@@ -52,6 +54,9 @@ model User {
   dmThreadsAsB           DmThread[]           @relation("DmThreadUserB")
   dmThreadsRequested     DmThread[]           @relation("DmThreadRequestAuthor")
   PasswordResetTokens    PasswordResetToken[]
+  EmailVerificationToken EmailVerificationToken[]
+  NotificationPreference NotificationPreference?
+  PhoneVerification      PhoneVerification[]
   DmThreadReads          DmThreadRead[]
   PostReports            PostReport[]         @relation("UserReports")
 }
@@ -156,6 +161,49 @@ model ClubEvent {
   subscriptions Subscription[]
   paymentIntents PaymentIntent[]
   chatRoom ChatRoom?
+}
+
+model NotificationPreference {
+  id                         String   @id @default(cuid())
+  userId                     String   @unique
+  user                       User     @relation(fields: [userId], references: [id])
+  emailFollow                Boolean  @default(true)
+  emailPostLike              Boolean  @default(true)
+  emailPostComment           Boolean  @default(true)
+  emailClubModeratorPost     Boolean  @default(true)
+  emailClubModeratorSecret   Boolean  @default(true)
+  emailClubNewMessagesDaily  Boolean  @default(true)
+  emailClubCreated           Boolean  @default(true)
+  emailClubNewEvent          Boolean  @default(true)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
+
+model EmailVerificationToken {
+  id         String   @id @default(cuid())
+  userId     String
+  email      String
+  token      String   @unique
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  consumedAt DateTime?
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model PhoneVerification {
+  id         String   @id @default(cuid())
+  userId     String
+  phone      String
+  code       String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  attempts   Int      @default(0)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model ChatRoom {

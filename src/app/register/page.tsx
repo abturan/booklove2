@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Modal from '@/components/ui/modal'
 import { TERMS_HTML } from '@/content/legal/terms'
 import { KVKK_HTML } from '@/content/legal/kvkk'
+import Recaptcha from '@/components/Captcha'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -15,6 +16,8 @@ export default function RegisterPage() {
   const [uOk, setUOk] = useState<boolean | null>(null)
 
   const [email, setEmail] = useState('')
+  
+  const [captchaToken, setCaptchaToken] = useState('')
   const [password, setPassword] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreeKvkk, setAgreeKvkk] = useState(false)
@@ -91,7 +94,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, username: uname }),
+        body: JSON.stringify({ name, email, password, username: uname, captchaToken }),
       })
       const j = await res.json()
       if (!res.ok || !j?.ok) {
@@ -105,6 +108,8 @@ export default function RegisterPage() {
       setSubmitting(false)
     }
   }
+
+  
 
   return (
     <div className="max-w-md mx-auto p-6 mt-8">
@@ -150,7 +155,7 @@ export default function RegisterPage() {
             }}
             onInput={(e) => e.currentTarget.setCustomValidity('')}
             className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
-            placeholder="kullaniciniz"
+            placeholder="Kullanıcı Adı"
             autoComplete="username"
             autoCapitalize="none"
             autoCorrect="off"
@@ -213,6 +218,8 @@ export default function RegisterPage() {
           />
         </div>
 
+        <Recaptcha onVerify={(t) => setCaptchaToken(t)} />
+
         <div className="space-y-2">
           <label className="flex items-start gap-3">
             <input
@@ -264,12 +271,9 @@ export default function RegisterPage() {
         </div>
 
         {msg && !err && (
-          <Link
-            href="/login"
-            className="block text-center rounded-xl bg-green-600 text-white py-2.5 font-semibold hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
-          >
-            Kayıt başarılı!  <u>Giriş yapabilirsiniz</u>
-          </Link>
+          <div className="rounded-xl border border-green-200 bg-green-50 text-green-800 px-4 py-3 text-sm">
+            Kayıt başarılı! E‑posta doğrulama bağlantısı gönderildi. Lütfen gelen kutunu kontrol et ve doğruladıktan sonra giriş yap.
+          </div>
         )}
 
         <button
@@ -299,6 +303,31 @@ export default function RegisterPage() {
         <article className="legal-content text-sm leading-relaxed text-gray-800" dangerouslySetInnerHTML={termsHTML} />
         </Modal>
       )}
+    </div>
+  )
+}
+
+// basit reCAPTCHA v2 bileşeni
+function Captcha({ onVerify }: { onVerify: (token: string) => void }) {
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''
+  useEffect(() => {
+    if (!siteKey) { onVerify('dev'); return }
+    const id = 'recaptcha-script'
+    if (!document.getElementById(id)) {
+      const s = document.createElement('script')
+      s.src = 'https://www.google.com/recaptcha/api.js'
+      s.async = true
+      s.defer = true
+      s.id = id
+      document.body.appendChild(s)
+    }
+    ;(window as any).onRecaptcha = (token: string) => onVerify(token)
+    return () => { /* noop */ }
+  }, [])
+  if (!siteKey) return null
+  return (
+    <div className="pt-2">
+      <div className="g-recaptcha" data-sitekey={siteKey} data-callback="onRecaptcha" />
     </div>
   )
 }

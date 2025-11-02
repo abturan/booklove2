@@ -19,6 +19,8 @@ export default function ProfileForms({ me }: { me: Me }) {
   const [username, setUsername] = React.useState(me.username ?? '')
   const [avatarUrl, setAvatarUrl] = React.useState(me.avatarUrl ?? '')
   const [preview, setPreview] = React.useState<string | null>(me.avatarUrl)
+  const [email, setEmail] = React.useState(me.email)
+  const [canEditEmail, setCanEditEmail] = React.useState<boolean>(false)
   const [saving, setSaving] = React.useState(false)
   const [uploading, setUploading] = React.useState(false)
   const [avatarMsg, setAvatarMsg] = React.useState<{ type: 'ok' | 'err'; text: string } | null>(null)
@@ -36,7 +38,21 @@ export default function ProfileForms({ me }: { me: Me }) {
     setUsername(me.username ?? '')
     setAvatarUrl(me.avatarUrl ?? '')
     setPreview(me.avatarUrl ?? null)
+    setEmail(me.email)
   }, [me.id, me.name, me.bio, me.username, me.avatarUrl])
+
+  // Load verify status; allow email change if not verified
+  React.useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        const r = await fetch('/api/me/verify-status', { cache: 'no-store' })
+        const j = await r.json().catch(() => null)
+        if (alive) setCanEditEmail(Boolean(j?.authenticated && j?.verified === false))
+      } catch { setCanEditEmail(false) }
+    })()
+    return () => { alive = false }
+  }, [])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -95,6 +111,7 @@ export default function ProfileForms({ me }: { me: Me }) {
       fd.append('bio', bio.trim())
       if (avatarUrl) fd.append('avatarUrl', avatarUrl)
       if (username) fd.append('username', username.trim())
+      if (canEditEmail && email && email !== me.email) fd.append('email', email.trim())
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { Accept: 'application/json' },
@@ -102,7 +119,10 @@ export default function ProfileForms({ me }: { me: Me }) {
       })
       const json = await res.json().catch(() => null)
       if (!res.ok || !json?.ok) throw new Error(json?.error || 'Kaydedilemedi.')
-      setProfileMsg({ type: 'ok', text: 'Profil bilgileri kaydedildi.' })
+      const msg = json?.emailChanged
+        ? 'E‑posta güncellendi. Doğrulama bağlantısı yeni adresine gönderildi.'
+        : 'Profil bilgileri kaydedildi.'
+      setProfileMsg({ type: 'ok', text: msg })
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('me:updated'))
       }
@@ -215,11 +235,18 @@ export default function ProfileForms({ me }: { me: Me }) {
         <div>
           <label className="block text-sm text-gray-600 mb-1">E-posta</label>
           <input
-            value={me.email}
-            disabled
-            className="w-full rounded-xl border bg-gray-100 px-3 py-2 text-gray-600"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={!canEditEmail}
+            className={`w-full rounded-xl border px-3 py-2 ${canEditEmail ? 'bg-white' : 'bg-gray-100 text-gray-600'}`}
+            placeholder="ornek@eposta.com"
+            type="email"
           />
-          <p className="text-xs text-gray-500 mt-1">E-posta adresi değiştirilemez.</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {canEditEmail
+              ? 'E‑posta adresin doğrulanmadığı için değiştirebilirsin. Kaydedince yeni doğrulama e‑postası gönderilecek.'
+              : 'E‑posta adresi değiştirilemez.'}
+          </p>
         </div>
 
         <div>
@@ -309,7 +336,6 @@ export default function ProfileForms({ me }: { me: Me }) {
     </div>
   )
 }
-
 
 
 

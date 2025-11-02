@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Notification } from '@prisma/client'
 
 export async function POST(
   req: Request,
@@ -73,6 +74,30 @@ export async function POST(
       },
       select: { id: true },
     })
+
+    // Notify past participants of this club about new event
+    try {
+      const members = await prisma.membership.findMany({
+        where: { clubId, isActive: true },
+        distinct: ['userId'],
+        select: { userId: true },
+      })
+      if (members.length > 0) {
+        const club = await prisma.club.findUnique({ where: { id: clubId }, select: { name: true, slug: true } })
+        const payloadObj = { clubId, eventId: event.id, clubName: club?.name ?? 'Kulüp', url: `/clubs/${club?.slug || ''}` }
+        const payload = JSON.stringify(payloadObj)
+        await prisma.notification.createMany({
+          data: members.map((m) => ({ userId: m.userId, type: 'club_new_event', payload })),
+        })
+        // email
+        const { sendNotificationEmail } = await import('@/lib/notify-email')
+        for (const m of members) {
+          sendNotificationEmail(m.userId, 'club_new_event', payloadObj).catch(() => {})
+        }
+      }
+    } catch (err) {
+      console.error('notify new event error', err)
+    }
 
     return NextResponse.json({ ok: true, event }, { status: 201 })
   } catch (err: any) {

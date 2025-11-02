@@ -3,14 +3,18 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-export default async function MembersPage({ searchParams }: { searchParams: { q?: string } }) {
+type SortKey = 'recent' | 'posts_desc' | 'followers_desc' | 'following_desc' | 'events_desc'
+
+export default async function MembersPage({ searchParams }: { searchParams: { q?: string; sort?: SortKey } }) {
   const session = await auth()
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/')
 
   const q = (searchParams.q ?? '').trim()
+  const sort = (searchParams.sort as SortKey) || 'recent'
   const where: Prisma.UserWhereInput = q
     ? {
         OR: [
@@ -21,9 +25,16 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
       }
     : {}
 
+  const orderBy: any =
+    sort === 'posts_desc' ? { posts: { _count: 'desc' } }
+    : sort === 'followers_desc' ? { followers: { _count: 'desc' } }
+    : sort === 'following_desc' ? { following: { _count: 'desc' } }
+    : sort === 'events_desc' ? { Memberships: { _count: 'desc' } }
+    : { createdAt: 'desc' }
+
   const users = await prisma.user.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
+    orderBy,
     select: {
       id: true,
       name: true,
@@ -38,6 +49,8 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
           comments: true,
           likes: true,
           dmMessagesAuthored: true,
+          followers: true,
+          following: true,
         },
       },
     },
@@ -56,6 +69,13 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
             placeholder="İsim, e-posta, kullanıcı adı"
             className="h-10 w-72 rounded-xl border px-3"
           />
+          <select name="sort" defaultValue={sort} className="h-10 rounded-xl border px-3 text-sm">
+            <option value="recent">En yeni</option>
+            <option value="posts_desc">En fazla post</option>
+            <option value="followers_desc">En fazla takipçi</option>
+            <option value="following_desc">En fazla takip eden</option>
+            <option value="events_desc">En fazla etkinliğe katılan</option>
+          </select>
           <button className="h-10 rounded-xl bg-primary px-4 text-white">Ara</button>
         </form>
       </div>
@@ -67,13 +87,16 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
               <th className="px-4 py-3">Üye</th>
               <th className="px-4 py-3">İstatistik</th>
               <th className="px-4 py-3">Tarih</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id} className="border-t">
                 <td className="px-4 py-3">
-                  <div className="font-medium">{u.name || '—'}</div>
+                  <Link href={`/admin/members/${u.id}`} className="hover:underline font-medium">
+                    {u.name || '—'}
+                  </Link>
                   <div className="text-xs text-gray-500">{u.email}</div>
                   {u.username && <div className="text-xs text-gray-500">@{u.username}</div>}
                 </td>
@@ -85,6 +108,9 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
                   <div>Sohbet Mesajı: {u._count.dmMessagesAuthored}</div>
                 </td>
                 <td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString('tr-TR')}</td>
+                <td className="px-4 py-3 text-right">
+                  <Link href={`/admin/members/${u.id}`} className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50">Detay</Link>
+                </td>
               </tr>
             ))}
             {!users.length && (

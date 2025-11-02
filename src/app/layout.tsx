@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import Providers from '@/components/Providers'
 import MobileAppFooter from '@/components/mobile/MobileAppFooter'
 import ShareModal from '@/components/modals/ShareModal'
+import GlobalVerifyBanner from '@/components/GlobalVerifyBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <Providers>
           <Header />
+          <GlobalVerifyBanner />
           <main className="container mx-auto px-4 py-6 flex-1 pb-24 sm:pb-6">{children}</main>
           <div className="hidden md:block">
             <Footer />
@@ -40,7 +42,6 @@ export default function RootLayout({
     </html>
   )
 }
-
 
 
 

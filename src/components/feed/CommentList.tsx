@@ -14,6 +14,7 @@ export default function CommentList({ postId }: { postId: string }) {
   const [items, setItems] = useState<Comment[]>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function load() {
     const res = await fetch(`/api/posts/${postId}/comments?limit=50`, { cache: 'no-store' })
@@ -26,6 +27,7 @@ export default function CommentList({ postId }: { postId: string }) {
   async function add() {
     if (!body.trim()) return
     setBusy(true)
+    setError(null)
     const res = await fetch(`/api/posts/${postId}/comments`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -35,6 +37,9 @@ export default function CommentList({ postId }: { postId: string }) {
     if (res.ok) {
       setBody('')
       load()
+    } else {
+      const j = await res.json().catch(() => null)
+      if (j?.code === 'EMAIL_NOT_VERIFIED') setError('Lütfen e‑postanızı doğrulayın.')
     }
   }
 
@@ -53,6 +58,7 @@ export default function CommentList({ postId }: { postId: string }) {
       </div>
 
       <div className="space-y-2">
+        {error && <div className="text-xs text-red-600">{error}</div>}
         {items.map((c) => (
           <div key={c.id} className="flex items-start gap-2">
             <img

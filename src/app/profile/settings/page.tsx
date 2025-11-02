@@ -4,15 +4,16 @@ import { prisma } from '@/lib/prisma'
 import ProfileForms from '@/components/profile/ProfileForms'
 import LeftSidebar from '@/components/sidebars/LeftSidebar'
 import ProfileBanner from '@/components/profile/ProfileBanner'
+import NotificationPrefsForm from '@/components/profile/NotificationPrefsForm'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProfilePage() {
   const session = await auth()
-  if (!session?.user?.email) return <div className="p-6">Lütfen giriş yapın.</div>
+  if (!session?.user?.id) return <div className="p-6">Lütfen giriş yapın.</div>
 
   const me = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { id: session.user.id },
     select: { id: true, name: true, email: true, bio: true, avatarUrl: true, username: true, bannerUrl: true },
   })
   if (!me) return <div className="p-6">Bulunamadı</div>
@@ -31,6 +32,7 @@ export default async function ProfilePage() {
           <ProfileForms
             me={{ id: me.id, name: me.name, bio: me.bio, avatarUrl: me.avatarUrl, email: me.email, username: me.username ?? null }}
           />
+          <NotificationPrefsForm />
         </div>
       </div>
     </div>

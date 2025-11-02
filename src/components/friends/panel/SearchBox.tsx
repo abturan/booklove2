@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import type { BuddySets, UserLite } from '../types'
+import { safeAvatarUrl } from '@/lib/avatar'
 
 export default function SearchBox({
   q,
@@ -187,7 +188,12 @@ export default function SearchBox({
           {!loading && suggestions.map(u => (
             <div key={u.id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50">
               <Link href={userPath(u.username, u.name, u.slug)} className="flex items-center gap-3 min-w-0 flex-1">
-                <img src={u.avatarUrl || '/avatar.png'} alt={u.name || 'Avatar'} className="h-8 w-8 rounded-full object-cover" loading="lazy" />
+                <img
+                  src={safeAvatarUrl(u.avatarUrl, u.username || u.slug || u.id)}
+                  alt={u.name || 'Avatar'}
+                  className="h-8 w-8 rounded-full object-cover bg-gray-100"
+                  loading="lazy"
+                />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{u.name || 'Kullanıcı'}</div>
                   <div className="truncate text-xs text-gray-500">{u.username ? `@${u.username}` : u.slug ? `@${u.slug}` : ''}</div>

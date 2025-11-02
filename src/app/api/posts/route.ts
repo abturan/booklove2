@@ -1,6 +1,7 @@
 // src/app/api/posts/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isEmailVerifiedOrLegacy } from '@/lib/guards'
 import { auth } from '@/lib/auth'
 
 type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN' | 'REPORTED'
@@ -139,6 +140,12 @@ export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const meId = session.user.id
+  try {
+    const ok = await isEmailVerifiedOrLegacy(meId)
+    if (!ok) {
+      return NextResponse.json({ error: 'E‑posta adresinizi doğrulamadan paylaşım yapamazsınız.', code: 'EMAIL_NOT_VERIFIED' }, { status: 403 })
+    }
+  } catch {}
 
   const payload = await req.json().catch(() => null)
   if (!payload || (typeof payload.body !== 'string' && !Array.isArray(payload.images))) {

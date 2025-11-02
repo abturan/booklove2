@@ -215,11 +215,11 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
     }
 
     setBusy(true)
-    try {
-      const res = await fetch('/api/paytr/get-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        const res = await fetch('/api/paytr/get-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
           email: initial.me.email,
           userName: initial.me.name || 'Katılımcı',
           userAddress: `${profile.district || ''} ${profile.city || 'Türkiye'}`.trim(),
@@ -259,6 +259,9 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
             ctype,
             raw.slice(0, 200),
           )
+        }
+        if (data?.need === 'phone_verify') {
+          setShowProfileModal(true)
         }
         throw new Error(data?.error || 'Ödeme başlatılamadı')
       }

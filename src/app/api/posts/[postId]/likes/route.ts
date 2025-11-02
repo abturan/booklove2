@@ -1,6 +1,9 @@
 // src/app/api/posts/[postId]/likes/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createNotification } from '@/lib/notify'
+import { isEmailVerifiedOrLegacy } from '@/lib/guards'
+import { sendNotificationEmail } from '@/lib/notify-email'
 import { auth } from '@/lib/auth'
 
 export async function GET(_req: Request, { params }: { params: { postId: string } }) {
@@ -69,6 +72,12 @@ export async function POST(_req: Request, { params }: { params: { postId: string
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const meId = session.user.id
+  try {
+    const ok = await isEmailVerifiedOrLegacy(meId)
+    if (!ok) {
+      return NextResponse.json({ error: 'E‑posta adresinizi doğrulamadan beğeni atamazsınız.', code: 'EMAIL_NOT_VERIFIED' }, { status: 403 })
+    }
+  } catch {}
   const { postId } = params
 
   const existing = await prisma.like
@@ -81,5 +90,14 @@ export async function POST(_req: Request, { params }: { params: { postId: string
   }
 
   await prisma.like.create({ data: { postId, userId: meId } })
+  // notify post owner (if not self)
+  try {
+    const post = await prisma.post.findUnique({ where: { id: postId }, select: { ownerId: true } })
+    if (post?.ownerId && post.ownerId !== meId) {
+      const payload = { byId: meId, postId, url: `/bookie/share/${postId}` }
+      await createNotification({ userId: post.ownerId, type: 'post_like', payload })
+      sendNotificationEmail(post.ownerId, 'post_like', payload).catch(() => {})
+    }
+  } catch {}
   return NextResponse.json({ ok: true, liked: true })
 }

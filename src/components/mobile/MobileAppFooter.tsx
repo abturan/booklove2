@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import NotificationBadge from '@/components/NotificationBadge'
+import useNotificationCount from '@/lib/hooks/useNotificationCount'
 import Avatar from '@/components/Avatar'
 
 function IClubs() { return (<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 7h16M6 11h12M8 15h8" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>) }
@@ -46,6 +47,7 @@ export default function MobileAppFooter() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string>('Profil')
   const [dmUnread, setDmUnread] = useState(0)
+  const { count: notifUnread } = useNotificationCount()
   const [signingOut, setSigningOut] = useState(false)
 
   useEffect(() => {
@@ -168,9 +170,9 @@ export default function MobileAppFooter() {
               </button>
               <Link href="/messages" scroll={false} className="relative grid place-content-center h-12" aria-label="Mesajlar">
                 <IMessages />
-                {dmUnread > 0 && (
+                {dmUnread + notifUnread > 0 && (
                   <span className="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
-                    {dmUnread > 99 ? '99+' : dmUnread}
+                    {dmUnread + notifUnread > 99 ? '99+' : dmUnread + notifUnread}
                   </span>
                 )}
               </Link>

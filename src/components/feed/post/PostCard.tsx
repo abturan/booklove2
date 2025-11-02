@@ -2,6 +2,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import useVerifyStatus from '@/lib/hooks/useVerifyStatus'
 import { useEffect, useState } from 'react'
 import type { Post } from './types'
 import PostHeader from './PostHeader'
@@ -22,7 +23,8 @@ const REPORT_OPTIONS = ['Spam','Nefret söylemi','Taciz','Müstehcen içerik','D
 
 export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; onUpdated?: (p: Post)=>void; onDeleted?: (id:string)=>void }) {
   const { data } = useSession()
-  const canInteract = !!data?.user
+  const { verified } = useVerifyStatus()
+  const canInteract = !!data?.user && verified === true
   const meId = (data?.user as any)?.id || null
   const isOwner = !!meId && meId === post.owner.id
   const isAdmin = (data?.user as any)?.role === 'ADMIN'
@@ -96,7 +98,7 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
   const commentCountForBadge = c.open ? c.items.length : Number((post.counts as any)?.comments || 0)
 
   return (
-    <div className="card p-3">
+    <div className="card p-3" data-post-id={post.id} id={`post-${post.id}`}>
       <PostHeader
         post={post}
         isOwner={!!isOwner}

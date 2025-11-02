@@ -20,7 +20,8 @@ export default function SearchFilters() {
   const params = useSearchParams()
 
   const initialQ = params.get('q') ?? ''
-  const initialSort = (params.get('sort') as SortKey) || 'members_desc'
+  // Default: newest sessions first (created_desc)
+  const initialSort = (params.get('sort') as SortKey) || 'created_desc'
   // 'soldout=1' means: hide sold-out sessions
   const initialHideSoldOut = params.get('soldout') === '1'
 
@@ -98,5 +99,4 @@ export default function SearchFilters() {
     </div>
   )
 }
-
 

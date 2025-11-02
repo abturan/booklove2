@@ -13,7 +13,12 @@ export default function LikeButton({ postId, initialCount }: { postId: string; i
     const res = await fetch(`/api/posts/${postId}/likes`, { method: 'POST' })
     const j = await res.json().catch(() => null)
     setBusy(false)
-    if (!res.ok) return
+    if (!res.ok) {
+      if (j?.code === 'EMAIL_NOT_VERIFIED') {
+        alert('Beğeni atmak için e‑posta adresini doğrula.')
+      }
+      return
+    }
     setCount((c) => (j?.liked ? c + 1 : c - 1))
   }
 

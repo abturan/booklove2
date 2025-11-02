@@ -8,6 +8,7 @@ const items = [
   { href: '/profile/settings', label: 'Profil ayarları', icon: '⚙️' },
   { href: '/subscriptions', label: 'Aboneliklerim', icon: '📚' },
   { href: '/friends', label: 'Book Buddy', icon: '🧑‍🤝‍🧑' },
+  { href: '/notifications', label: 'Bildirimler', icon: '🔔' },
   { href: '/messages', label: 'Mesajlar', icon: '💬' },
 ]
 

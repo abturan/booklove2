@@ -5,6 +5,7 @@ import ProfileBanner from '@/components/profile/ProfileBanner'
 import LeftSidebar from '@/components/sidebars/LeftSidebar'
 import ThreadList from '@/components/messages/ThreadList'
 import NewChatPicker from '@/components/messages/NewChatPicker'
+import NotificationsPanel from '@/components/messages/NotificationsPanel'
 
 export default async function MessagesPage() {
   const session = await auth()
@@ -34,6 +35,11 @@ export default async function MessagesPage() {
             <div className="card p-6 text-sm text-gray-600">Bir sohbet seçin.</div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile'de bildirimler de bu sahnede yer alsın */}
+      <div className="lg:hidden">
+        <NotificationsPanel />
       </div>
 
       <NewChatPicker />

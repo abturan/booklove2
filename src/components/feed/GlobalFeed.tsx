@@ -16,12 +16,14 @@ export default function GlobalFeed({
   paginateDesktop = false,
   leftColumnSelector,
   active = true,
+  focusPostId,
 }: {
   ownerId?: string
   hideTopBar?: boolean
   paginateDesktop?: boolean
   leftColumnSelector?: string
   active?: boolean
+  focusPostId?: string | null
 }) {
   const { data } = useSession()
   const loggedIn = !!data?.user?.id
@@ -101,6 +103,8 @@ export default function GlobalFeed({
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const focusAttemptsRef = useRef(0)
+  const [focusDone, setFocusDone] = useState(false)
 
   useEffect(() => {
     if (!active) return
@@ -341,6 +345,37 @@ export default function GlobalFeed({
   const canNext = pagingEnabled && !!pages[pageIndex]?.cursorOut
   const showLoading = loading && !fillingRef.current
 
+  // Auto-focus a specific post id by loading more content until it's found
+  useEffect(() => {
+    if (!active || !focusPostId || focusDone) return
+    const found = document.querySelector(`[data-post-id="${focusPostId}"]`) as HTMLElement | null
+    if (found) {
+      try {
+        found.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        found.classList.add('ring-2', 'ring-primary')
+        setTimeout(() => found.classList.remove('ring-2', 'ring-primary'), 2000)
+      } catch {}
+      setFocusDone(true)
+      return
+    }
+    // Not found yet: load more
+    if (pagingEnabled) {
+      const cur = pages[pageIndex]
+      if (cur?.cursorOut && !loading) {
+        void loadPage(cur.cursorOut, false, 6)
+      } else if (pages[pageIndex + 1]) {
+        setPageIndex(pageIndex + 1)
+      } else {
+        setFocusDone(true)
+      }
+    } else {
+      if (hasMore && !loading) void loadMore(false)
+      else setFocusDone(true)
+    }
+    focusAttemptsRef.current += 1
+    if (focusAttemptsRef.current > 10) setFocusDone(true)
+  }, [items, pages, pageIndex, hasMore, loading, active, focusPostId, focusDone, pagingEnabled])
+
   return (
     <aside className="space-y-4">
       {showTopBar && (
@@ -422,6 +457,14 @@ export default function GlobalFeed({
     </aside>
   )
 }
+
+// augment component with focus behavior by patching via hooks below
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function useFocusBehavior() {}
+
+// Focus helper effect (auto-scroll to a specific post id)
+// We keep it outside the main return but inside file to avoid cluttering above logic
+// NOTE: Placed after component to keep TS happy in single file.
 
 function normalizePost(p: any): Post {
   return {

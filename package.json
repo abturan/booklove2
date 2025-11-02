@@ -15,7 +15,8 @@
     "patch:reverse": "bash scripts/self-apply-patch.sh --patch ./changes.patch --reverse",
     "patch:stdin": "bash scripts/self-apply-patch.sh --patch -",
     "patch:root": "bash scripts/self-apply-patch.sh --root .",
-    "ai:snapshot": "bash scripts/make-ai-snapshot.sh"
+    "ai:snapshot": "bash scripts/make-ai-snapshot.sh",
+    "verify:legacy": "tsx scripts/mark-legacy-verified.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

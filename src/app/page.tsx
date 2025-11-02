@@ -42,6 +42,7 @@ function HomeBody() {
   const params = useSearchParams()
   const router = useRouter()
   const pending = usePendingBuddyCount()
+  const focusId = params.get('focus')
 
   const initialQuery = useMemo(() => {
     const obj: Record<string, string | undefined> = {}
@@ -99,7 +100,7 @@ function HomeBody() {
           ]}
         />
         <div aria-hidden={activeTab !== 'bookie'} className={activeTab === 'bookie' ? 'block' : 'hidden'}>
-          <GlobalFeed hideTopBar={false} paginateDesktop={false} active={activeTab === 'bookie'} />
+          <GlobalFeed hideTopBar={false} paginateDesktop={false} active={activeTab === 'bookie'} focusPostId={focusId} />
         </div>
         <div aria-hidden={activeTab !== 'clubs'} className={activeTab === 'clubs' ? 'block' : 'hidden'}>
           <SearchFilters />
@@ -118,7 +119,7 @@ function HomeBody() {
           </div>
           <div className="space-y-4">
             <BookBuddyPanel active />
-            <GlobalFeed paginateDesktop leftColumnSelector="#left-col" active />
+            <GlobalFeed paginateDesktop leftColumnSelector="#left-col" active focusPostId={focusId} />
           </div>
         </div>
       </div>

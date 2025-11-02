@@ -97,6 +97,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Require verified phone for logged-in users
+    if (userId) {
+      const me = await (prisma as any).user.findUnique({ where: { id: userId }, select: { phone: true, phoneVerifiedAt: true } })
+      if (!me?.phone || !me.phoneVerifiedAt) {
+        return NextResponse.json({ error: 'Telefon doğrulanmadı', need: 'phone_verify' }, { status: 428 })
+      }
+    }
+
     const userIp = getClientIp(req.headers)
     const merchant_oid = makeMerchantOid(String(clubId), String(clubEventId))
     const payment_amount = amountToKurus(amount)

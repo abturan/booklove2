@@ -1,9 +1,6 @@
 // src/lib/mail.ts
-export async function sendPasswordResetEmail(to: string, link: string) {
-  const subject = 'Şifre Sıfırlama'
-  const html = `<p>Şifreni sıfırlamak için aşağıdaki bağlantıya tıkla:</p><p><a href="${link}">${link}</a></p><p>Bu bağlantı 1 saat içinde geçerlidir.</p>`
+export async function sendMail(to: string, subject: string, html: string) {
   const from = process.env.MAIL_FROM || 'no-reply@example.com'
-
   try {
     const nodemailer = await import('nodemailer')
     const transporter = nodemailer.createTransport({
@@ -17,6 +14,12 @@ export async function sendPasswordResetEmail(to: string, link: string) {
     })
     await transporter.sendMail({ to, from, subject, html })
   } catch {
-    console.log(`[DEV] Password reset link for ${to}: ${link}`)
+    console.log(`[DEV] Mail to ${to}: ${subject}`)
   }
+}
+
+export async function sendPasswordResetEmail(to: string, link: string) {
+  const subject = 'Şifre Sıfırlama'
+  const html = `<p>Şifreni sıfırlamak için aşağıdaki bağlantıya tıkla:</p><p><a href="${link}">${link}</a></p><p>Bu bağlantı 1 saat içinde geçerlidir.</p>`
+  await sendMail(to, subject, html)
 }

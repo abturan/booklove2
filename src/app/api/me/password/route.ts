@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
   const session = await auth()
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json({ ok: false, error: 'Yetkisiz' }, { status: 401 })
   }
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Yeni şifre en az 6 karakter olmalı.' }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } })
     if (!user?.passwordHash) {
       return NextResponse.json({ ok: false, error: 'Bu hesap için şifre değiştirilemez.' }, { status: 400 })
     }

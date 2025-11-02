@@ -34,7 +34,7 @@ export default function PostActions({
           disabled={!canInteract}
           className={`inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 ${liked ? 'text-rose-600' : ''}`}
           aria-label={liked ? 'Beğeniyi geri al' : 'Beğen'}
-          title={liked ? 'Beğeniyi geri al' : 'Beğen'}
+          title={!canInteract ? 'Önce e‑postanızı doğrulayın' : (liked ? 'Beğeniyi geri al' : 'Beğen')}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
@@ -57,7 +57,7 @@ export default function PostActions({
           onClick={onToggleComments}
           className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-50"
           aria-label="Yorumları aç/kapat"
-          title="Yorumlar"
+          title={canInteract ? 'Yorumlar' : 'Önce e‑postanızı doğrulayın'}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
             <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>

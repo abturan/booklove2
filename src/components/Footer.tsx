@@ -1,7 +1,7 @@
 // src/components/Footer.tsx
 'use client'
 
-import Image from 'next/image'
+// Use native img to avoid Next/Image null issues on auth redirects
 import { useState } from 'react'
 import ManifestoModal from '@/components/modals/ManifestoModal'
 
@@ -65,12 +65,9 @@ export default function Footer() {
           <div className="md:justify-end flex flex-col items-start md:items-end gap-3">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Güvenli Ödeme</span>
             <div className="flex flex-wrap items-center gap-4 max-w-full">
-              <Image className="opacity-80 grayscale hover:opacity-100 transition h-7 w-auto max-w-full"
-                     src="/logos/visa.svg" alt="Visa" width={68} height={28} />
-              <Image className="opacity-80 grayscale hover:opacity-100 transition h-7 w-auto max-w-full"
-                     src="/logos/mastercard.svg" alt="Mastercard" width={96} height={28} />
-              <Image className="opacity-80 grayscale hover:opacity-100 transition h-7 w-auto max-w-full"
-                     src="/logos/paytr.png" alt="PayTR ile Öde" width={116} height={28} />
+              <img className="opacity-80 grayscale hover:opacity-100 transition h-7 w-auto max-w-full" src="/logos/visa.svg" alt="Visa" width={68} height={28} />
+              <img className="opacity-80 grayscale hover:opacity-100 transition h-7 w-auto max-w-full" src="/logos/mastercard.svg" alt="Mastercard" width={96} height={28} />
+              <img className="opacity-80 grayscale hover:opacity-100 transition h-7 w-auto max-w-full" src="/logos/paytr.png" alt="PayTR ile Öde" width={116} height={28} />
             </div>
           </div>
         </div>
@@ -80,7 +77,6 @@ export default function Footer() {
     </>
   )
 }
-
 
 
 

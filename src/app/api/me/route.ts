@@ -15,7 +15,7 @@ export async function GET() {
 
   const me = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, avatarUrl: true, username: true, name: true, email: true },
+    select: { id: true, avatarUrl: true, username: true, name: true, email: true, phone: true, phoneVerifiedAt: true },
   })
   if (!me) return NextResponse.json({ ok: false, error: 'Bulunamadı' }, { status: 404 })
   return NextResponse.json(me)

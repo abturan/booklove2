@@ -2,7 +2,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { assignMemberToClub } from '../actions'
+import { assignMemberToClub, adminUpdateUser, deactivateMembership, removeFromClub, cancelSubscriptionAction } from '../actions'
 import Select from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 
@@ -28,6 +28,11 @@ export default async function MemberDetailPage({
         name: true,
         email: true,
         username: true,
+        city: true,
+        district: true,
+        phone: true,
+        emailVerifiedAt: true,
+        phoneVerifiedAt: true,
         createdAt: true,
         lastSeenAt: true,
       },
@@ -100,7 +105,7 @@ export default async function MemberDetailPage({
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-2xl font-semibold">{user.name || '—'}</h1>
           <div className="text-sm text-gray-600">{user.email}</div>
           {user.username && <div className="text-sm text-gray-600">@{user.username}</div>}
@@ -109,6 +114,9 @@ export default async function MemberDetailPage({
             {user.lastSeenAt && (
               <> · Son görüldü: {new Date(user.lastSeenAt).toLocaleString('tr-TR')}</>
             )}
+          </div>
+          <div className="text-xs text-gray-600">
+            E‑posta: {user.emailVerifiedAt ? 'Doğrulandı' : 'Doğrulanmadı'} · Telefon: {user.phoneVerifiedAt ? 'Doğrulandı' : 'Doğrulanmadı'}
           </div>
         </div>
         <div className="text-right text-sm text-gray-700 space-y-0.5">
@@ -120,6 +128,29 @@ export default async function MemberDetailPage({
           <div>Beğeni: <span className="font-medium">{(counts?._count as any)?.likes ?? 0}</span></div>
           <div>Sohbet: <span className="font-medium">{(counts?._count as any)?.ChatMessage ?? 0}</span></div>
         </div>
+      </div>
+
+      {/* Profil düzenle */}
+      <div className="rounded-2xl border p-4">
+        <h2 className="mb-3 text-lg font-semibold">Profil Düzenle</h2>
+        <form action={adminUpdateUser} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input type="hidden" name="id" value={user.id} />
+          <Input name="name" defaultValue={user.name ?? ''} placeholder="Ad soyad" />
+          <Input name="username" defaultValue={user.username ?? ''} placeholder="Kullanıcı adı" />
+          <Input name="email" defaultValue={user.email ?? ''} placeholder="E‑posta" />
+          <Input name="city" defaultValue={user.city ?? ''} placeholder="Şehir" />
+          <Input name="district" defaultValue={user.district ?? ''} placeholder="İlçe" />
+          <Input name="phone" defaultValue={user.phone ?? ''} placeholder="Telefon" />
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" name="emailVerified" defaultChecked={!!user.emailVerifiedAt} /> E‑posta doğrulandı
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" name="phoneVerified" defaultChecked={!!user.phoneVerifiedAt} /> Telefon doğrulandı
+          </label>
+          <div className="sm:col-span-2">
+            <button className="rounded-xl bg-gray-900 px-4 py-2 text-white">Kaydet</button>
+          </div>
+        </form>
       </div>
 
       {/* Manuel abonelik/üyelik atama */}
@@ -175,6 +206,7 @@ export default async function MemberDetailPage({
               <th className="px-4 py-3">Rol</th>
               <th className="px-4 py-3">Durum</th>
               <th className="px-4 py-3">Katılım</th>
+              <th className="px-4 py-3">İşlem</th>
             </tr>
           </thead>
           <tbody>
@@ -215,6 +247,18 @@ export default async function MemberDetailPage({
                   )}
                 </td>
                 <td className="px-4 py-3">{new Date(m.joinedAt).toLocaleDateString('tr-TR')}</td>
+                <td className="px-4 py-3">
+                  <form action={deactivateMembership}>
+                    <input type="hidden" name="membershipId" value={m.id} />
+                    <input type="hidden" name="userId" value={user.id} />
+                    <button className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50">Etkinlikten çıkar</button>
+                  </form>
+                  <form action={removeFromClub} className="mt-1">
+                    <input type="hidden" name="userId" value={user.id} />
+                    <input type="hidden" name="clubId" value={m.club.id} />
+                    <button className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50">Kulüpten çıkar</button>
+                  </form>
+                </td>
               </tr>
             ))}
             {!memberships.length && (
@@ -239,6 +283,7 @@ export default async function MemberDetailPage({
               <th className="px-4 py-3">Durum</th>
               <th className="px-4 py-3">Başlangıç</th>
               <th className="px-4 py-3">Bitiş</th>
+              <th className="px-4 py-3">İşlem</th>
             </tr>
           </thead>
           <tbody>
@@ -283,6 +328,15 @@ export default async function MemberDetailPage({
                 <td className="px-4 py-3">
                   {s.canceledAt ? new Date(s.canceledAt).toLocaleDateString('tr-TR') : '—'}
                 </td>
+                <td className="px-4 py-3">
+                  {s.active && (
+                    <form action={cancelSubscriptionAction}>
+                      <input type="hidden" name="subscriptionId" value={s.id} />
+                      <input type="hidden" name="userId" value={user.id} />
+                      <button className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50">İptal et</button>
+                    </form>
+                  )}
+                </td>
               </tr>
             ))}
             {!subscriptions.length && (
@@ -295,6 +349,122 @@ export default async function MemberDetailPage({
           </tbody>
         </table>
       </div>
+
+      {/* Takip ilişkileri */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Followers userId={id} />
+        <Following userId={id} />
+      </div>
+
+      {/* Kullanıcının gönderileri */}
+      <UserPosts userId={id} />
+
+      {/* Kullanıcının sohbet mesajları */}
+      <UserMessages userId={id} />
+    </div>
+  )
+}
+
+async function Followers({ userId }: { userId: string }) {
+  const rows = await prisma.follow.findMany({
+    where: { followingId: userId },
+    select: { follower: { select: { id: true, name: true, email: true, username: true } } },
+    take: 100,
+  })
+  return (
+    <div className="rounded-2xl border">
+      <div className="border-b px-4 py-3 font-semibold">Takipçiler</div>
+      <ul className="p-3 text-sm space-y-1 max-h-72 overflow-auto">
+        {rows.map((r) => (
+          <li key={r.follower.id}>{r.follower.name || '—'} {r.follower.username ? `(@${r.follower.username})` : ''} — {r.follower.email}</li>
+        ))}
+        {!rows.length && <li className="text-gray-500">Takipçi yok.</li>}
+      </ul>
+    </div>
+  )
+}
+
+async function Following({ userId }: { userId: string }) {
+  const rows = await prisma.follow.findMany({
+    where: { followerId: userId },
+    select: { following: { select: { id: true, name: true, email: true, username: true } } },
+    take: 100,
+  })
+  return (
+    <div className="rounded-2xl border">
+      <div className="border-b px-4 py-3 font-semibold">Takip ettikleri</div>
+      <ul className="p-3 text-sm space-y-1 max-h-72 overflow-auto">
+        {rows.map((r) => (
+          <li key={r.following.id}>{r.following.name || '—'} {r.following.username ? `(@${r.following.username})` : ''} — {r.following.email}</li>
+        ))}
+        {!rows.length && <li className="text-gray-500">Takip ettiği yok.</li>}
+      </ul>
+    </div>
+  )
+}
+
+async function UserPosts({ userId }: { userId: string }) {
+  const posts = await prisma.post.findMany({ where: { ownerId: userId }, orderBy: { createdAt: 'desc' }, take: 20, select: { id: true, createdAt: true, body: true } })
+  return (
+    <div className="rounded-2xl border">
+      <div className="border-b px-4 py-3 font-semibold">Son Gönderiler</div>
+      <ul className="p-3 text-sm space-y-2">
+        {posts.map((p) => (
+          <li key={p.id} className="border rounded-lg p-2">
+            <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleString('tr-TR')}</div>
+            <div className="whitespace-pre-wrap">{p.body.slice(0, 240)}</div>
+          </li>
+        ))}
+        {!posts.length && <li className="text-gray-500">Gönderi yok.</li>}
+      </ul>
+    </div>
+  )
+}
+
+async function UserMessages({ userId }: { userId: string }) {
+  const msgs = await prisma.chatMessage.findMany({
+    where: { authorId: userId },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+    select: {
+      id: true,
+      body: true,
+      isSecret: true,
+      createdAt: true,
+      room: {
+        select: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true,
+              club: { select: { name: true, slug: true } },
+            },
+          },
+        },
+      },
+    },
+  })
+  return (
+    <div className="rounded-2xl border">
+      <div className="border-b px-4 py-3 font-semibold">Son Sohbet Mesajları</div>
+      <ul className="p-3 text-sm space-y-2 max-h-[420px] overflow-auto">
+        {msgs.map((m) => {
+          const ev = m.room?.event
+          const club = ev?.club
+          return (
+            <li key={m.id} className="border rounded-lg p-2">
+              <div className="text-xs text-gray-500 flex items-center gap-2">
+                <span>{new Date(m.createdAt).toLocaleString('tr-TR')}</span>
+                {club && (<span>• {club.name}{ev?.title ? ` — ${ev.title}` : ''}</span>)}
+                {m.isSecret && <span className="rounded-full bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5">Gizli</span>}
+              </div>
+              <div className="whitespace-pre-wrap mt-1">{m.body}</div>
+            </li>
+          )
+        })}
+        {!msgs.length && <li className="text-gray-500">Mesaj yok.</li>}
+      </ul>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { createNotification } from '@/lib/notify'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ async function resolveEvent(eventId: string) {
   if (!eventId) return null
   return prisma.clubEvent.findUnique({
     where: { id: eventId },
-    select: { id: true, clubId: true, club: { select: { moderatorId: true } } },
+    select: { id: true, clubId: true, club: { select: { id: true, moderatorId: true, slug: true, name: true } } },
   })
 }
 
@@ -129,6 +130,40 @@ export async function POST(
       data: { roomId: room.id, authorId: session.user.id, body: body.trim(), isSecret },
       include: { author: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } } },
     })
+
+    // Notify event members if moderator posted
+    try {
+      if (isModerator) {
+        const members = await prisma.membership.findMany({
+          where: { clubEventId: event.id, isActive: true, userId: { not: session.user.id } },
+          select: { userId: true },
+        })
+        if (members.length > 0) {
+          const type = isSecret ? 'club_moderator_secret' : 'club_moderator_post'
+          const payloadObj = {
+            clubId: event.clubId,
+            eventId: event.id,
+            url: `/clubs/${event.club?.slug || ''}`,
+            byId: session.user.id,
+            clubName: event.club?.name || 'Kulüp',
+            body: body.trim(),
+            isSecret,
+          }
+          const payload = JSON.stringify(payloadObj)
+          await prisma.notification.createMany({
+            data: members.map((m) => ({ userId: m.userId, type, payload })),
+            skipDuplicates: false,
+          })
+          // email
+          const { sendNotificationEmail } = await import('@/lib/notify-email')
+          for (const m of members) {
+            sendNotificationEmail(m.userId, type as any, payloadObj).catch(() => {})
+          }
+        }
+      }
+    } catch (err) {
+      console.error('chat notify error', err)
+    }
 
     return NextResponse.json({ ok: true, item: msg })
   } catch (err: any) {

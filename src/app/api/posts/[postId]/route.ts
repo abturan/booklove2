@@ -3,6 +3,32 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
+export async function GET(_req: Request, { params }: { params: { postId: string } }) {
+  const { postId } = params
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: {
+      id: true,
+      body: true,
+      createdAt: true,
+      status: true,
+      owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+      images: { select: { url: true, width: true, height: true } },
+      _count: { select: { likes: true, comments: true } },
+    },
+  })
+  if (!post) return NextResponse.json({ error: 'Bulunamadı' }, { status: 404 })
+  return NextResponse.json({
+    id: post.id,
+    body: post.body,
+    createdAt: post.createdAt,
+    status: post.status,
+    owner: post.owner,
+    images: post.images,
+    counts: { likes: post._count.likes, comments: post._count.comments },
+  })
+}
+
 export async function PATCH(req: Request, { params }: { params: { postId: string } }) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

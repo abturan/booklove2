@@ -8,7 +8,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
 
   const q = (searchParams.get('q') || '').trim()
-  const sort = (searchParams.get('sort') as SortKey) || 'members_desc'
+  // Default: newest sessions first
+  const sort = (searchParams.get('sort') as SortKey) || 'created_desc'
   const limit = Number(searchParams.get('limit') || '0') || undefined
   const pageParam = Number(searchParams.get('page') || '1')
   const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1
