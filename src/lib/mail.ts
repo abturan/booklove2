@@ -1,6 +1,20 @@
 // src/lib/mail.ts
+function resolveFrom(): string | { name: string; address: string } {
+  const envFrom = process.env.MAIL_FROM?.trim()
+  const name = (process.env.MAIL_FROM_NAME || 'Boook Love').trim()
+  const address = (process.env.MAIL_FROM_ADDRESS || 'no-reply@boook.love').trim()
+  // If MAIL_FROM provided as full "Name <addr@host>" use as-is
+  if (envFrom) {
+    if (envFrom.includes('@')) return envFrom
+    // Looks like only a display name was provided (or something like "Book Love <>")
+    // Fall back to structured object to avoid "<>"
+    return { name: envFrom.replace(/[<>]/g, ''), address }
+  }
+  return { name, address }
+}
+
 export async function sendMail(to: string, subject: string, html: string) {
-  const from = process.env.MAIL_FROM || 'no-reply@example.com'
+  const from = resolveFrom()
   try {
     const nodemailer = await import('nodemailer')
     const transporter = nodemailer.createTransport({

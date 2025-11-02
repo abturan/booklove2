@@ -17,7 +17,15 @@ export async function createNotification(opts: {
   type: NotificationType
   payload?: Record<string, any>
 }) {
-  const payload = opts.payload ? JSON.stringify(opts.payload) : '{}'
+  // Enrich payload with byName if byId is present (for nicer UI titles)
+  let data: Record<string, any> = opts.payload ? { ...opts.payload } : {}
+  try {
+    if (data && data.byId && !data.byName) {
+      const u = await prisma.user.findUnique({ where: { id: String(data.byId) }, select: { name: true } })
+      if (u?.name) data.byName = u.name
+    }
+  } catch {}
+  const payload = JSON.stringify(data)
   const pref = await (prisma as any).notificationPreference.findUnique({ where: { userId: opts.userId } })
   if (pref) {
     if (
