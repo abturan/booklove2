@@ -102,8 +102,6 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
                 </td>
                 <td className="px-4 py-3">
                   <div>Aktif etkinlik üyeliği: {u.Memberships.length}</div>
-                  <div>Katıldığı kulüp sayısı: {new Set(u.Memberships.map((m) => m.clubId)).size}</div>
-                  <div>Aktif abonelik: {u.Subscriptions.length}</div>
                   <div>Post: {u._count.posts}, Yorum: {u._count.comments}, Beğeni: {u._count.likes}</div>
                   <div>Sohbet Mesajı: {u._count.dmMessagesAuthored}</div>
                 </td>

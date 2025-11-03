@@ -9,6 +9,7 @@ const items = [
   { href: '/admin', label: 'Özet' },
   { href: '/admin/clubs', label: 'Kulüpler' },
   { href: '/admin/members', label: 'Üyeler' },
+  { href: '/admin/payments', label: 'Ödemeler' },
   { href: '/admin/posts', label: 'Post’lar' },
 ]
 

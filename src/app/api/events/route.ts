@@ -105,9 +105,9 @@ export async function GET(req: Request) {
     const memberCount = (ev._count.memberships as unknown as number) || 0
     const capacity = ev.capacity ?? ev.club.capacity ?? null
 
-    // Build event label like "Kasım Oturumu — Club Name"
+    // Build event label like "Kasım Oturumu —\nClub Name" (long dash + new line)
     const monthTitle = MONTH_TR[ev.startsAt.getMonth()] || 'Ay'
-    const eventName = `${monthTitle} Oturumu — ${ev.club.name}`
+    const eventName = `${monthTitle} Oturumu —\n${ev.club.name}`
 
     return {
       id: ev.id,

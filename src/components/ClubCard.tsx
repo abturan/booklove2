@@ -54,7 +54,7 @@ export default function ClubCard({ club }: { club: ClubItem }) {
 
       <div className="p-4">
         <Link href={`/clubs/${club.slug}`}>
-          <h3 className="text-base font-semibold tracking-tight text-gray-900 line-clamp-1">
+          <h3 className="text-base font-semibold tracking-tight text-gray-900 whitespace-pre-line line-clamp-2">
             {club.name}
           </h3>
         </Link>

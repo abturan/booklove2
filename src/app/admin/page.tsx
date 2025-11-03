@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import AdminCharts from '@/components/admin/AdminCharts'
 import ActiveUsersModalButton from '@/components/admin/ActiveUsersModalButton'
@@ -18,8 +19,20 @@ export default async function AdminHome() {
   const now = new Date()
   const thresholdMin = 5
   const since = new Date(now.getTime() - thresholdMin * 60 * 1000)
-  const [userCount, clubCount, activeClubCount, paidIntents, subsCount, upcomingEventCount, onlineCount] = await Promise.all([
+  // Test kullanıcılarını hariç saymak için basit bir desen: example.com, +test, test@, dev@
+  const testWhere: Prisma.UserWhereInput = {
+    OR: [
+      { email: { contains: '+test', mode: 'insensitive' } },
+      { email: { endsWith: '@example.com', mode: 'insensitive' } },
+      { email: { endsWith: '@test.com', mode: 'insensitive' } },
+      { email: { startsWith: 'test', mode: 'insensitive' } },
+      { email: { startsWith: 'dev', mode: 'insensitive' } },
+    ],
+  }
+
+  const [userCountAll, userCountReal, clubCount, activeClubCount, paidIntents, subsActiveAll, realPaidSubsRows, upcomingEventCount, onlineCount] = await Promise.all([
     prisma.user.count(),
+    prisma.user.count({ where: { NOT: testWhere } }),
     prisma.club.count(),
     prisma.club.count({ where: { published: true } }),
     prisma.paymentIntent.findMany({
@@ -27,11 +40,24 @@ export default async function AdminHome() {
       select: { amountTRY: true, createdAt: true },
     }),
     prisma.subscription.count({ where: { active: true } }),
+    prisma.$queryRaw<{ c: bigint }[]>`SELECT COUNT(DISTINCT (s."userId" || ':' || s."clubEventId"))::bigint AS c
+      FROM "Subscription" s
+      JOIN "PaymentIntent" p ON p."userId" = s."userId" AND p."clubEventId" = s."clubEventId" AND p."status" = 'SUCCEEDED'
+      JOIN "User" u ON u."id" = s."userId"
+      WHERE s."active" = true
+        AND NOT (
+          u."email" ILIKE '%+test%'
+          OR u."email" ILIKE '%@example.com'
+          OR u."email" ILIKE '%@test.com'
+          OR u."email" ILIKE 'test%'
+          OR u."email" ILIKE 'dev%'
+        )`,
     prisma.clubEvent.count({ where: { startsAt: { gte: now } } }),
     prisma.user.count({ where: { lastSeenAt: { gte: since } } }),
   ])
 
-  const revenueTRY = paidIntents.reduce((sum, p) => sum + (p.amountTRY ?? 0), 0) // ❗ bölme yok
+  // amountTRY kuruş (int); gösterirken TL'ye çevir
+  const revenueTRY = paidIntents.reduce((sum, p) => sum + (p.amountTRY ?? 0), 0) / 100
   const fmt = (n: number) => n.toLocaleString('tr-TR')
 
   // ----- grafikleri besleyecek zaman serileri (son 30 gün)
@@ -70,17 +96,17 @@ export default async function AdminHome() {
     usersDailyRaw.map(r => ({ d: r.d, v: Number(r.c) })), 'v'
   )
   const revenueDaily: Row[] = mapSeries(
-    paymentsDailyRaw.map(r => ({ d: r.d, v: Number(r.s) })), 'v'
+    paymentsDailyRaw.map(r => ({ d: r.d, v: Math.round(Number(r.s) / 100) })), 'v'
   )
 
   return (
     <div className="space-y-6">
       {/* Üst kartlar */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card title="Toplam Üye" value={fmt(userCount)} href="/admin/members" />
+        <Card title="Toplam Üye" value={`${fmt(userCountReal)} (${fmt(userCountAll)})`} href="/admin/members" />
         <Card title={`Aktif Kullanıcı (~${thresholdMin}dk)`} value={fmt(onlineCount)} />
         <Card title="Kulüp (aktif)" value={`${fmt(activeClubCount)} / ${fmt(clubCount)}`} href="/admin/clubs" />
-        <Card title="Etkinlik Aboneliği (aktif)" value={fmt(subsCount)} href="/admin/members" />
+        <Card title="Etkinlik Aboneliği (aktif)" value={`${fmt(Number(realPaidSubsRows?.[0]?.c || 0))} (${fmt(subsActiveAll)})`} href="/admin/members" />
         <Card title="Yaklaşan Etkinlik" value={fmt(upcomingEventCount)} href="/admin/clubs" />
         <Card title="Toplam Ciro (₺)" value={fmt(revenueTRY)} />
       </section>

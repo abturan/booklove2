@@ -135,8 +135,6 @@ export default async function MemberDetailPage({
         </div>
         <div className="text-right text-sm text-gray-700 space-y-0.5">
           <div>Aktif etkinlik üyeliği: <span className="font-medium">{activeEventMemberships.length}</span></div>
-          <div>Katıldığı kulüp sayısı: <span className="font-medium">{joinedClubCount}</span></div>
-          <div>Aktif abonelik: <span className="font-medium">{activeEventSubscriptions.length}</span></div>
           <div>Post: <span className="font-medium">{(counts?._count as any)?.posts ?? 0}</span></div>
           <div>Yorum: <span className="font-medium">{(counts?._count as any)?.comments ?? 0}</span></div>
           <div>Beğeni: <span className="font-medium">{(counts?._count as any)?.likes ?? 0}</span></div>
