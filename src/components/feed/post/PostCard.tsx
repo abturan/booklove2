@@ -16,11 +16,12 @@ import { useEdit } from './hooks/useEdit'
 import { useLike } from './hooks/useLike'
 import BareModal from '@/components/ui/BareModal'
 import Modal from '@/components/ui/modal'
+import PostComposer from '@/components/feed/PostComposer'
 import LikeListModal from './LikeListModal'
 
 const REPORT_OPTIONS = ['Spam','Nefret söylemi','Taciz','Müstehcen içerik','Dolandırıcılık','Diğer']
 
-export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; onUpdated?: (p: Post)=>void; onDeleted?: (id:string)=>void }) {
+export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { post: Post; onUpdated?: (p: Post)=>void; onDeleted?: (id:string)=>void; onPosted?: (id:string)=>void }) {
   const { data } = useSession()
   const { verified } = useVerifyStatus()
   const canInteract = !!data?.user && verified === true
@@ -38,6 +39,7 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
   const [reporting, setReporting] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [likersOpen, setLikersOpen] = useState(false)
+  const [rebookOpen, setRebookOpen] = useState(false)
   const [reportedBanner, setReportedBanner] = useState(false)
 
   useEffect(() => {
@@ -118,6 +120,14 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
           <PostBody text={post.body} />
           <PostImages images={post.images} />
 
+          {post.repostOf && (
+            <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <div className="text-xs text-gray-500 mb-1">@{post.repostOf.owner.username || post.repostOf.owner.name || 'Kullanıcı'}’den alıntı</div>
+              <PostBody text={post.repostOf.body} />
+              <PostImages images={post.repostOf.images} />
+            </div>
+          )}
+
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {statusTR && isAdmin && (
               <span className="rounded-full border px-2 py-0.5 text-[10px] tracking-wide text-gray-600">
@@ -132,17 +142,6 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
                 <button type="button" onClick={() => moderate('hide')} disabled={busy !== null} className="text-xs rounded-full border px-2 py-0.5 hover:bg-gray-50 disabled:opacity-60">Gizle</button>
               </>
             )}
-
-            {!isOwner && canInteract && (
-              <button type="button" onClick={() => setReportOpen(true)} className="text-xs rounded-full border px-2 py-0.5 hover:bg-gray-50">Bildir</button>
-            )}
-
-            {isOwner && (
-              <>
-                <button type="button" onClick={() => { ed.setEditText(post.body); ed.setEditImages(post.images || []); ed.setEditing(true) }} className="text-xs rounded-full border px-2 py-0.5 hover:bg-gray-50">Düzenle</button>
-                <button type="button" onClick={() => setDeleteOpen(true)} className="text-xs rounded-full border px-2 py-0.5 hover:bg-gray-50">Sil</button>
-              </>
-            )}
           </div>
 
           <PostActions
@@ -152,7 +151,12 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
             onToggleLike={like.toggle}
             onShowLikers={() => setLikersOpen(true)}
             onToggleComments={() => { c.setOpen(!c.open); if (!c.open) c.load() }}
+            onRebook={() => setRebookOpen(true)}
+            onEdit={() => { ed.setEditText(post.body); ed.setEditImages(post.images || []); ed.setEditing(true) }}
+            onDelete={() => setDeleteOpen(true)}
+            onReport={() => setReportOpen(true)}
             canInteract={canInteract}
+            isOwner={!!isOwner}
           />
 
           <PostComments
@@ -218,6 +222,15 @@ export default function PostCard({ post, onUpdated, onDeleted }: { post: Post; o
 
       <Modal open={likersOpen} onClose={() => setLikersOpen(false)} title="Beğenenler">
         <LikeListModal postId={post.id} />
+      </Modal>
+
+      <Modal open={rebookOpen} onClose={() => setRebookOpen(false)} title="Rebookie paylaş">
+        <div className="space-y-3">
+          <PostComposer
+            onPosted={(id) => { setRebookOpen(false); onPosted?.(id) }}
+            repostOf={{ id: post.id, body: post.body, owner: { name: post.owner.name, username: post.owner.username || null }, images: post.images }}
+          />
+        </div>
       </Modal>
     </div>
   )

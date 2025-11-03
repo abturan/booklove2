@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import useVerifyStatus from '@/lib/hooks/useVerifyStatus'
 import EmojiPicker from '@/components/EmojiPicker'
 
-export default function PostComposer({ onPosted }: { onPosted: (id: string) => void }) {
+export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: string) => void; repostOf?: { id: string; body: string; owner?: { name?: string | null; username?: string | null }; images?: { url: string }[] } }) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +56,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
       setError('Tüm özelliklerden faydalanmak için e‑postanızı doğrulayın.')
       return
     }
-    if (!body && images.length === 0) {
+    if (!body && images.length === 0 && !repostOf) {
       setError('Lütfen bir şeyler yazın veya görsel ekleyin.')
       return
     }
@@ -67,7 +67,7 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body, images }),
+        body: JSON.stringify({ body, images, repostOfId: repostOf?.id }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -91,6 +91,19 @@ export default function PostComposer({ onPosted }: { onPosted: (id: string) => v
 
   return (
     <div className="card p-3">
+      {repostOf && (
+        <div className="mb-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm">
+          <div className="mb-1 text-xs text-gray-500">Rebookie</div>
+          <div className="text-sm whitespace-pre-wrap">{repostOf.body}</div>
+          {Array.isArray(repostOf.images) && repostOf.images.length > 0 && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {repostOf.images.slice(0, 4).map((img, i) => (
+                <img key={i} src={img.url} alt="" className="rounded-lg object-cover w-full h-24" />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

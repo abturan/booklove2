@@ -13,10 +13,21 @@ function truncate(s: string, n = 400) {
   return t.slice(0, n - 1) + '…'
 }
 
+function envTag() {
+  const env = (process.env.VERCEL_ENV || process.env.NODE_ENV || 'development').toLowerCase()
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_ORIGIN || '').replace(/\/$/, '')
+  const host = (() => { try { return base ? new URL(base).host : '' } catch { return '' } })()
+  const label = env === 'production' ? 'PROD' : env === 'preview' ? 'PREVIEW' : 'DEV'
+  const emoji = env === 'production' ? '🟢' : env === 'preview' ? '🟡' : '🔵'
+  return { label, emoji, host, base }
+}
+
 export async function adminAlert(subject: string, fields?: Record<string, any>, level: Level = 'info') {
   try {
     if (!ENABLED) return
     const textLines: string[] = []
+    const env = envTag()
+    textLines.push(`${env.emoji} [${env.label}] ${env.host || ''}`)
     textLines.push(`*${subject}*`)
     if (fields) {
       for (const [k, v] of Object.entries(fields)) {

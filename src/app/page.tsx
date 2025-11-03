@@ -98,7 +98,7 @@ function HomeBody() {
           tabs={[
             { value: 'bookie', label: 'Bookie!' },
             { value: 'clubs', label: 'Kulüpler' },
-            { value: 'buddy', label: 'Book Buddy', badge: pending },
+            { value: 'buddy', label: 'Book Buddy' },
           ]}
         />
         <div aria-hidden={activeTab !== 'bookie'} className={activeTab === 'bookie' ? 'block' : 'hidden'}>

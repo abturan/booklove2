@@ -136,7 +136,7 @@ export default function ThreadList({
             />
           </>
         )}
-        {!loading && items.filter((it) => it.status !== 'ARCHIVED').length === 0 && (
+        {!loading && items.length === 0 && (
           <div className="px-3 py-3 text-sm text-gray-600">Sohbet bulunamadı.</div>
         )}
       </div>
@@ -226,7 +226,6 @@ function ActiveThreadsSection({
   online?: Record<string, boolean>
 }) {
   const threads = items.filter((it) => {
-    if (it.status === 'ARCHIVED') return false
     if (it.status === 'REQUESTED' && it.requestedById && it.requestedById !== meId) return false
     return true
   })

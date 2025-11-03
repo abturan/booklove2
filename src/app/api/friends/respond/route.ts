@@ -27,7 +27,9 @@ export async function POST(req: Request) {
   const now = new Date()
 
   if (action === 'ACCEPT') {
+    // Kabul: iki yönlü takip oluştur (karşılıklı takip)
     await ensureFollow({ followerId: meId, followingId: peerId })
+    await ensureFollow({ followerId: peerId, followingId: meId })
 
     const updated = await prisma.dmThread.update({
       where: { id: thread.id },
@@ -42,11 +44,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, threadId: updated.id })
   }
 
-  // DECLINE
+  // DECLINE: Arşiv konseptini kaldırıyoruz. İsteği sonlandır, açık bekleyen istek görünmesin.
   await prisma.dmThread.update({
     where: { id: thread.id },
     data: {
-      status: 'ARCHIVED',
+      status: 'REQUESTED',
       requestedById: null,
       requestedAt: null,
       lastDecisionAt: now,

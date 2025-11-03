@@ -29,6 +29,8 @@ export default function GlobalFeed({
   const loggedIn = !!data?.user?.id
   const isAdmin = (data?.user as any)?.role === 'ADMIN'
   const [status, setStatus] = useState<Status>('PUBLISHED')
+  const [audience, setAudience] = useState<'global' | 'following'>('global')
+  const [modOpen, setModOpen] = useState(false)
 
   const [counts, setCounts] = useState<{ published: number; pending: number; hidden: number; reported: number }>({
     published: 0,
@@ -121,7 +123,7 @@ export default function GlobalFeed({
       setHasMore(true)
       void loadMore(true)
     }
-  }, [ownerId, status, pagingEnabled, active])
+  }, [ownerId, status, audience, pagingEnabled, active])
 
   function buildQuery(limit = '10', extra?: string) {
     const q = new URLSearchParams()
@@ -131,7 +133,7 @@ export default function GlobalFeed({
       q.set('scope', 'owner')
       q.set('ownerId', ownerId)
     } else {
-      q.set('scope', 'global')
+      q.set('scope', audience === 'following' ? 'following' : 'global')
     }
     if (extra) q.set('cursor', extra)
     return q
@@ -385,7 +387,7 @@ export default function GlobalFeed({
             <button
               type="button"
               onClick={() => setOpenComposer(true)}
-              className="rounded-full bg-primary text-white px-4 py-1.5 text-sm font-medium hover:bg-primary/90"
+              className="hidden md:inline-flex rounded-full bg-[#fa3d30] text-white px-4 py-1.5 text-sm font-medium hover:opacity-90"
               aria-label="Bookie! Paylaş"
             >
               Paylaş
@@ -395,7 +397,7 @@ export default function GlobalFeed({
             <button
               type="button"
               onClick={() => setOpenComposer(false)}
-              className="h-8 w-8 grid place-content-center rounded-full bg-primary text-white hover:bg-primary/90"
+              className="hidden md:grid h-8 w-8 place-content-center rounded-full bg-[#fa3d30] text-white hover:opacity-90"
               aria-label="Kapat"
               title="Kapat"
             >
@@ -405,19 +407,91 @@ export default function GlobalFeed({
         </div>
       )}
 
-      {showTopBar && <div className="h-1 w-full rounded-full bg-primary" />}
+      {showTopBar && (
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            {loggedIn && !openComposer && (
+              <button
+                type="button"
+                onClick={() => setOpenComposer(true)}
+                className="md:hidden inline-flex rounded-full bg-[#fa3d30] text-white px-4 py-1.5 text-sm font-medium hover:opacity-90"
+                aria-label="Bookie! Paylaş (mobil)"
+              >
+                Paylaş
+              </button>
+            )}
+            {loggedIn && openComposer && (
+              <button
+                type="button"
+                onClick={() => setOpenComposer(false)}
+                className="md:hidden inline-grid h-8 w-8 place-content-center rounded-full bg-[#fa3d30] text-white hover:opacity-90"
+                aria-label="Kapat"
+                title="Kapat"
+              >
+                ✕
+              </button>
+            )}
+            <div className="h-1 w-full rounded-full bg-primary" />
+          </div>
+          <div className="shrink-0">
+            <div className="inline-flex rounded-full border bg-white p-0.5 text-xs shadow-sm">
+              <button
+                type="button"
+                onClick={() => setAudience('global')}
+                className={`px-3 py-1 rounded-full transition ${audience==='global' ? 'bg-[#fa3d30] text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+                aria-pressed={audience==='global'}
+              >
+                Herkes
+              </button>
+              <button
+                type="button"
+                onClick={() => setAudience('following')}
+                className={`px-3 py-1 rounded-full transition ${audience==='following' ? 'bg-[#fa3d30] text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+                aria-pressed={audience==='following'}
+              >
+                Takip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isAdmin && (
-        <Tabs
-          value={status}
-          onValueChange={(v) => setStatus(v as Status)}
-          tabs={[
-            { value: 'PUBLISHED', label: `Yayında (${counts.published})` },
-            { value: 'PENDING', label: `Bekleyen (${counts.pending})` },
-            { value: 'HIDDEN', label: `Gizli (${counts.hidden})` },
-            { value: 'REPORTED', label: `Şikayet (${counts.reported})` },
-          ]}
-        />
+        <div className="space-y-2">
+          {!modOpen ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setModOpen(true)}
+                className="text-xs text-gray-500 underline hover:text-gray-700"
+              >
+                Moderasyon seçeneklerini aç
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setModOpen(false)}
+                  className="text-xs text-gray-500 underline hover:text-gray-700"
+                >
+                  Gizle
+                </button>
+              </div>
+              <Tabs
+                value={status}
+                onValueChange={(v) => setStatus(v as Status)}
+                tabs={[
+                  { value: 'PUBLISHED', label: `Yayında (${counts.published})` },
+                  { value: 'PENDING', label: `Bekleyen (${counts.pending})` },
+                  { value: 'HIDDEN', label: `Gizli (${counts.hidden})` },
+                  { value: 'REPORTED', label: `Şikayet (${counts.reported})` },
+                ]}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {openComposer && !ownerId && loggedIn && <PostComposer onPosted={onPosted} />}
@@ -430,7 +504,7 @@ export default function GlobalFeed({
 
       <div ref={listRef} className="space-y-3">
         {list.map((p) => (
-          <PostCard key={p.id} post={p} onUpdated={onUpdated} onDeleted={onDeleted} />
+          <PostCard key={p.id} post={p} onUpdated={onUpdated} onDeleted={onDeleted} onPosted={onPosted} />
         ))}
       </div>
 
@@ -487,5 +561,26 @@ function normalizePost(p: any): Post {
         }))
       : [],
     counts: { likes: Number(p._count?.likes || 0), comments: Number(p._count?.comments || 0) },
+    repostOf: p.repostOf
+      ? {
+          id: String(p.repostOf.id),
+          body: String(p.repostOf.body || ''),
+          createdAt: String(p.repostOf.createdAt || new Date().toISOString()),
+          owner: {
+            id: p.repostOf.owner?.id || '',
+            name: p.repostOf.owner?.name || 'Kullanıcı',
+            username: p.repostOf.owner?.username || null,
+            slug: p.repostOf.owner?.slug || null,
+            avatarUrl: p.repostOf.owner?.avatarUrl || null,
+          },
+          images: Array.isArray(p.repostOf.images)
+            ? p.repostOf.images.map((i: any) => ({
+                url: String(i.url || ''),
+                width: typeof i.width === 'number' ? i.width : null,
+                height: typeof i.height === 'number' ? i.height : null,
+              }))
+            : [],
+        }
+      : null,
   }
 }

@@ -91,6 +91,21 @@ export default function NotificationsPanel({ active }: { active?: boolean }) {
                   >
                     Görüntüle
                   </button>
+                ) : n.type === 'dm_message' && n.payload?.threadId ? (
+                  <button
+                    type="button"
+                    className="text-xs text-primary underline"
+                    onClick={async () => {
+                      await fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: n.id }) })
+                      window.dispatchEvent(new Event('notif:changed'))
+                      const t = String(n.payload.threadId)
+                      const m = n.payload?.messageId ? String(n.payload.messageId) : null
+                      const url = m ? `/messages/${t}?msg=${encodeURIComponent(m)}` : `/messages/${t}`
+                      window.location.href = url
+                    }}
+                  >
+                    Mesajı aç
+                  </button>
                 ) : n.payload?.url ? (
                   <button
                     type="button"

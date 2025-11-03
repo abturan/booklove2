@@ -28,6 +28,14 @@ export async function GET(req: Request) {
       ownerFilter = { in: [ownerIdParam] }
     } else if (scope === 'self' && meId) {
       ownerFilter = { in: [meId] }
+    } else if (scope === 'following' && meId) {
+      try {
+        const followingRows = await prisma.follow.findMany({ where: { followerId: meId }, select: { followingId: true } })
+        const ids = Array.from(new Set([meId, ...followingRows.map(r => r.followingId)]))
+        ownerFilter = { in: ids }
+      } catch {
+        ownerFilter = { in: [meId] }
+      }
     } else if (scope === 'global') {
       ownerFilter = undefined
     } else {
@@ -109,21 +117,80 @@ export async function GET(req: Request) {
       where.status = 'PUBLISHED'
     }
 
-    const posts = await prisma.post.findMany({
+    // Repost alanı henüz deploy edilmemiş olabilir — güvenli geriye uyum
+    const common = {
       where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        status: true,
-        owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
-        images: { select: { url: true, width: true, height: true } },
-        _count: { select: { likes: true, comments: true, reports: true } },
+    } as const
+    const selectWithRepost = {
+      id: true,
+      body: true,
+      createdAt: true,
+      status: true,
+      owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+      images: { select: { url: true, width: true, height: true } },
+      repostOf: {
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+          images: { select: { url: true, width: true, height: true } },
+        },
+      },
+      _count: { select: { likes: true, comments: true, reports: true } },
+    }
+    const selectLegacy = {
+      id: true,
+      body: true,
+      createdAt: true,
+      status: true,
+      owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+      images: { select: { url: true, width: true, height: true } },
+      _count: { select: { likes: true, comments: true, reports: true } },
+    }
+    let posts: any[]
+    let withRel = true
+    try {
+      posts = await (prisma as any).post.findMany({ ...common, select: selectWithRepost })
+    } catch {
+      posts = await (prisma as any).post.findMany({ ...common, select: selectLegacy })
+      withRel = false
+    }
+
+    // Fallback: repost ilişkisi yoksa ve gövdede [repost:<id>] marker'ı varsa alıntıyı sunucu tarafında zenginleştir
+    if (!withRel) {
+      const markerRe = /\[repost:([a-zA-Z0-9]+)\]\s*$/
+      const ids = Array.from(new Set(posts.map((p: any) => {
+        const m = typeof p.body === 'string' ? p.body.match(markerRe) : null
+        return m ? m[1] : null
+      }).filter(Boolean))) as string[]
+
+      if (ids.length) {
+        const refRows = await prisma.post.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            body: true,
+            createdAt: true,
+            owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+            images: { select: { url: true, width: true, height: true } },
+          },
+        })
+        const map: Record<string, any> = {}
+        for (const r of refRows) map[r.id] = r
+        posts = posts.map((p: any) => {
+          const m = typeof p.body === 'string' ? p.body.match(markerRe) : null
+          if (!m) return p
+          const id = m[1]
+          const ref = map[id]
+          if (!ref) return p
+          return { ...p, body: p.body.replace(markerRe, '').trimEnd(), repostOf: ref }
+        })
       }
-    })
+    }
 
     let nextCursor: string | null = null
     if (posts.length > limit) {
@@ -150,13 +217,14 @@ export async function POST(req: Request) {
   } catch {}
 
   const payload = await req.json().catch(() => null)
-  if (!payload || (typeof payload.body !== 'string' && !Array.isArray(payload.images))) {
+  if (!payload || (typeof payload.body !== 'string' && !Array.isArray(payload.images) && !payload.repostOfId)) {
     return NextResponse.json({ error: 'Geçersiz istek' }, { status: 400 })
   }
 
   const bodyText = typeof payload.body === 'string' ? payload.body.trim() : ''
   const images = Array.isArray(payload.images) ? payload.images : []
-  if (!bodyText && images.length === 0) {
+  const repostOfId = typeof payload.repostOfId === 'string' ? payload.repostOfId : null
+  if (!bodyText && images.length === 0 && !repostOfId) {
     return NextResponse.json({ error: 'Metin veya görsel ekleyin' }, { status: 400 })
   }
 
@@ -181,35 +249,43 @@ export async function POST(req: Request) {
 
   let status: Status = 'PENDING'
   try {
-    const lastAny = await prisma.post.findFirst({
-      where: { ownerId: meId },
-      orderBy: { createdAt: 'desc' },
-      select: { createdAt: true }
-    })
-    const lastTs = lastAny ? new Date(lastAny.createdAt).getTime() : 0
+    // Yayınlama penceresi: 10 dakikada en fazla 10 post doğrudan yayımlansın
     const windowMs = 10 * 60 * 1000
-    status = !lastAny || now - lastTs >= windowMs ? 'PUBLISHED' : 'PENDING'
+    const sinceWindow = new Date(now - windowMs)
+    const recentCount = await prisma.post.count({ where: { ownerId: meId, createdAt: { gte: sinceWindow } } })
+    status = recentCount < 10 ? 'PUBLISHED' : 'PENDING'
   } catch {
     status = 'PENDING'
   }
 
-  const post = await prisma.post.create({
-    data: {
-      ownerId: meId,
-      body: bodyText,
-      status,
-      images: {
-        create: images
-          .filter((x: any) => x && typeof x.url === 'string' && x.url.trim())
-          .map((x: any) => ({
-            url: x.url.trim(),
-            width: typeof x.width === 'number' ? x.width : null,
-            height: typeof x.height === 'number' ? x.height : null,
-          })),
+  async function createPost(withRepost: boolean) {
+    return (prisma as any).post.create({
+      data: {
+        ownerId: meId,
+        // Fallback için gövdeye marker ekleyebiliriz (repost ilişkisiz şema için)
+        body: withRepost ? bodyText : (repostOfId ? (bodyText ? `${bodyText}\n\n[repost:${repostOfId}]` : `[repost:${repostOfId}]`) : bodyText),
+        status,
+        ...(withRepost && repostOfId ? { repostOfId } : {}),
+        images: {
+          create: images
+            .filter((x: any) => x && typeof x.url === 'string' && x.url.trim())
+            .map((x: any) => ({
+              url: x.url.trim(),
+              width: typeof x.width === 'number' ? x.width : null,
+              height: typeof x.height === 'number' ? x.height : null,
+            })),
+        },
       },
-    },
-    select: { id: true, status: true }
-  })
+      select: { id: true, status: true },
+    })
+  }
+  let post
+  try {
+    post = await createPost(true)
+  } catch {
+    // Eski şemada repost alanı yoksa: repostOfId olmadan oluştur
+    post = await createPost(false)
+  }
 
   try { alertPostCreated({ userId: meId, postId: post.id, body: bodyText, images: images.length }).catch(() => {}) } catch {}
   return NextResponse.json({ ok: true, id: post.id, status: post.status })

@@ -58,6 +58,7 @@ model User {
   NotificationPreference NotificationPreference?
   PhoneVerification      PhoneVerification[]
   DmThreadReads          DmThreadRead[]
+  DmReactions            DmReaction[]
   PostReports            PostReport[]         @relation("UserReports")
 }
 
@@ -242,9 +243,14 @@ model Post {
   owner       User        @relation("UserPosts", fields: [ownerId], references: [id])
   status      PostStatus  @default(PENDING)
   reports     PostReport[]
+  // Rebookie (repost/quote) desteği
+  repostOfId  String?
+  repostOf    Post?       @relation("Repost", fields: [repostOfId], references: [id])
+  reposts     Post[]      @relation("Repost")
 
   @@index([ownerId, createdAt])
   @@index([status, createdAt])
+  @@index([repostOfId])
 }
 
 model PostImage {
@@ -326,6 +332,7 @@ model DmMessage {
   createdAt DateTime @default(now())
   thread    DmThread @relation(fields: [threadId], references: [id])
   author    User     @relation("DmMessageAuthor", fields: [authorId], references: [id])
+  reactions DmReaction[]
 
   @@index([threadId, createdAt])
 }
@@ -372,4 +379,17 @@ enum DmThreadStatus {
   ACTIVE
   REQUESTED
   ARCHIVED
+}
+
+model DmReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  message   DmMessage @relation(fields: [messageId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId, emoji], name: "messageId_userId_emoji")
+  @@index([messageId])
 }

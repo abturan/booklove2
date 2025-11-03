@@ -72,7 +72,6 @@ export default function ClubCard({ club }: { club: ClubItem }) {
 
         <div className="mt-3 flex items-start gap-3 text-sm text-gray-700">
           <span>👥 {club.memberCount} katılımcı</span>
-          <span>📚 {club.pickCount} seçki</span>
 
           {hasCapacity && (
             <div className="ml-auto flex flex-col items-end gap-1">

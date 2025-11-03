@@ -34,6 +34,7 @@ export default function PostHeader({
         <div className="mt-0.5 flex items-center gap-2">
           {post.owner.username && <span className="text-xs text-gray-500">@{post.owner.username}</span>}
           <span className="text-xs text-gray-400">· {timeAgo(post.createdAt)}</span>
+          {/* Rebookie rozeti istemiyoruz; aksiyon çubuğunda ikon var */}
         </div>
       </div>
     </div>

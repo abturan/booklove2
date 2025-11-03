@@ -7,4 +7,11 @@ export type Post = {
   owner: { id: string; name: string; username: string | null; slug: string | null; avatarUrl: string | null }
   images: { url: string; width: number | null; height: number | null }[]
   counts?: { likes?: number; comments?: number }
+  repostOf?: {
+    id: string
+    body: string
+    createdAt: string
+    owner: { id: string; name: string; username: string | null; slug: string | null; avatarUrl: string | null }
+    images: { url: string; width: number | null; height: number | null }[]
+  } | null
 }
