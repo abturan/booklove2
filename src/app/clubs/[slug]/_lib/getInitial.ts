@@ -84,7 +84,8 @@ export async function getInitial(slug: string): Promise<ClubInitial | null> {
       moderatorId: true,
       moderator: { select: { name: true, avatarUrl: true, username: true, slug: true } },
       events: {
-        orderBy: { startsAt: 'asc' },
+        // Son eklenen/son tarihli etkinlik en üstte görünsün
+        orderBy: { startsAt: 'desc' },
         select: {
           id: true,
           startsAt: true,

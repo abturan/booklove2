@@ -98,11 +98,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Require verified phone for logged-in users
+    // Telefon doğrulama zorunluluğunu kaldır: sadece telefon alanı dolu olsun yeter
     if (userId) {
-      const me = await (prisma as any).user.findUnique({ where: { id: userId }, select: { phone: true, phoneVerifiedAt: true } })
-      if (!me?.phone || !me.phoneVerifiedAt) {
-        return NextResponse.json({ error: 'Telefon doğrulanmadı', need: 'phone_verify' }, { status: 428 })
+      const me = await (prisma as any).user.findUnique({ where: { id: userId }, select: { phone: true } })
+      if (!me?.phone) {
+        return NextResponse.json({ error: 'Lütfen profilinizde telefon numarası girin.', need: 'phone' }, { status: 428 })
       }
     }
 

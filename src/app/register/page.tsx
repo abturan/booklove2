@@ -272,7 +272,14 @@ export default function RegisterPage() {
 
         {msg && !err && (
           <div className="rounded-xl border border-green-200 bg-green-50 text-green-800 px-4 py-3 text-sm">
-            Kayıt başarılı! E‑posta doğrulama bağlantısı gönderildi. Lütfen gelen kutunu kontrol et ve doğruladıktan sonra giriş yap.
+            <div>
+              Kayıt başarılı! E‑posta doğrulama bağlantısı gönderildi. Lütfen gelen kutunu kontrol et ve doğruladıktan sonra giriş yap.
+            </div>
+            <div className="mt-2">
+              <Link href="/" className="inline-flex items-center gap-1 rounded-lg border border-green-300 bg-white/60 px-3 py-1 text-green-800 hover:bg-white">
+                Doğrulamadan devam et
+              </Link>
+            </div>
           </div>
         )}
 

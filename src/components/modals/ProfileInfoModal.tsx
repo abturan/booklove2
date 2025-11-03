@@ -15,6 +15,7 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
   const [district, setDistrict] = useState(initial.district ?? '')
   const [phone, setPhone] = useState(initial.phone ?? '')
   const [basePhone, setBasePhone] = useState(initial.phone ?? '')
+  const defaultCountry = (process.env.NEXT_PUBLIC_SMS_DEFAULT_COUNTRY || process.env.SMS_DEFAULT_COUNTRY || 'TR').toUpperCase()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [sendBusy, setSendBusy] = useState(false)
@@ -37,7 +38,13 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
   }
 
   function formatPhoneDisplay(raw: string) {
-    const s = unmaskPhone(raw)
+    let s = unmaskPhone(raw)
+    // Heuristic fix for common TR input mistakes
+    if (defaultCountry === 'TR' && s.startsWith('+')) {
+      const d = s.slice(1)
+      if (/^0\d{10}$/.test(d)) s = `+90${d.slice(1)}`
+      else if (/^5\d{9}$/.test(d)) s = `+90${d}`
+    }
     const hasPlus = s.startsWith('+')
     const digits = hasPlus ? s.slice(1) : s
     if (!digits) return hasPlus ? '+' : ''
@@ -56,7 +63,7 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
     const parts: string[] = []
 
     // Country code in parentheses when present: (+CC)
-    if (hasPlus) parts.push(`(+${cc})`)
+    if (hasPlus && cc) parts.push(`(+${cc})`)
 
     // Country‑specific grouping
     if (hasPlus && cc === '90') {
@@ -117,6 +124,8 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
           const raw = typeof j.phone === 'string' && j.phone ? j.phone : (initial.phone ?? '')
           setBasePhone(raw || '')
           if (raw) setPhone(formatPhoneDisplay(raw))
+          // infer country from existing phone
+          // no country selector anymore
           setVerified(Boolean(j.phoneVerifiedAt))
           // clear transient states
           setCode('')
@@ -203,9 +212,7 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
     if (!district.trim()) return setErr('İlçe zorunludur.')
     if (!validPhone(phone)) return setErr('Telefon numarası geçerli değil.')
     const phoneChanged = (initial.phone ?? '').trim() !== phone.trim()
-    if (phoneChanged && !verified) {
-      return setErr('Telefon numarasını kaydetmeden önce SMS doğrulamasını tamamlayın.')
-    }
+    // SMS doğrulama zorunlu değil
     setBusy(true)
     try {
       const res = await fetch('/api/me', {
@@ -234,7 +241,7 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
         <div className="text-lg font-semibold">Üyelik için kısa bilgi</div>
         <p className="text-sm text-gray-600 mt-1">
           İl, ilçe ve telefon bilgilerin eksik görünüyor. Lütfen tamamla.
-          Telefon numaran için doğrulama gereklidir.
+          Telefon numaranı ülke koduyla birlikte yazman yeterli.
         </p>
 
         <div className="mt-4 space-y-3">
@@ -259,33 +266,20 @@ export default function ProfileInfoModal({ open, initial, onClose, onSaved }: Pr
                 aria-label="Telefon"
                 disabled={verified}
               />
-              {!verified && (
-                <button type="button" onClick={sendCode} disabled={sendBusy || resendSec > 0} className="px-3 py-2 rounded-lg border disabled:opacity-60">
-                  {sendBusy ? 'Gönderiliyor…' : resendSec > 0 ? `Tekrar: ${resendSec}s` : 'Kod Gönder'}
-                </button>
-              )}
+              {/* SMS doğrulama devre dışı */}
             </div>
             {!verified && sendMsg && <div className="mt-1 text-xs text-green-700">{sendMsg}</div>}
             {verified && <div className="mt-1 text-xs text-green-700">Telefon doğrulandı ✔</div>}
           </div>
-          {!verified && codeSent && (
-            <div>
-              <label className="text-sm font-medium">SMS Kod</label>
-              <div className="flex items-center gap-2 mt-1">
-                <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D+/g, '').slice(0, 6))} className="flex-1 px-3 py-2 rounded-lg border" placeholder="6 haneli kod" />
-                <button type="button" onClick={verifyCode} disabled={verifyBusy || code.length !== 6} className="px-3 py-2 rounded-lg bg-rose-600 text-white disabled:opacity-60">
-                  {verifyBusy ? 'Doğrulanıyor…' : 'Doğrula'}
-                </button>
-              </div>
-              {verifyMsg && <div className="mt-1 text-xs text-green-700">{verifyMsg}</div>}
-            </div>
+          {false && codeSent && (
+            <div />
           )}
           {err && <div className="text-sm text-red-600">{err}</div>}
         </div>
 
         <div className="mt-5 flex gap-2 justify-end">
           <button className="px-4 py-2 rounded-lg border" onClick={onClose}>Vazgeç</button>
-          <button className="px-4 py-2 rounded-lg bg-rose-600 text-white disabled:opacity-60" disabled={busy || ((basePhone ?? '').trim() !== phone.trim() && !verified)} onClick={save}>
+          <button className="px-4 py-2 rounded-lg bg-rose-600 text-white disabled:opacity-60" disabled={busy} onClick={save}>
             {busy ? 'Kaydediliyor…' : 'Kaydet'}
           </button>
         </div>

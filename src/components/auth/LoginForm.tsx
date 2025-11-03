@@ -42,6 +42,16 @@ export default function LoginForm() {
         setError(res.error === 'CredentialsSignin' ? 'E-posta veya şifre hatalı.' : 'Giriş yapılamadı.')
         return
       }
+      // Şifre reset zorunluluğu var mı kontrol et
+      try {
+        const chk = await fetch('/api/me/reset-required', { cache: 'no-store' })
+        const j = await chk.json().catch(() => null)
+        if (chk.ok && j?.required) {
+          router.push('/reset-required')
+          router.refresh()
+          return
+        }
+      } catch {}
       router.push('/')
       router.refresh()
     } finally {

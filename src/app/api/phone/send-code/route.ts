@@ -6,17 +6,29 @@ import { sendSms } from '@/lib/sms'
 
 function toE164(raw: string): string | null {
   const only = String(raw).replace(/[^\d+]/g, '')
-  if (only.startsWith('+') && /^\+\d{10,15}$/.test(only)) return only
-  // Simple TR normalization if configured
-  const country = (process.env.SMS_DEFAULT_COUNTRY || '').toUpperCase()
+  const country = (process.env.SMS_DEFAULT_COUNTRY || 'TR').toUpperCase()
+  // If starts with +, try to fix common TR mistakes
+  if (only.startsWith('+')) {
+    const digits = only.slice(1).replace(/\D/g, '')
+    if (country === 'TR') {
+      // +0534xxxxxxx → +90534xxxxxxx
+      if (/^0\d{10}$/.test(digits)) return `+90${digits.slice(1)}`
+      // +534xxxxxxx → +90534xxxxxxx
+      if (/^5\d{9}$/.test(digits)) return `+90${digits}`
+      // +90********** already ok
+      if (/^90\d{10}$/.test(digits)) return `+${digits}`
+    }
+    // Other countries or already valid
+    return /^\+\d{10,15}$/.test('+' + digits) ? ('+' + digits) : null
+  }
+  // No plus: try default country heuristics
+  const digits = only.replace(/\D/g, '')
   if (country === 'TR') {
-    const digits = only.replace(/\D/g, '')
     if (/^0\d{10}$/.test(digits)) return `+90${digits.slice(1)}`
     if (/^5\d{9}$/.test(digits)) return `+90${digits}`
     if (/^90\d{10}$/.test(digits)) return `+${digits}`
   }
-  // Fallback: if it looks like national but not international, reject
-  return /^\+?\d{10,15}$/.test(only) ? (only.startsWith('+') ? only : `+${only}`) : null
+  return /^\d{10,15}$/.test(digits) ? `+${digits}` : null
 }
 
 export async function POST(req: Request) {
@@ -24,7 +36,7 @@ export async function POST(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { phone } = await req.json().catch(() => ({}))
   const normalized = phone ? toE164(String(phone)) : null
-  if (!normalized) return NextResponse.json({ error: 'Geçerli telefon girin (örn. +90 5xx xxx xx xx)' }, { status: 400 })
+  if (!normalized) return NextResponse.json({ error: 'Geçerli telefon girin. Örn: +90 5xx xxx xx xx' }, { status: 400 })
 
   const userId = session.user.id
   const now = new Date()

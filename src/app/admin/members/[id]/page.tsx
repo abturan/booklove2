@@ -2,7 +2,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { assignMemberToClub, adminUpdateUser, deactivateMembership, removeFromClub, cancelSubscriptionAction } from '../actions'
+import { assignMemberToClub, adminUpdateUser, deactivateMembership, removeFromClub, cancelSubscriptionAction, adminRequirePasswordReset, adminSendPasswordResetEmail } from '../actions'
 import Select from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 
@@ -104,6 +104,20 @@ export default async function MemberDetailPage({
 
   return (
     <div className="space-y-6">
+      {(searchParams?.msg || searchParams?.err) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={
+            (searchParams?.err
+              ? 'border-red-200 bg-red-50 text-red-800'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-800') +
+            ' rounded-xl border px-4 py-3'
+          }
+        >
+          {searchParams?.err || searchParams?.msg}
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">{user.name || '—'}</h1>
@@ -151,6 +165,34 @@ export default async function MemberDetailPage({
             <button className="rounded-xl bg-gray-900 px-4 py-2 text-white">Kaydet</button>
           </div>
         </form>
+        <div className="mt-3 space-y-2">
+          <form action={adminRequirePasswordReset} className="inline">
+            <input type="hidden" name="userId" value={user.id} />
+            <button type="submit" className="rounded-xl border px-4 py-2 text-sm hover:bg-gray-50">
+              Şifreyi sıfırla (girişte zorunlu)
+            </button>
+          </form>
+          <form action={adminSendPasswordResetEmail} className="inline ml-2">
+            <input type="hidden" name="userId" value={user.id} />
+            <button type="submit" className="rounded-xl border px-4 py-2 text-sm hover:bg-gray-50">
+              Şifre sıfırlama e‑postası gönder
+            </button>
+          </form>
+          {(searchParams?.msg || searchParams?.err) && (
+            <div
+              role="status"
+              aria-live="polite"
+              className={
+                (searchParams?.err
+                  ? 'border-red-200 bg-red-50 text-red-800'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-800') +
+                ' inline-block rounded-xl border px-3 py-1 text-xs ml-2'
+              }
+            >
+              {searchParams?.err || searchParams?.msg}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Manuel abonelik/üyelik atama */}

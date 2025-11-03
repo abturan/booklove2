@@ -4,6 +4,9 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import crypto from 'crypto'
+import { sendPasswordResetEmail } from '@/lib/mail'
 
 export async function assignMemberToClub(formData: FormData) {
   const session = await auth()
@@ -123,4 +126,51 @@ export async function cancelSubscriptionAction(formData: FormData) {
   if (!subscriptionId) throw new Error('Abonelik ID gerekli')
   await prisma.subscription.update({ where: { id: subscriptionId }, data: { active: false, canceledAt: new Date() } })
   revalidatePath(`/admin/members/${userId}`)
+}
+
+export async function adminRequirePasswordReset(formData: FormData) {
+  const session = await auth()
+  if (!session?.user || (session.user as any).role !== 'ADMIN') throw new Error('Yetkisiz işlem')
+  const userId = String(formData.get('userId') || '')
+  if (!userId) throw new Error('Kullanıcı ID gerekli')
+  try {
+    // Eski kullanılmamış tokenları temizleyip yeni bir token kaydı oluştur
+    await prisma.passwordResetToken.deleteMany({ where: { userId, usedAt: null } })
+    const raw = crypto.randomBytes(32).toString('hex')
+    const tokenHash = crypto.createHash('sha256').update(raw).digest('hex')
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14) // 14 gün
+    await prisma.passwordResetToken.create({ data: { userId, tokenHash, expiresAt } })
+    revalidatePath(`/admin/members/${userId}`)
+    redirect(`/admin/members/${userId}?msg=${encodeURIComponent('Kullanıcı için şifre belirleme zorunlu kılındı.')}`)
+  } catch (e: any) {
+    const m = typeof e?.message === 'string' ? e.message : 'İşlem başarısız'
+    redirect(`/admin/members/${userId}?err=${encodeURIComponent(m)}`)
+  }
+}
+
+export async function adminSendPasswordResetEmail(formData: FormData) {
+  const session = await auth()
+  if (!session?.user || (session.user as any).role !== 'ADMIN') throw new Error('Yetkisiz işlem')
+  const userId = String(formData.get('userId') || '')
+  if (!userId) throw new Error('Kullanıcı ID gerekli')
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+    if (!user?.email) throw new Error('Kullanıcının e‑posta adresi yok')
+
+    await prisma.passwordResetToken.deleteMany({ where: { userId, usedAt: null } })
+    const raw = crypto.randomBytes(32).toString('hex')
+    const tokenHash = crypto.createHash('sha256').update(raw).digest('hex')
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 12) // 12 saat
+    await prisma.passwordResetToken.create({ data: { userId, tokenHash, expiresAt } })
+
+    const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.APP_ORIGIN || '').replace(/\/$/, '')
+    const link = `${base || ''}/reset-password?token=${raw}`
+    await sendPasswordResetEmail(user.email, link)
+
+    revalidatePath(`/admin/members/${userId}`)
+    redirect(`/admin/members/${userId}?msg=${encodeURIComponent('Şifre sıfırlama e‑postası gönderildi.')}`)
+  } catch (e: any) {
+    const m = typeof e?.message === 'string' ? e.message : 'E‑posta gönderilemedi'
+    redirect(`/admin/members/${userId}?err=${encodeURIComponent(m)}`)
+  }
 }

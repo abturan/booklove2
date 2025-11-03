@@ -2,10 +2,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 export default function useNotificationCount() {
   const [count, setCount] = useState(0)
+  const { status } = useSession()
   useEffect(() => {
+    if (status !== 'authenticated') { setCount(0); return }
     let alive = true
     async function load() {
       try {
@@ -19,7 +22,6 @@ export default function useNotificationCount() {
     const h = () => load()
     window.addEventListener('notif:changed', h)
     return () => { alive = false; clearInterval(t); window.removeEventListener('notif:changed', h) }
-  }, [])
+  }, [status])
   return { count }
 }
-

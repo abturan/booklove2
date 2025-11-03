@@ -24,15 +24,16 @@ export async function POST(req: Request) {
 
     const raw = crypto.randomBytes(32).toString('hex')
     const hash = crypto.createHash('sha256').update(raw).digest('hex')
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60)
+    // 12 saat geçerli olsun
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 12)
 
     await prisma.passwordResetToken.create({
       data: { userId: user.id, tokenHash: hash, expiresAt },
     })
 
     const origin = new URL(req.url).origin
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
-    const link = `${appUrl}/reset-password?token=${raw}`
+    const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || origin).replace(/\/$/, '')
+    const link = `${base}/reset-password?token=${raw}`
 
     await sendPasswordResetEmail(user.email, link)
 

@@ -66,6 +66,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.avatarUrl = (user as any).avatarUrl ?? null
         token.username = (user as any).username ?? null
       }
+      // Reset zorunluluğu claim (en azından login sonrasında kontrol edilsin)
+      try {
+        if (token?.id) {
+          const { prisma } = await import('./prisma')
+          const count = await prisma.passwordResetToken.count({ where: { userId: String(token.id), usedAt: null, expiresAt: { gt: new Date() } } })
+          ;(token as any).passwordResetRequired = count > 0
+        }
+      } catch {}
       return token
     },
 
@@ -76,6 +84,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.avatarUrl = (token.avatarUrl as string | null) ?? null
         session.user.username = (token.username as string | null) ?? null
       }
+      ;(session as any).passwordResetRequired = (token as any)?.passwordResetRequired || false
       return session
     },
   },
