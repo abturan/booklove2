@@ -159,6 +159,9 @@ export async function adminSendPasswordResetEmail(formData: FormData) {
   const userId = String(formData.get('userId') || '')
   if (!userId) throw new Error('Kullanıcı ID gerekli')
   try {
+    if (!process.env.SMTP_HOST) {
+      throw new Error('E‑posta servisi yapılandırılmamış (SMTP_HOST eksik).')
+    }
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
     if (!user?.email) throw new Error('Kullanıcının e‑posta adresi yok')
 
