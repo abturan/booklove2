@@ -5,6 +5,10 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+// RSC redirect() throws a special error with digest "NEXT_REDIRECT"; don't treat it as failure
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — internal helper is the canonical way in Next.js
+import { isRedirectError } from 'next/dist/client/components/redirect'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '@/lib/mail'
 
@@ -143,6 +147,7 @@ export async function adminRequirePasswordReset(formData: FormData) {
     revalidatePath(`/admin/members/${userId}`)
     redirect(`/admin/members/${userId}?msg=${encodeURIComponent('Kullanıcı için şifre belirleme zorunlu kılındı.')}`)
   } catch (e: any) {
+    if (isRedirectError?.(e)) throw e
     const m = typeof e?.message === 'string' ? e.message : 'İşlem başarısız'
     redirect(`/admin/members/${userId}?err=${encodeURIComponent(m)}`)
   }
@@ -170,6 +175,7 @@ export async function adminSendPasswordResetEmail(formData: FormData) {
     revalidatePath(`/admin/members/${userId}`)
     redirect(`/admin/members/${userId}?msg=${encodeURIComponent('Şifre sıfırlama e‑postası gönderildi.')}`)
   } catch (e: any) {
+    if (isRedirectError?.(e)) throw e
     const m = typeof e?.message === 'string' ? e.message : 'E‑posta gönderilemedi'
     redirect(`/admin/members/${userId}?err=${encodeURIComponent(m)}`)
   }
