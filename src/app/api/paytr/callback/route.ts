@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { alertTicket } from '@/lib/adminAlert'
 import { getPaytrEnv, verifyCallbackHash } from '@/lib/paytr'
+import { createInvoiceForPaytr } from '@/lib/parasut'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -54,7 +55,14 @@ export async function POST(req: NextRequest) {
 
     const intent = await prisma.paymentIntent.findFirst({
       where: { merchantOid: p.merchant_oid },
-      select: { id: true, userId: true, clubId: true, clubEventId: true },
+      select: {
+        id: true,
+        userId: true,
+        clubId: true,
+        clubEventId: true,
+        user: { select: { name: true, email: true } },
+        event: { select: { title: true, club: { select: { name: true } } } },
+      },
     })
 
     if (intent) {
@@ -87,6 +95,18 @@ export async function POST(req: NextRequest) {
           }),
         ])
         try { alertTicket({ userId: intent.userId, clubId: intent.clubId, eventId: intent.clubEventId, amountTRY: Number(p.total_amount) / 100, status: 'SUCCEEDED', merchantOid: p.merchant_oid }).catch(() => {}) } catch {}
+        // Fire-and-forget: create Parasut sales invoice
+        try {
+          const descParts = [intent.event?.title, intent.event?.club?.name].filter(Boolean)
+          const description = descParts.length ? `${descParts.join(' – ')}` : 'Etkinlik Üyeliği'
+          void createInvoiceForPaytr({
+            merchantOid: p.merchant_oid,
+            buyerName: intent.user?.name || 'Müşteri',
+            buyerEmail: intent.user?.email || undefined,
+            description,
+            amountTRY: Number(p.total_amount) / 100,
+          }).catch(() => {})
+        } catch {}
       } else {
         await prisma.paymentIntent.update({
           where: { id: intent.id },
