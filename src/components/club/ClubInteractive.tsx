@@ -18,6 +18,7 @@ import EventOverviewCard from './UpcomingSessionCard'
 import EventNavigation from './EventNavigation'
 import ChatPanel from '@/components/ChatPanel'
 import useOnlineMap from '@/lib/hooks/useOnlineMap'
+import MeetingSection from './MeetingSection'
 
 type Pending = { merchant_oid: string; iframe_url: string; createdAt: number } | null
 
@@ -25,6 +26,10 @@ const pendingKeyFor = (eventId: string) => `paytr_pending_${eventId}`
 
 const CHAT_HEADER_HEIGHT = 56
 const FOOTER_HEIGHT_VAR = 'var(--mobile-footer-height, 72px)'
+const MEETING_FEATURE_ENABLED = (() => {
+  const flag = (process.env.NEXT_PUBLIC_LIVEKIT_ENABLED || '0').toString().toLowerCase()
+  return flag === '1' || flag === 'true' || flag === 'yes' || flag === 'on'
+})()
 
 export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
   const search = useSearchParams()
@@ -545,6 +550,19 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
             capacity={capacity}
             book={book}
           >
+            {/* Desktop: Meeting + a spacer below it */}
+            {MEETING_FEATURE_ENABLED && (
+              <div className="hidden lg:block">
+              <MeetingSection
+                eventId={activeEvent.id}
+                eventStartsAt={activeEvent.startsAt}
+                isMember={isMember || initial.club.isModerator}
+                isModerator={initial.club.isModerator}
+                moderatorId={initial.club.moderatorId}
+              />
+                <div className="h-6" />
+              </div>
+            )}
             <ChatSection
               enabled={canPostToChat}
               eventId={activeEvent.id}
@@ -555,6 +573,21 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
             />
           </EventOverviewCard>
         </div>
+
+      {/* Mobile: show Meeting section openly below the overview card */}
+      {MEETING_FEATURE_ENABLED && (
+        <div className="lg:hidden">
+          <div className="mt-4" style={{ marginBottom: 'calc(var(--mobile-footer-height, 72px) + 80px)' }}>
+          <MeetingSection
+            eventId={activeEvent.id}
+            eventStartsAt={activeEvent.startsAt}
+            isMember={isMember || initial.club.isModerator}
+            isModerator={initial.club.isModerator}
+            moderatorId={initial.club.moderatorId}
+          />
+          </div>
+        </div>
+      )}
 
       <aside className="hidden space-y-4 lg:block lg:min-w-0">
         <EventNavigation

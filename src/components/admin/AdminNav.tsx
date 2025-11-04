@@ -16,13 +16,13 @@ const items = [
 export default function AdminNav() {
   const pathname = usePathname()
   return (
-    <nav className="flex gap-2">
+    <nav className="flex gap-2 overflow-x-auto whitespace-nowrap rounded-xl border px-2 py-1 sm:border-0 sm:px-0 sm:py-0 flex-wrap">
       {items.map(i => (
         <Link
           key={i.href}
           href={i.href}
           className={clsx(
-            'rounded-full px-3 py-1.5 text-sm',
+            'rounded-full px-3 py-1.5 text-sm shrink-0',
             pathname === i.href
               ? 'bg-primary text-white'
               : 'bg-white ring-1 ring-black/10 hover:bg-gray-50'

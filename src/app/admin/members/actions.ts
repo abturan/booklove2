@@ -12,6 +12,45 @@ import { isRedirectError } from 'next/dist/client/components/redirect'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '@/lib/mail'
 
+export async function adminSoftDeleteUser(formData: FormData) {
+  const session = await auth()
+  if (!session?.user || (session.user as any).role !== 'ADMIN') throw new Error('Yetkisiz işlem')
+  const userId = String(formData.get('userId') || '')
+  if (!userId) throw new Error('Kullanıcı ID gerekli')
+  // Ensure column exists to avoid Prisma unknown field error on older DBs
+  try {
+    await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)')
+  } catch {}
+  await prisma.$transaction(async (tx) => {
+    try {
+      await tx.user.update({ where: { id: userId }, data: { deletedAt: new Date() } })
+    } catch {
+      // Column may still be unavailable on some providers; ignore and continue with membership deactivation
+    }
+    await tx.membership.updateMany({ where: { userId }, data: { isActive: false } })
+    await tx.subscription.updateMany({ where: { userId, active: true }, data: { active: false, canceledAt: new Date() } })
+  })
+  revalidatePath(`/admin/members/${userId}`)
+  revalidatePath('/admin/members')
+}
+
+export async function adminRestoreUser(formData: FormData) {
+  const session = await auth()
+  if (!session?.user || (session.user as any).role !== 'ADMIN') throw new Error('Yetkisiz işlem')
+  const userId = String(formData.get('userId') || '')
+  if (!userId) throw new Error('Kullanıcı ID gerekli')
+  try {
+    await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)')
+  } catch {}
+  try {
+    await prisma.user.update({ where: { id: userId }, data: { deletedAt: null } })
+  } catch {
+    // ignore if column not present
+  }
+  revalidatePath(`/admin/members/${userId}`)
+  revalidatePath('/admin/members')
+}
+
 export async function assignMemberToClub(formData: FormData) {
   const session = await auth()
   if (!session?.user || (session.user as any).role !== 'ADMIN') {

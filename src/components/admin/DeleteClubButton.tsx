@@ -31,7 +31,7 @@ export default function DeleteClubButton({ id, name }: { id: string; name: strin
       type="button"
       onClick={onDelete}
       disabled={pending}
-      className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60"
+      className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60 whitespace-nowrap"
     >
       {pending ? 'Siliniyor…' : 'Sil'}
     </button>

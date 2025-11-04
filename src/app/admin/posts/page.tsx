@@ -51,17 +51,17 @@ export default async function PostsPage({ searchParams }: { searchParams?: { q?:
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold">Post’lar</h2>
-        <form action="/admin/posts" className="flex items-center gap-2">
-          <input name="q" defaultValue={q} placeholder="İçerik, kullanıcı, yorum" className="h-10 w-72 rounded-xl border px-3" />
+        <form action="/admin/posts" className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input name="q" defaultValue={q} placeholder="İçerik, kullanıcı, yorum" className="h-10 w-full sm:w-72 rounded-xl border px-3" />
           <input type="date" name="from" defaultValue={from ? new Date(from).toISOString().slice(0,10) : ''} className="h-10 rounded-xl border px-3 text-sm" />
           <input type="date" name="to" defaultValue={to ? new Date(to).toISOString().slice(0,10) : ''} className="h-10 rounded-xl border px-3 text-sm" />
           <button className="h-10 rounded-xl bg-primary px-4 text-white">Ara</button>
         </form>
       </div>
       <div className="overflow-x-auto rounded-2xl border">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>
               <th className="px-4 py-3">Kullanıcı</th>
@@ -83,7 +83,7 @@ export default async function PostsPage({ searchParams }: { searchParams?: { q?:
                 <td className="px-4 py-3">{new Date(p.createdAt).toLocaleString('tr-TR')}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center gap-2 justify-end">
-                    <Link href={`/admin/posts/${p.id}`} className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50">Detay</Link>
+                    <Link href={`/admin/posts/${p.id}`} className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap">Detay</Link>
                     <PostRowActions id={p.id} />
                   </div>
                 </td>

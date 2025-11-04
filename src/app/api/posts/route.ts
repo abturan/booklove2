@@ -138,6 +138,15 @@ export async function GET(req: Request) {
           createdAt: true,
           owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
           images: { select: { url: true, width: true, height: true } },
+          repostOf: {
+            select: {
+              id: true,
+              body: true,
+              createdAt: true,
+              owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+              images: { select: { url: true, width: true, height: true } },
+            },
+          },
         },
       },
       _count: { select: { likes: true, comments: true, reports: true } },

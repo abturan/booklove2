@@ -9,13 +9,14 @@ declare global {
 
 export default function Captcha({ onVerify }: { onVerify: (token: string) => void }) {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''
+  const enabled = (process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED || '1').toString() !== '0'
   const ref = useRef<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<number | null>(null)
   const onVerifyRef = useRef(onVerify)
   onVerifyRef.current = onVerify
 
   useEffect(() => {
-    if (!siteKey) {
+    if (!enabled || !siteKey) {
       onVerify('dev')
       return
     }
@@ -67,6 +68,6 @@ export default function Captcha({ onVerify }: { onVerify: (token: string) => voi
     }
   }, [siteKey])
 
-  if (!siteKey) return null
+  if (!enabled || !siteKey) return null
   return <div ref={ref} />
 }

@@ -35,6 +35,7 @@ export default async function MemberDetailPage({
         phoneVerifiedAt: true,
         createdAt: true,
         lastSeenAt: true,
+        // deletedAt may not exist if migration not yet applied; avoid selecting to prevent Prisma error
       },
     }),
     prisma.club.findMany({
@@ -118,7 +119,7 @@ export default async function MemberDetailPage({
           {searchParams?.err || searchParams?.msg}
         </div>
       )}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">{user.name || '—'}</h1>
           <div className="text-sm text-gray-600">{user.email}</div>
@@ -133,12 +134,33 @@ export default async function MemberDetailPage({
             E‑posta: {user.emailVerifiedAt ? 'Doğrulandı' : 'Doğrulanmadı'} · Telefon: {user.phoneVerifiedAt ? 'Doğrulandı' : 'Doğrulanmadı'}
           </div>
         </div>
-        <div className="text-right text-sm text-gray-700 space-y-0.5">
+        <div className="text-left sm:text-right text-sm text-gray-700 space-y-0.5">
           <div>Aktif etkinlik üyeliği: <span className="font-medium">{activeEventMemberships.length}</span></div>
           <div>Post: <span className="font-medium">{(counts?._count as any)?.posts ?? 0}</span></div>
           <div>Yorum: <span className="font-medium">{(counts?._count as any)?.comments ?? 0}</span></div>
           <div>Beğeni: <span className="font-medium">{(counts?._count as any)?.likes ?? 0}</span></div>
           <div>Sohbet: <span className="font-medium">{(counts?._count as any)?.ChatMessage ?? 0}</span></div>
+        </div>
+      </div>
+
+      {/* Sil/Pasifleştir */}
+      <div className="rounded-2xl border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="font-semibold">Hesap durumu</div>
+          <div className="text-sm text-gray-600">{user.deletedAt ? `Pasifleştirildi (${new Date(user.deletedAt).toLocaleDateString('tr-TR')})` : 'Aktif'}</div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {!user.deletedAt ? (
+            <form action={require('../actions').adminSoftDeleteUser}>
+              <input type="hidden" name="userId" value={user.id} />
+              <button className="rounded-full border px-2.5 py-1 text-xs text-red-700 hover:bg-red-50 whitespace-nowrap">Hesabı pasifleştir (soft delete)</button>
+            </form>
+          ) : (
+            <form action={require('../actions').adminRestoreUser}>
+              <input type="hidden" name="userId" value={user.id} />
+              <button className="rounded-full border px-2.5 py-1 text-xs text-green-700 hover:bg-green-50 whitespace-nowrap">Hesabı yeniden etkinleştir</button>
+            </form>
+          )}
         </div>
       </div>
 
@@ -238,7 +260,8 @@ export default async function MemberDetailPage({
       {/* Üyelikler */}
       <div className="rounded-2xl border">
         <div className="border-b px-4 py-3 font-semibold">Üyelikler</div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>
               <th className="px-4 py-3">Kulüp</th>
@@ -291,31 +314,33 @@ export default async function MemberDetailPage({
                   <form action={deactivateMembership}>
                     <input type="hidden" name="membershipId" value={m.id} />
                     <input type="hidden" name="userId" value={user.id} />
-                    <button className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50">Etkinlikten çıkar</button>
+                    <button className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap">Etkinlikten çıkar</button>
                   </form>
                   <form action={removeFromClub} className="mt-1">
                     <input type="hidden" name="userId" value={user.id} />
                     <input type="hidden" name="clubId" value={m.club.id} />
-                    <button className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50">Kulüpten çıkar</button>
+                    <button className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap">Kulüpten çıkar</button>
                   </form>
                 </td>
               </tr>
             ))}
             {!memberships.length && (
               <tr>
-                <td className="px-4 py-6 text-gray-500" colSpan={5}>
+                <td className="px-4 py-6 text-gray-500" colSpan={6}>
                   Üyelik bulunamadı.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Abonelikler */}
       <div className="rounded-2xl border">
         <div className="border-b px-4 py-3 font-semibold">Abonelikler</div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>
               <th className="px-4 py-3">Kulüp</th>
@@ -373,7 +398,7 @@ export default async function MemberDetailPage({
                     <form action={cancelSubscriptionAction}>
                       <input type="hidden" name="subscriptionId" value={s.id} />
                       <input type="hidden" name="userId" value={user.id} />
-                      <button className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50">İptal et</button>
+                      <button className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap">İptal et</button>
                     </form>
                   )}
                 </td>
@@ -381,13 +406,14 @@ export default async function MemberDetailPage({
             ))}
             {!subscriptions.length && (
               <tr>
-                <td className="px-4 py-6 text-gray-500" colSpan={5}>
+                <td className="px-4 py-6 text-gray-500" colSpan={6}>
                   Abonelik bulunamadı.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Takip ilişkileri */}

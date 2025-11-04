@@ -1,6 +1,8 @@
 // src/lib/recaptcha.ts
 export async function verifyRecaptcha(token?: string | null): Promise<boolean> {
+  const enabled = String(process.env.RECAPTCHA_ENABLED ?? '1').toLowerCase() !== '0'
   const secret = process.env.RECAPTCHA_SECRET_KEY
+  if (!enabled) return true
   if (!secret) return true // dev ortamı: doğrulamayı atla
   if (!token) return false
   try {
@@ -17,4 +19,3 @@ export async function verifyRecaptcha(token?: string | null): Promise<boolean> {
     return false
   }
 }
-

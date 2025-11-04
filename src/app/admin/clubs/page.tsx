@@ -8,11 +8,23 @@ import DeleteClubButton from '@/components/admin/DeleteClubButton'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ClubsPage() {
+export default async function ClubsPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
   const session = await auth()
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/')
 
+  const q = (typeof searchParams?.q === 'string' ? searchParams?.q : Array.isArray(searchParams?.q) ? searchParams?.q[0] : '').trim()
+
+  const where: any = {}
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: 'insensitive' } },
+      { moderator: { is: { name: { contains: q, mode: 'insensitive' } } } },
+      { moderator: { is: { email: { contains: q, mode: 'insensitive' } } } },
+    ]
+  }
+
   const clubs = await prisma.club.findMany({
+    where,
     orderBy: { updatedAt: 'desc' },
     select: {
       id: true,
@@ -21,6 +33,7 @@ export default async function ClubsPage() {
       published: true,
       updatedAt: true,
       priceTRY: true,
+      moderator: { select: { name: true, email: true } },
       events: {
         orderBy: { startsAt: 'asc' },
         select: {
@@ -37,13 +50,28 @@ export default async function ClubsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold">Kulüpler</h2>
-        <Link href="/admin/clubs/new" className="rounded-xl bg-primary px-4 py-2 text-white">Yeni Kulüp</Link>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <form action="/admin/clubs" className="flex w-full max-w-md items-center gap-2">
+            <input
+              type="search"
+              name="q"
+              defaultValue={q}
+              placeholder="Kulüp adı, moderatör adı veya e-posta"
+              className="w-full rounded-xl border px-3 py-2 text-sm"
+            />
+            <button type="submit" className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">Ara</button>
+            {q && (
+              <Link href="/admin/clubs" className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">Temizle</Link>
+            )}
+          </form>
+          <Link href="/admin/clubs/new" className="rounded-full bg-primary px-3 py-1.5 text-sm text-white whitespace-nowrap">Yeni Kulüp</Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>
               <th className="px-4 py-3">Kulüp</th>
@@ -66,6 +94,9 @@ export default async function ClubsPage() {
                   <td className="px-4 py-3">
                     <div className="font-medium">{c.name}</div>
                     <div className="text-xs text-gray-500">/{c.slug}</div>
+                    {c.moderator && (
+                      <div className="mt-1 text-xs text-gray-500">Moderatör: {c.moderator.name || '—'}{c.moderator.email ? ` · ${c.moderator.email}` : ''}</div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {c.events.length === 0 ? (
@@ -111,7 +142,7 @@ export default async function ClubsPage() {
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <Link
                         href={`/admin/clubs/${c.id}/edit`}
-                        className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50"
+                        className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap"
                       >
                         Düzenle
                       </Link>

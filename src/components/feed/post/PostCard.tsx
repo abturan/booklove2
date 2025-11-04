@@ -8,6 +8,7 @@ import type { Post } from './types'
 import PostHeader from './PostHeader'
 import PostBody from './PostBody'
 import PostImages from './PostImages'
+import QuoteEmbed from './QuoteEmbed'
 import PostActions from './PostActions'
 import PostComments from './PostComments'
 import PostEditor from './PostEditor'
@@ -121,10 +122,8 @@ export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { pos
           <PostImages images={post.images} />
 
           {post.repostOf && (
-            <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <div className="text-xs text-gray-500 mb-1">@{post.repostOf.owner.username || post.repostOf.owner.name || 'Kullanıcı'}’den alıntı</div>
-              <PostBody text={post.repostOf.body} />
-              <PostImages images={post.repostOf.images} />
+            <div className="mt-2">
+              <QuoteEmbed quoted={post.repostOf as any} />
             </div>
           )}
 
@@ -226,10 +225,29 @@ export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { pos
 
       <Modal open={rebookOpen} onClose={() => setRebookOpen(false)} title="Rebookie paylaş">
         <div className="space-y-3">
+          {(() => {
+            // Determine root quoted post if current post is itself a rebook
+            function getRootQuoted(p: any): any {
+              let cur = p
+              // if current post quotes another, start from that
+              if (cur?.repostOf) cur = cur.repostOf
+              while (cur?.repostOf) cur = cur.repostOf
+              return cur
+            }
+            const target: any = getRootQuoted(post as any)
+            const preview = {
+              id: target.id,
+              body: target.body,
+              owner: { name: target.owner?.name, username: target.owner?.username || null },
+              images: target.images || [],
+            }
+            return (
           <PostComposer
             onPosted={(id) => { setRebookOpen(false); onPosted?.(id) }}
-            repostOf={{ id: post.id, body: post.body, owner: { name: post.owner.name, username: post.owner.username || null }, images: post.images }}
+            repostOf={preview as any}
           />
+            )
+          })()}
         </div>
       </Modal>
     </div>

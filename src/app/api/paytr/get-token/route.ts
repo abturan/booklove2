@@ -18,8 +18,11 @@ function makeMerchantOid(clubId: string, eventId: string) {
   const cleanedClub = String(clubId).replace(/[^A-Za-z0-9]/g, '')
   const cleanedEvent = String(eventId).replace(/[^A-Za-z0-9]/g, '')
   const t = Date.now().toString(36)
-  const r = Math.random().toString(36).slice(2, 8)
-  return (`SUB${cleanedClub}${cleanedEvent}${t}${r}`).slice(0, 64)
+  const r = Math.random().toString(36).slice(2, 10)
+  // Put entropy first to avoid truncation eliminating randomness
+  const head = `SUB${t}${r}`
+  const tail = `${cleanedClub.slice(0, 16)}${cleanedEvent.slice(0, 16)}`
+  return (head + tail).slice(0, 64)
 }
 
 export async function POST(req: NextRequest) {
@@ -107,7 +110,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userIp = getClientIp(req.headers)
-    const merchant_oid = makeMerchantOid(String(clubId), String(clubEventId))
+    let merchant_oid = makeMerchantOid(String(clubId), String(clubEventId))
     const payment_amount = amountToKurus(amount)
     const basketLabel = clubEventTitle ? `${clubEventTitle} – ${clubName}` : `Etkinlik Üyeliği - ${clubName}`
     const user_basket = toPaytrBasketBase64([[basketLabel, amount.toFixed(2), 1]])
@@ -135,16 +138,31 @@ export async function POST(req: NextRequest) {
     })
 
     if (userId) {
-      await prisma.paymentIntent.create({
-        data: {
-          userId,
-          clubId,
-          clubEventId,
-          amountTRY: payment_amount,
-          status: 'REQUIRES_PAYMENT',
-          merchantOid: merchant_oid,
-        },
-      })
+      // Create intent; on accidental merchantOid collision, retry with a fresh oid (rare)
+      let created = false
+      for (let i = 0; i < 3 && !created; i++) {
+        try {
+          await prisma.paymentIntent.create({
+            data: {
+              userId,
+              clubId,
+              clubEventId,
+              amountTRY: payment_amount,
+              status: 'REQUIRES_PAYMENT',
+              merchantOid: merchant_oid,
+            },
+          })
+          created = true
+        } catch (e: any) {
+          const msg = String(e?.message || '')
+          if (msg.includes('Unique constraint') && msg.includes('merchantOid')) {
+            merchant_oid = makeMerchantOid(String(clubId), String(clubEventId))
+            continue
+          }
+          throw e
+        }
+      }
+      if (!created) throw new Error('Tekrar deneyiniz (OID üretimi başarısız).')
       try { alertTicket({ userId, clubId, eventId: clubEventId, amountTRY: amount, status: 'REQUIRES_PAYMENT', merchantOid: merchant_oid }).catch(() => {}) } catch {}
     }
 

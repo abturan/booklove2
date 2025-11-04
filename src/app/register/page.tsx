@@ -80,6 +80,14 @@ export default function RegisterPage() {
     e.preventDefault()
     setErr(null)
     setMsg(null)
+    // basic email validation + common TLD typo guard
+    const em = email.trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i
+    const tldTypo = /(\.(cmo|con|clm))$/i
+    if (!emailRegex.test(em) || tldTypo.test(em)) {
+      setErr('E‑posta adresi geçersiz görünüyor. Yazım hatası olabilir (örn. ".com" yerine ".clm"). Lütfen kontrol edin.')
+      return
+    }
     if (!agreeKvkk || !agreeTerms) {
       setErr('Kayıt için “Kullanım Koşulları” ve “Kişisel Veriler Kanunu” metinlerini onaylamanız gerekir.')
       return
@@ -94,7 +102,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, username: uname, captchaToken }),
+        body: JSON.stringify({ name, email: em, password, username: uname, captchaToken }),
       })
       const j = await res.json()
       if (!res.ok || !j?.ok) {
@@ -317,8 +325,9 @@ export default function RegisterPage() {
 // basit reCAPTCHA v2 bileşeni
 function Captcha({ onVerify }: { onVerify: (token: string) => void }) {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''
+  const enabled = (process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED || '1') !== '0'
   useEffect(() => {
-    if (!siteKey) { onVerify('dev'); return }
+    if (!enabled || !siteKey) { onVerify('dev'); return }
     const id = 'recaptcha-script'
     if (!document.getElementById(id)) {
       const s = document.createElement('script')
@@ -331,7 +340,7 @@ function Captcha({ onVerify }: { onVerify: (token: string) => void }) {
     ;(window as any).onRecaptcha = (token: string) => onVerify(token)
     return () => { /* noop */ }
   }, [])
-  if (!siteKey) return null
+  if (!enabled || !siteKey) return null
   return (
     <div className="pt-2">
       <div className="g-recaptcha" data-sitekey={siteKey} data-callback="onRecaptcha" />

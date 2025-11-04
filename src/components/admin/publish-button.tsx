@@ -25,8 +25,8 @@ export default function PublishButton({
     <button
       onClick={toggle}
       disabled={pending}
-      className={`rounded-full px-3 py-1.5 ${
-        published ? 'bg-white border text-gray-900' : 'bg-emerald-600 text-white'
+      className={`rounded-full px-2.5 py-1 text-xs whitespace-nowrap ${
+        published ? 'bg-white border text-gray-900 hover:bg-gray-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'
       } ${pending ? 'opacity-60' : ''}`}
       title={published ? 'Yayından kaldır' : 'Yayınla'}
     >

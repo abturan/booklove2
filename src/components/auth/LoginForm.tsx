@@ -59,7 +59,8 @@ export default function LoginForm() {
     }
   }
 
-  const requireCaptcha = Boolean(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY)
+  const recaptchaEnabled = (process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED || '1') !== '0'
+  const requireCaptcha = recaptchaEnabled && Boolean(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY)
 
   return (
     <div className="max-w-md mx-auto p-6 mt-8">

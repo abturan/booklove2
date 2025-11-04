@@ -14,6 +14,25 @@ export async function GET(_req: Request, { params }: { params: { postId: string 
       status: true,
       owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
       images: { select: { url: true, width: true, height: true } },
+      repostOf: {
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+          images: { select: { url: true, width: true, height: true } },
+          // one more level for context
+          repostOf: {
+            select: {
+              id: true,
+              body: true,
+              createdAt: true,
+              owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
+              images: { select: { url: true, width: true, height: true } },
+            },
+          },
+        },
+      },
       _count: { select: { likes: true, comments: true } },
     },
   })
@@ -26,6 +45,7 @@ export async function GET(_req: Request, { params }: { params: { postId: string 
     owner: post.owner,
     images: post.images,
     counts: { likes: post._count.likes, comments: post._count.comments },
+    repostOf: post.repostOf || null,
   })
 }
 

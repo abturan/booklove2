@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/kill-port.mjs 3000 && next dev -p 3000",
     "build": "prisma generate && next build",
-    "start": "next start -p 3000",
+    "start": "node scripts/kill-port.mjs 3000 && next start -p 3000",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
@@ -19,12 +19,16 @@
     "verify:legacy": "tsx scripts/mark-legacy-verified.ts"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.9.15",
+    "@livekit/components-styles": "^1.1.6",
     "@prisma/client": "^6.16.2",
     "@vercel/blob": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.2",
     "fontkit": "^2.0.2",
+    "livekit-client": "^2.15.14",
+    "livekit-server-sdk": "^2.14.0",
     "lucide-react": "0.446.0",
     "next": "14.2.5",
     "next-auth": "5.0.0-beta.20",

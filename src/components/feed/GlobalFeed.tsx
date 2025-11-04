@@ -308,20 +308,33 @@ export default function GlobalFeed({
     return () => clearInterval(t)
   }, [items, status, ownerId, pagingEnabled, active])
 
-  function onPosted() {
+  async function onPosted(newId: string) {
     if (isAdmin) loadCounts()
-    setLoading(true)
-    setHasRequested(false)
-    if (pagingEnabled) {
-      setPages([])
-      setPageIndex(0)
-      void loadPage(null, true, 6)
-    } else {
-      setItems([])
-      setCursor(null)
-      setHasMore(true)
-      void loadMore(true)
-    }
+    if (!newId) return
+    try {
+      const res = await fetch(`/api/posts/${newId}`, { cache: 'no-store' })
+      const j = await res.json()
+      if (!res.ok || !j?.id) return
+      const p = normalizePost(j)
+      // Sadece yayınlanan gönderileri listeye alalım
+      if ((p.status as any) !== 'PUBLISHED') return
+      if (pagingEnabled) {
+        setPages((prev) => {
+          if (!prev.length) return [{ items: [p], cursorIn: null, cursorOut: null }]
+          const first = prev[0]
+          // Çift kayıt engelle
+          const seen = new Set(first.items.map((x) => x.id))
+          const items = seen.has(p.id) ? first.items : [p, ...first.items]
+          const next = [{ ...first, items }, ...prev.slice(1)]
+          return next
+        })
+      } else {
+        setItems((prev) => {
+          const seen = new Set(prev.map((x) => x.id))
+          return seen.has(p.id) ? prev : [p, ...prev]
+        })
+      }
+    } catch {}
   }
   function onUpdated(updated: Post) {
     if (pagingEnabled) {

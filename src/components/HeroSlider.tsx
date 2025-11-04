@@ -66,7 +66,7 @@ export default function HeroSlider() {
         priority
         className="hidden sm:block object-contain object-right lg:object-right-bottom pointer-events-none select-none -z-0"
       />
-      <div className="absolute inset-x-0 top-6 sm:top-8 lg:top-10 z-10 mt-2 ml-10">
+      <div className="absolute inset-x-0 top-6 sm:top-8 lg:top-10 z-10 mt-2 ml-4 sm:ml-10">
         <div className="container">
           <div className="grid grid-cols-12 items-start gap-6">
             <div className="col-span-12 md:col-span-10 lg:col-span-10">
@@ -88,31 +88,31 @@ export default function HeroSlider() {
           </div>
         </div>
       </div>
-      <div className="absolute left-6 bottom-4 flex items-center gap-2 z-20">
+      <div className="absolute left-4 bottom-3 flex items-center gap-1.5 z-20">
         {slides.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setI(idx)}
             aria-label={`Slide ${idx + 1}`}
             className={clsx(
-              'h-2 rounded-full transition-all',
-              idx === i ? 'w-8 bg-white' : 'w-3 bg-white/70 hover:bg-white/90'
+              'h-1.5 rounded-full transition-all',
+              idx === i ? 'w-6 bg-white shadow-sm' : 'w-2.5 bg-white/70 hover:bg-white/90'
             )}
           />
         ))}
       </div>
-      <div className="absolute right-6 bottom-4 flex items-center gap-2 z-20">
+      <div className="absolute right-4 bottom-3 flex items-center gap-1.5 z-20">
         <button
           onClick={() => go(-1)}
           aria-label="Önceki"
-          className="h-9 w-9 rounded-full bg-white text-gray-900 grid place-content-center shadow hover:scale-[1.03] transition"
+          className="h-8 w-8 rounded-full bg-white/90 ring-1 ring-white/70 text-gray-900/90 grid place-content-center shadow-sm backdrop-blur-sm hover:scale-[1.03] transition"
         >
           ‹
         </button>
         <button
           onClick={() => go(+1)}
           aria-label="Sonraki"
-          className="h-9 w-9 rounded-full bg-white text-gray-900 grid place-content-center shadow hover:scale-[1.03] transition"
+          className="h-8 w-8 rounded-full bg-white/90 ring-1 ring-white/70 text-gray-900/90 grid place-content-center shadow-sm backdrop-blur-sm hover:scale-[1.03] transition"
         >
           ›
         </button>
@@ -120,7 +120,6 @@ export default function HeroSlider() {
     </div>
   )
 }
-
 
 
 

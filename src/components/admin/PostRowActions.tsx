@@ -20,9 +20,8 @@ export default function PostRowActions({ id, onDone }: { id: string; onDone?: ()
   }
   return (
     <div className="flex justify-end gap-2">
-      <button onClick={hide} className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50">Gizle</button>
-      <button onClick={del} className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50">Sil</button>
+      <button onClick={hide} className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap">Gizle</button>
+      <button onClick={del} className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap">Sil</button>
     </div>
   )
 }
-

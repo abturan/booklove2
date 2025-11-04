@@ -59,15 +59,15 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold">Üyeler</h2>
-        <form action="/admin/members" className="inline-flex items-center gap-2">
+        <form action="/admin/members" className="flex flex-col gap-2 sm:inline-flex sm:flex-row sm:items-center">
           <input
             type="text"
             name="q"
             defaultValue={q}
             placeholder="İsim, e-posta, kullanıcı adı"
-            className="h-10 w-72 rounded-xl border px-3"
+            className="h-10 w-full sm:w-72 rounded-xl border px-3"
           />
           <select name="sort" defaultValue={sort} className="h-10 rounded-xl border px-3 text-sm">
             <option value="recent">En yeni</option>
@@ -81,7 +81,7 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
       </div>
 
       <div className="overflow-x-auto rounded-2xl border">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>
               <th className="px-4 py-3">Üye</th>
@@ -92,22 +92,22 @@ export default async function MembersPage({ searchParams }: { searchParams: { q?
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="border-t">
-                <td className="px-4 py-3">
+              <tr key={u.id} className="border-t align-top">
+                <td className="px-4 py-3 whitespace-normal break-words">
                   <Link href={`/admin/members/${u.id}`} className="hover:underline font-medium">
                     {u.name || '—'}
                   </Link>
                   <div className="text-xs text-gray-500">{u.email}</div>
                   {u.username && <div className="text-xs text-gray-500">@{u.username}</div>}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-normal break-words">
                   <div>Aktif etkinlik üyeliği: {u.Memberships.length}</div>
                   <div>Post: {u._count.posts}, Yorum: {u._count.comments}, Beğeni: {u._count.likes}</div>
                   <div>Sohbet Mesajı: {u._count.dmMessagesAuthored}</div>
                 </td>
                 <td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString('tr-TR')}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/admin/members/${u.id}`} className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50">Detay</Link>
+                  <Link href={`/admin/members/${u.id}`} className="rounded-full border px-2.5 py-1 text-xs hover:bg-gray-50 whitespace-nowrap">Detay</Link>
                 </td>
               </tr>
             ))}

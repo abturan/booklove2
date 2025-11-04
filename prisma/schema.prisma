@@ -31,6 +31,7 @@ model User {
   phone                  String?
   phoneVerifiedAt        DateTime?
   emailVerifiedAt        DateTime?
+  deletedAt              DateTime?
   bio                    String?
   about                  String?
   website                String?
@@ -60,6 +61,7 @@ model User {
   DmThreadReads          DmThreadRead[]
   DmReactions            DmReaction[]
   PostReports            PostReport[]         @relation("UserReports")
+  MeetingPresence        MeetingPresence[]
 }
 
 model Notification {
@@ -162,6 +164,49 @@ model ClubEvent {
   subscriptions Subscription[]
   paymentIntents PaymentIntent[]
   chatRoom ChatRoom?
+  meeting       Meeting?
+  meetingPresences MeetingPresence[]
+  reminders     EventReminder[]
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  clubEventId String   @unique
+  isActive    Boolean  @default(false)
+  opensAt     DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  event       ClubEvent @relation(fields: [clubEventId], references: [id])
+}
+
+model MeetingPresence {
+  id          String   @id @default(cuid())
+  clubEventId String
+  userId      String
+  joinedAt    DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  leftAt      DateTime?
+  allowSpeak  Boolean  @default(false)
+  micOn       Boolean  @default(false)
+  cameraOn    Boolean  @default(false)
+  event       ClubEvent @relation(fields: [clubEventId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([clubEventId, userId])
+  @@index([clubEventId])
+}
+
+model EventReminder {
+  id          String   @id @default(cuid())
+  clubEventId String
+  kind        String
+  sentAt      DateTime @default(now())
+  event       ClubEvent @relation(fields: [clubEventId], references: [id])
+
+  @@unique([clubEventId, kind])
+  @@index([clubEventId])
 }
 
 model NotificationPreference {

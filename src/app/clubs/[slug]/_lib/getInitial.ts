@@ -53,6 +53,7 @@ export type ClubInitial = {
     description: string | null
     bannerUrl: string
     priceTRY: number
+    moderatorId: string
     moderatorName: string
     moderatorAvatarUrl: string | null
     moderatorUsername: string | null
@@ -265,6 +266,7 @@ export async function getInitial(slug: string): Promise<ClubInitial | null> {
       description: club.description ?? null,
       bannerUrl: safeBanner,
       priceTRY: club.priceTRY,
+      moderatorId: club.moderatorId,
       moderatorName: club.moderator?.name ?? '—',
       moderatorAvatarUrl: club.moderator?.avatarUrl ?? null,
       moderatorUsername: club.moderator?.username ?? null,
