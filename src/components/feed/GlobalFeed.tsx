@@ -410,7 +410,7 @@ export default function GlobalFeed({
   return (
     <aside className="space-y-4">
       {showTopBar && (
-        <div className="flex items-end justify-between">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="text-2xl font-extrabold tracking-tight">Bookie!</div>
           {loggedIn && !openComposer ? (
             <button
@@ -437,8 +437,8 @@ export default function GlobalFeed({
       )}
 
       {showTopBar && (
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-1 min-w-[220px]">
             {loggedIn && !openComposer && (
               <button
                 type="button"

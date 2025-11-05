@@ -1,20 +1,24 @@
 // src/lib/eventMailTemplate.ts
 import { renderEmail, escapeHtml } from '@/lib/emailTemplates'
 
+const MAIL_TIME_ZONE = 'Europe/Istanbul'
+
 function formatDate(date: Date) {
-  return date.toLocaleDateString('tr-TR', {
+  return new Intl.DateTimeFormat('tr-TR', {
+    timeZone: MAIL_TIME_ZONE,
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
+  }).format(date)
 }
 
 function formatTime(date: Date) {
-  return date.toLocaleTimeString('tr-TR', {
+  return new Intl.DateTimeFormat('tr-TR', {
+    timeZone: MAIL_TIME_ZONE,
     hour: '2-digit',
     minute: '2-digit',
-  })
+  }).format(date)
 }
 
 function sanitizeNote(note?: string | null) {
@@ -67,4 +71,3 @@ export function buildEventMail({
 
   return { subject, html, previewText }
 }
-
