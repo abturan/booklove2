@@ -15,7 +15,7 @@ type Participant = {
   slug: string | null
   registeredAt?: string | null
   paymentAmount?: number | null
-  sources: Array<{ type: 'membership' | 'subscription'; id: string; joinedAt?: string | null; startedAt?: string | null; role?: string | null }>
+  sources: Array<{ type: 'membership' | 'subscription' | 'moderator'; id: string; joinedAt?: string | null; startedAt?: string | null; role?: string | null }>
 }
 
 type MailRecipient = {
@@ -73,6 +73,7 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
   const [sending, setSending] = useState(false)
   const [expandedMail, setExpandedMail] = useState<string | null>(null)
   const [selectedMailId, setSelectedMailId] = useState<string>('')
+  const [extraEmailsText, setExtraEmailsText] = useState('')
 
   const pillButton = 'rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100'
   const subtleButton = 'rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-40'
@@ -203,10 +204,20 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     return selectedMailId
   }
 
+  function getValidExtraEmails(): string[] | null {
+    if (extraEmailInvalid.length > 0) {
+      setMessage(`Geçersiz e-posta adresleri: ${extraEmailInvalid.join(', ')}`)
+      return null
+    }
+    return extraEmailInfo.valid
+  }
+
   async function sendMailToAll() {
     const mailId = assertSelectedMail()
     if (!mailId) return
-    await handleResend(mailId)
+    const extras = getValidExtraEmails()
+    if (extras === null) return
+    await handleResend(mailId, undefined, extras)
   }
 
   async function sendMailToSelected() {
@@ -216,7 +227,9 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     }
     const mailId = assertSelectedMail()
     if (!mailId) return
-    await handleResend(mailId, Array.from(selectedIds))
+    const extras = getValidExtraEmails()
+    if (extras === null) return
+    await handleResend(mailId, Array.from(selectedIds), extras)
   }
 
   async function sendMailToSingle(userId: string | undefined) {
@@ -226,17 +239,22 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     }
     const mailId = assertSelectedMail()
     if (!mailId) return
-    await handleResend(mailId, [userId])
+    const extras = getValidExtraEmails()
+    if (extras === null) return
+    await handleResend(mailId, [userId], extras)
   }
 
-  async function handleResend(mailId: string, recipientIds?: string[]) {
+  async function handleResend(mailId: string, recipientIds?: string[], extraEmails?: string[]) {
     try {
       setMessage(null)
       setSending(true)
+      const payload: Record<string, any> = {}
+      if (recipientIds && recipientIds.length > 0) payload.recipientIds = recipientIds
+      if (extraEmails && extraEmails.length > 0) payload.extraEmails = extraEmails
       const res = await fetch(`/api/admin/events/mail/${mailId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(recipientIds ? { recipientIds } : {}),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => null)
@@ -255,6 +273,10 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     if (!data) return null
     return data.mailHistory.find((mail) => mail.id === selectedMailId) || null
   }, [data, selectedMailId])
+
+  const extraEmailInfo = useMemo(() => parseEmailList(extraEmailsText), [extraEmailsText])
+  const extraEmailCount = extraEmailInfo.valid.length
+  const extraEmailInvalid = extraEmailInfo.invalid
 
   const statusMap = useMemo(() => {
     const map = new Map<string, { status: string; mailId: string }>()
@@ -437,6 +459,25 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
                   </div>
                 )
               )}
+
+              <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm">
+                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">Ek e-posta alıcıları</label>
+                <input
+                  value={extraEmailsText}
+                  onChange={(e) => setExtraEmailsText(e.target.value)}
+                  placeholder="ornek@site.com, baska@site.com"
+                  className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                <div className="mt-1 text-xs text-gray-500">
+                  Virgülle ayırarak dilediğiniz adresleri ekleyebilirsiniz.
+                  {extraEmailCount > 0 && <span className="ml-1 font-semibold text-gray-700">{extraEmailCount} e-posta eklendi.</span>}
+                  {extraEmailInvalid.length > 0 && (
+                    <span className="ml-1 font-semibold text-rose-600">
+                      Geçersiz: {extraEmailInvalid.join(', ')}
+                    </span>
+                  )}
+                </div>
+              </div>
             </section>
 
             <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100">
@@ -567,7 +608,9 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleResend(mail.id)
+                            const extras = getValidExtraEmails()
+                            if (extras === null) return
+                            handleResend(mail.id, undefined, extras)
                           }}
                           className={`${subtleButton} px-3 text-xs`}
                           disabled={sending}
@@ -579,7 +622,9 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleResend(mail.id, Array.from(selectedIds))
+                              const extras = getValidExtraEmails()
+                              if (extras === null) return
+                              handleResend(mail.id, Array.from(selectedIds), extras)
                             }}
                             className={`${subtleButton} px-3 text-xs`}
                             disabled={sending}
@@ -617,7 +662,11 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
                                   <td className="px-3 py-2">
                                     <button
                                       type="button"
-                                      onClick={() => handleResend(mail.id, [rec.userId || rec.id])}
+                                      onClick={() => {
+                                        const extras = getValidExtraEmails()
+                                        if (extras === null) return
+                                        handleResend(mail.id, [rec.userId || rec.id], extras)
+                                      }}
                                       className={`${subtleButton} px-3 text-[11px]`}
                                       disabled={sending}
                                     >
@@ -644,6 +693,33 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
   )
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function parseEmailList(input: string) {
+  const valid: string[] = []
+  const invalid: string[] = []
+  const seen = new Set<string>()
+
+  if (!input) return { valid, invalid }
+
+  input
+    .split(/[,;\s]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .forEach((email) => {
+      const lower = email.toLowerCase()
+      if (seen.has(lower)) return
+      if (EMAIL_REGEX.test(email)) {
+        valid.push(email)
+        seen.add(lower)
+      } else if (!invalid.includes(email)) {
+        invalid.push(email)
+      }
+    })
+
+  return { valid, invalid }
+}
+
 function safeCsv(value: string) {
   const v = value?.toString() ?? ''
   if (/[",\n]/.test(v)) {
@@ -668,6 +744,9 @@ function formatCurrency(amount: number) {
 function sourceLabel(source: Participant['sources'][number]) {
   if (source.type === 'membership') {
     return `Üyelik ${source.joinedAt ? `(${formatDate(source.joinedAt)})` : ''}`
+  }
+  if (source.type === 'moderator') {
+    return 'Moderatör'
   }
   return `Abonelik ${source.startedAt ? `(${formatDate(source.startedAt)})` : ''}`
 }

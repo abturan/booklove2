@@ -117,6 +117,19 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       }
     })
 
+    if (event.club.moderator) {
+      const mod = event.club.moderator
+      participantMap.set(mod.id, {
+        userId: mod.id,
+        name: mod.name,
+        username: null,
+        email: mod.email,
+        avatarUrl: null,
+        slug: null,
+        sources: [{ type: 'moderator', id: `moderator:${mod.id}`, joinedAt: new Date(), role: 'MODERATOR' }],
+      })
+    }
+
     const membershipCount = event.memberships.length
     const subscriptionCount = event.subscriptions.length
 

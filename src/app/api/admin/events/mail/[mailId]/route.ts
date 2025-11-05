@@ -10,6 +10,7 @@ export const runtime = 'nodejs'
 
 type Body = {
   recipientIds?: string[]
+  extraEmails?: string[]
 }
 
 export async function POST(req: NextRequest, { params }: { params: { mailId: string } }) {
@@ -22,6 +23,11 @@ export async function POST(req: NextRequest, { params }: { params: { mailId: str
 
     const body = (await req.json().catch(() => ({}))) as Body
     const selectedIds = Array.isArray(body?.recipientIds) ? body.recipientIds.filter(Boolean) : null
+    const extraEmails = Array.isArray(body?.extraEmails)
+      ? body.extraEmails
+          .map((email) => (typeof email === 'string' ? email.trim() : ''))
+          .filter((email) => email.length > 0)
+      : []
 
     const originalMail = await prisma.eventMail.findUnique({
       where: { id: params.mailId },
@@ -37,7 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: { mailId: str
             id: true,
             title: true,
             startsAt: true,
-            club: { select: { id: true, name: true, slug: true } },
+            club: { select: { id: true, name: true, slug: true, moderator: { select: { id: true, name: true, email: true } } } },
             memberships: {
               where: { isActive: true },
               select: {
@@ -74,6 +80,9 @@ export async function POST(req: NextRequest, { params }: { params: { mailId: str
     }
     event.memberships.forEach((m: any) => pushUser(m.user))
     event.subscriptions.forEach((s: any) => pushUser(s.user))
+    if (event.club.moderator) {
+      pushUser(event.club.moderator)
+    }
 
     const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_BASE_URL || '').replace(/\/$/, '')
     const cta = `${base || 'https://boook.love'}/clubs/${event.club.slug}`
@@ -107,7 +116,25 @@ export async function POST(req: NextRequest, { params }: { params: { mailId: str
       recipients = Array.from(participantMap.values())
     }
 
-    recipients = recipients.filter((r) => !!r.email)
+    const seenEmails = new Set<string>()
+    const uniqueRecipients: { userId: string | null; email: string | null; name: string | null }[] = []
+
+    recipients.forEach((r) => {
+      if (!r.email) return
+      const normalized = r.email.toLowerCase()
+      if (seenEmails.has(normalized)) return
+      seenEmails.add(normalized)
+      uniqueRecipients.push(r)
+    })
+
+    extraEmails.forEach((email) => {
+      const normalized = email.toLowerCase()
+      if (seenEmails.has(normalized)) return
+      seenEmails.add(normalized)
+      uniqueRecipients.push({ userId: null, email, name: null })
+    })
+
+    recipients = uniqueRecipients
     if (!recipients.length) {
       return NextResponse.json({ error: 'Gönderilecek katılımcı bulunamadı.' }, { status: 400 })
     }
