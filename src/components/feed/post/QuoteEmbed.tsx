@@ -36,8 +36,13 @@ export default function QuoteEmbed({ quoted, depth = 0 }: { quoted: MinimalPost;
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="w-full text-left">
-        <div className="rounded-xl border border-gray-200 bg-white p-3 hover:bg-gray-50">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true) } }}
+        className="w-full rounded-xl border border-gray-200 bg-white p-3 text-left hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+      >
           <div className="mb-2 flex items-center gap-2">
             <Avatar src={quoted.owner.avatarUrl || undefined} size={24} alt={quoted.owner.name} />
             <div className="min-w-0">
@@ -53,8 +58,7 @@ export default function QuoteEmbed({ quoted, depth = 0 }: { quoted: MinimalPost;
               <QuoteEmbed quoted={quoted.repostOf as any} depth={depth + 1} />
             </div>
           )}
-        </div>
-      </button>
+      </div>
 
       <Modal open={open} onClose={() => setOpen(false)}>
         {!full && <div className="p-4 text-sm text-gray-600">Yükleniyor…</div>}

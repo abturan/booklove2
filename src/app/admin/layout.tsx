@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="space-y-6"
+      className="space-y-6 pt-6 sm:pt-8"
       style={{
         // Prevent bottom app footer from covering admin content on mobile
         paddingBottom: 'calc(var(--mobile-footer-height, 72px) + 24px + env(safe-area-inset-bottom))',

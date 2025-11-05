@@ -11,6 +11,7 @@ const items = [
   { href: '/admin/members', label: 'Üyeler' },
   { href: '/admin/payments', label: 'Ödemeler' },
   { href: '/admin/posts', label: 'Post’lar' },
+  { href: '/admin/ads', label: 'Reklamlar' },
 ]
 
 export default function AdminNav() {
@@ -25,7 +26,7 @@ export default function AdminNav() {
             'rounded-full px-3 py-1.5 text-sm shrink-0',
             pathname === i.href
               ? 'bg-primary text-white'
-              : 'bg-white ring-1 ring-black/10 hover:bg-gray-50'
+              : 'bg-white border border-slate-200 hover:bg-gray-50'
           )}
         >
           {i.label}

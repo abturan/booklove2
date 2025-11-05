@@ -51,13 +51,13 @@ export default function PostImages({ images }: { images: PostImage[] }) {
             type="button"
             key={i}
             onClick={() => setActiveIndex(i)}
-            className="group relative overflow-hidden rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="group relative aspect-square w-full max-h-[420px] overflow-hidden rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <img
               src={img.url}
               alt=""
               loading="lazy"
-              className="h-36 w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
             />
           </button>
         ))}

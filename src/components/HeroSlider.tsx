@@ -88,7 +88,8 @@ export default function HeroSlider() {
           </div>
         </div>
       </div>
-      <div className="absolute left-4 bottom-3 flex items-center gap-1.5 z-20">
+      {/* Dots: keep inside rounded container on desktop by adding a bit more inset */}
+      <div className="absolute left-5 bottom-4 flex items-center gap-1.5 z-20 pointer-events-auto">
         {slides.map((_, idx) => (
           <button
             key={idx}
@@ -101,7 +102,7 @@ export default function HeroSlider() {
           />
         ))}
       </div>
-      <div className="absolute right-4 bottom-3 flex items-center gap-1.5 z-20">
+      <div className="absolute right-4 bottom-4 flex items-center gap-1.5 z-20">
         <button
           onClick={() => go(-1)}
           aria-label="Önceki"
@@ -120,7 +121,6 @@ export default function HeroSlider() {
     </div>
   )
 }
-
 
 
 

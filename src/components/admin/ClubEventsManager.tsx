@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import EventParticipantsModal from '@/components/admin/EventParticipantsModal'
 
 type EventItem = {
   id: string
@@ -69,10 +70,12 @@ export default function ClubEventsManager({
   items,
   defaultPrice,
   defaultCapacity,
+  clubSlug,
 }: {
   items: EventItem[]
   defaultPrice: number | null
   defaultCapacity: number | null
+  clubSlug: string
 }) {
   const [events, setEvents] = useState<EventState[]>(
     items.map((event) => ({
@@ -283,13 +286,16 @@ export default function ClubEventsManager({
     }
   }
 
-  return (
-    <div className="space-y-10">
-      {events.map((event) => {
-        const displayDate = formatDisplayDate(event.startsAtLocal, event.startsAt)
-        const isUpcoming = new Date(event.startsAt).getTime() >= Date.now()
+  const [modalEvent, setModalEvent] = useState<{ id: string; title: string; startsAt: string } | null>(null)
 
-        return (
+  return (
+    <>
+      <div className="space-y-10">
+        {events.map((event) => {
+          const displayDate = formatDisplayDate(event.startsAtLocal, event.startsAt)
+          const isUpcoming = new Date(event.startsAt).getTime() >= Date.now()
+
+          return (
           <section
             key={event.id}
             className="overflow-hidden rounded-[32px] bg-white shadow-xl ring-1 ring-black/5"
@@ -316,6 +322,13 @@ export default function ClubEventsManager({
                       <span className="h-2 w-2 rounded-full bg-indigo-500" />
                       {formatCountBadge('Aktif abonelik', event.activeSubscriptions)}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => setModalEvent({ id: event.id, title: event.title?.trim() || 'Aylık Oturum', startsAt: event.startsAt })}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      Katılımcılar
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(event.id)}
@@ -612,6 +625,18 @@ export default function ClubEventsManager({
           </section>
         )
       })}
-    </div>
+      </div>
+
+      {modalEvent && (
+        <EventParticipantsModal
+          eventId={modalEvent.id}
+          eventTitle={modalEvent.title}
+          startsAt={modalEvent.startsAt}
+          clubSlug={clubSlug}
+          open
+          onClose={() => setModalEvent(null)}
+        />
+      )}
+    </>
   )
 }

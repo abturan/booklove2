@@ -98,6 +98,9 @@ export default async function MemberDetailPage({
 
   if (!user) redirect('/admin/members')
 
+  // deletedAt may not be selected (older DB without column) — treat as optional
+  const deletedAt: Date | null = ((user as any)?.deletedAt as Date | null) ?? null
+
   const availableClubs = clubs
   const activeEventMemberships = memberships.filter((m) => m.isActive)
   const activeEventSubscriptions = subscriptions.filter((s) => s.active)
@@ -147,10 +150,10 @@ export default async function MemberDetailPage({
       <div className="rounded-2xl border p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="font-semibold">Hesap durumu</div>
-          <div className="text-sm text-gray-600">{user.deletedAt ? `Pasifleştirildi (${new Date(user.deletedAt).toLocaleDateString('tr-TR')})` : 'Aktif'}</div>
+          <div className="text-sm text-gray-600">{deletedAt ? `Pasifleştirildi (${new Date(deletedAt).toLocaleDateString('tr-TR')})` : 'Aktif'}</div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {!user.deletedAt ? (
+          {!deletedAt ? (
             <form action={require('../actions').adminSoftDeleteUser}>
               <input type="hidden" name="userId" value={user.id} />
               <button className="rounded-full border px-2.5 py-1 text-xs text-red-700 hover:bg-red-50 whitespace-nowrap">Hesabı pasifleştir (soft delete)</button>

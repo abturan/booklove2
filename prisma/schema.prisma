@@ -62,6 +62,8 @@ model User {
   DmReactions            DmReaction[]
   PostReports            PostReport[]         @relation("UserReports")
   MeetingPresence        MeetingPresence[]
+  EventMailsAuthored     EventMail[]          @relation("EventMailAuthor")
+  EventMailRecipients    EventMailRecipient[] @relation("EventMailRecipientUser")
 }
 
 model Notification {
@@ -167,6 +169,7 @@ model ClubEvent {
   meeting       Meeting?
   meetingPresences MeetingPresence[]
   reminders     EventReminder[]
+  mails         EventMail[]
 }
 
 model Meeting {
@@ -207,6 +210,39 @@ model EventReminder {
 
   @@unique([clubEventId, kind])
   @@index([clubEventId])
+}
+
+model EventMail {
+  id          String    @id @default(cuid())
+  eventId     String
+  subject     String
+  previewText String?
+  bodyHtml    String
+  note        String?
+  sendScope   String    @default("ALL")
+  createdAt   DateTime  @default(now())
+  createdById String?
+  event       ClubEvent @relation(fields: [eventId], references: [id])
+  createdBy   User?     @relation("EventMailAuthor", fields: [createdById], references: [id])
+  recipients  EventMailRecipient[]
+}
+
+model EventMailRecipient {
+  id        String   @id @default(cuid())
+  mailId    String
+  userId    String?
+  email     String
+  name      String?
+  status    String   @default("PENDING")
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  mail      EventMail @relation(fields: [mailId], references: [id], onDelete: Cascade)
+  user      User?      @relation("EventMailRecipientUser", fields: [userId], references: [id])
+
+  @@index([mailId])
+  @@index([userId])
 }
 
 model NotificationPreference {
@@ -437,4 +473,40 @@ model DmReaction {
 
   @@unique([messageId, userId, emoji], name: "messageId_userId_emoji")
   @@index([messageId])
+}
+
+// Simple banner/ad model
+model Ad {
+  id        String   @id @default(cuid())
+  title     String
+  type      String   @default("image_full") // image_full | announcement
+  slot      String   @default("feed")       // feed | hero | sidebar
+  imageUrl  String?
+  mobileImageUrl String?
+  desktopImageUrl String?
+  linkUrl   String?
+  html      String?
+  mobileHtml String?
+  desktopHtml String?
+  device    String   @default("all") // all | mobile | desktop
+  active    Boolean  @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  weight    Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  campaignId String?
+  campaign   AdCampaign? @relation(fields: [campaignId], references: [id])
+}
+
+model AdCampaign {
+  id        String  @id @default(cuid())
+  name      String
+  type      String  @default("rotate") // rotate | pinned_top
+  frequency Int     @default(1)
+  scope     String  @default("all")
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Ads       Ad[]
 }

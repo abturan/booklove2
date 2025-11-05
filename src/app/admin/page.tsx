@@ -99,6 +99,17 @@ export default async function AdminHome() {
     paymentsDailyRaw.map(r => ({ d: r.d, v: Math.round(Number(r.s) / 100) })), 'v'
   )
 
+  // Averages for new members
+  const sum30 = usersDaily.reduce((a, b) => a + (b.value || 0), 0)
+  const avg30 = sum30 / 30
+  const firstUser = await prisma.user.findFirst({ orderBy: { createdAt: 'asc' }, select: { createdAt: true } })
+  const daysAll = (() => {
+    if (!firstUser?.createdAt) return 1
+    const diff = Math.max(1, Math.ceil((now.getTime() - new Date(firstUser.createdAt).getTime()) / (24 * 3600 * 1000)))
+    return diff
+  })()
+  const avgAll = userCountAll / daysAll
+
   return (
     <div className="space-y-6">
       {/* Üst kartlar */}
@@ -121,6 +132,19 @@ export default async function AdminHome() {
         <BigLink href="/admin/clubs" label="Kulüpler" emoji="📚" />
         <BigLink href="/admin/members" label="Üyeler" emoji="👥" />
         <BigLink href="/admin/posts" label="Post’lar" emoji="📝" />
+      </section>
+
+      {/* Yeni üye ortalamaları */}
+      <section className="rounded-2xl bg-white ring-1 ring-black/5 p-4">
+        <div className="text-sm text-gray-600 mb-2">Yeni üye ortalamaları</div>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="inline-flex items-center rounded-full border px-3 py-1 bg-gray-50 text-gray-700">
+            Tüm zamanlar günlük ort.: <span className="ml-1 font-semibold">{avgAll.toFixed(2)}</span>
+          </span>
+          <span className="inline-flex items-center rounded-full border px-3 py-1 bg-gray-50 text-gray-700">
+            Son 30 gün günlük ort.: <span className="ml-1 font-semibold">{avg30.toFixed(2)}</span>
+          </span>
+        </div>
       </section>
 
       {/* Grafikler — geri geldi */}

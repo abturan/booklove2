@@ -105,6 +105,7 @@ export default async function EditClubPage({ params }: { params: { id: string } 
             bookIsbn: event.bookIsbn ?? '',
             bookCoverUrl: event.bookCoverUrl ?? '',
           }))}
+          clubSlug={club.slug}
         />
       </div>
     </div>

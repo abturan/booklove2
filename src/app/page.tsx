@@ -11,6 +11,7 @@ import Tabs from '@/components/ui/Tabs'
 import GlobalFeed from '@/components/feed/GlobalFeed'
 import BookBuddyPanel from '@/components/friends/BookBuddyPanel'
 import BookBuddyTab from '@/components/home/BookBuddyTab'
+import HomeCalendar from '@/components/home/HomeCalendar'
 
 function usePendingBuddyCount() {
   const [count, setCount] = useState(0)
@@ -90,6 +91,7 @@ function HomeBody() {
   return (
     <div className="space-y-6">
       <HeroSlider />
+      <HomeCalendar />
 
       <div className="md:hidden space-y-4">
         <Tabs

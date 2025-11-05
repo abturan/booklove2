@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import PublishButton from '../../../../components/admin/publish-button'
+import EventParticipantsButton from '@/components/admin/EventParticipantsButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -108,6 +109,7 @@ export default async function AdminPreview({
                   <th className="px-4 py-3">Aktif Üye</th>
                   <th className="px-4 py-3">Aktif Abonelik</th>
                   <th className="px-4 py-3">Not</th>
+                  <th className="px-4 py-3 text-right">Katılımcılar</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,6 +160,14 @@ export default async function AdminPreview({
                     <td className="px-4 py-3">{event.subscriptions.length}</td>
                     <td className="px-4 py-3 text-xs text-gray-600 whitespace-pre-wrap">
                       {event.notes || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <EventParticipantsButton
+                        eventId={event.id}
+                        eventTitle={event.title || 'Aylık Oturum'}
+                        startsAt={event.startsAt.toISOString()}
+                        clubSlug={club.slug}
+                      />
                     </td>
                   </tr>
                 ))}

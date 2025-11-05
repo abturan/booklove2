@@ -1,11 +1,12 @@
 // src/components/feed/GlobalFeed.tsx
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { Fragment, useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Tabs from '@/components/ui/Tabs'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard, { type Post } from '@/components/feed/PostCard'
+import AdCard from '@/components/ads/AdCard'
 
 type Status = 'PUBLISHED' | 'PENDING' | 'HIDDEN' | 'REPORTED'
 type PageBundle = { items: Post[]; cursorIn: string | null; cursorOut: string | null }
@@ -102,6 +103,7 @@ export default function GlobalFeed({
   const [openComposer, setOpenComposer] = useState(false)
 
   const [items, setItems] = useState<Post[]>([])
+  const [ads, setAds] = useState<any[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -280,6 +282,20 @@ export default function GlobalFeed({
     io.observe(el)
     return () => io.disconnect()
   }, [sentinelRef.current, cursor, hasMore, pagingEnabled, active])
+
+  // fetch feed ads once
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+        const r = await fetch(`/api/ads/feed?device=${isMobile ? 'mobile' : 'desktop'}&scope=${audience === 'following' ? 'following' : 'global'}`, { cache: 'no-store' })
+        const j = await r.json().catch(() => null)
+        if (!cancelled && Array.isArray(j?.campaigns)) setAds(j.campaigns)
+      } catch {}
+    })()
+    return () => { cancelled = true }
+  }, [audience])
 
   useEffect(() => {
     if (pagingEnabled || !active) return
@@ -516,9 +532,56 @@ export default function GlobalFeed({
       )}
 
       <div ref={listRef} className="space-y-3">
-        {list.map((p) => (
-          <PostCard key={p.id} post={p} onUpdated={onUpdated} onDeleted={onDeleted} onPosted={onPosted} />
-        ))}
+        {(() => {
+          const out: React.ReactNode[] = []
+          const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+          const pinned = ads.filter((c: any) => c.campaign?.type === 'pinned_top' && c.creatives?.length)
+          const rotating = ads.filter((c: any) => c.campaign?.type === 'rotate' && c.creatives?.length)
+
+          if (pinned.length > 0) {
+            const first = pinned[0]
+            const creative = first.creatives[0]
+            if (creative) {
+              out.push(
+                <AdCard
+                  key={`ad-pinned-${first.campaign.id}`}
+                  ad={{ ...creative, slot: 'feed', campaignId: first.campaign.id }}
+                  device={isMobile ? 'mobile' : 'desktop'}
+                />
+              )
+            }
+          }
+
+          const rotationIndex = new Map<string, number>()
+
+          list.forEach((p, idx) => {
+            out.push(
+              <Fragment key={`feed-${p.id}`}>
+                <PostCard post={p} onUpdated={onUpdated} onDeleted={onDeleted} onPosted={onPosted} />
+              </Fragment>
+            )
+
+            rotating.forEach((entry: any) => {
+              const freq = Math.max(1, Number(entry.campaign?.frequency || 1))
+              const creatives = entry.creatives || []
+              if (creatives.length === 0) return
+              const position = idx + 1
+              if (position % freq !== 0) return
+              const placed = rotationIndex.get(entry.campaign.id) || 0
+              const pick = creatives[placed % creatives.length]
+              rotationIndex.set(entry.campaign.id, placed + 1)
+              out.push(
+                <AdCard
+                  key={`ad-rot-${entry.campaign.id}-${idx}-${placed}`}
+                  ad={{ ...pick, slot: 'feed', campaignId: entry.campaign.id }}
+                  device={isMobile ? 'mobile' : 'desktop'}
+                />
+              )
+            })
+          })
+
+          return out
+        })()}
       </div>
 
       {!pagingEnabled && <div ref={sentinelRef} />}

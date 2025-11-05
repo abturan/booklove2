@@ -21,7 +21,8 @@ export default function SearchFilters() {
 
   const initialQ = params.get('q') ?? ''
   // Default: newest sessions first (created_desc)
-  const initialSort = (params.get('sort') as SortKey) || 'created_desc'
+  const defaultSort: SortKey = 'created_desc'
+  const initialSort = (params.get('sort') as SortKey) || defaultSort
   // 'soldout=1' means: hide sold-out sessions
   const initialHideSoldOut = params.get('soldout') === '1'
 
@@ -33,7 +34,8 @@ export default function SearchFilters() {
   useEffect(() => {
     const s = new URLSearchParams(params.toString())
     debouncedQ ? s.set('q', debouncedQ) : s.delete('q')
-    sort ? s.set('sort', sort) : s.delete('sort')
+    // Do not append default sort to URL; only set when different than default
+    sort !== defaultSort ? s.set('sort', sort) : s.delete('sort')
     hideSoldOut ? s.set('soldout', '1') : s.delete('soldout')
     router.replace(`${pathname}?${s.toString()}`, { scroll: false })
   }, [debouncedQ, sort, hideSoldOut]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -99,4 +101,3 @@ export default function SearchFilters() {
     </div>
   )
 }
-
