@@ -9,6 +9,7 @@ import crypto from 'crypto'
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) return new Response('Unauthorized', { status: 401 })
+  const isAdmin = session.user.role === 'ADMIN'
 
   const wantsJson = req.headers.get('accept')?.includes('application/json')
   const form = await req.formData()
@@ -16,6 +17,14 @@ export async function POST(req: Request) {
   const getStr = (k: string) => {
     const v = form.get(k)
     return typeof v === 'string' ? v : undefined
+  }
+  const looksGif = (value: string | null | undefined) => {
+    if (!value) return false
+    const trimmed = value.trim().toLowerCase()
+    if (!trimmed) return false
+    if (trimmed.startsWith('data:image/gif')) return true
+    const base = trimmed.split('#')[0].split('?')[0]
+    return base.endsWith('.gif')
   }
 
   const id = getStr('id') || ''
@@ -41,11 +50,23 @@ export async function POST(req: Request) {
 
   if (form.has('avatarUrl')) {
     const raw = getStr('avatarUrl')
+    if (!isAdmin && looksGif(raw ?? null)) {
+      const body = { ok: false, error: 'Sadece admin kullanıcıları GIF avatar kullanabilir.' }
+      return wantsJson
+        ? NextResponse.json(body, { status: 400 })
+        : new Response(JSON.stringify(body), { status: 400, headers: { 'content-type': 'application/json' } })
+    }
     data.avatarUrl = raw ? raw.trim() || null : null
   }
 
   if (form.has('bannerUrl')) {
     const raw = getStr('bannerUrl')
+    if (!isAdmin && looksGif(raw ?? null)) {
+      const body = { ok: false, error: 'Sadece admin kullanıcıları GIF banner kullanabilir.' }
+      return wantsJson
+        ? NextResponse.json(body, { status: 400 })
+        : new Response(JSON.stringify(body), { status: 400, headers: { 'content-type': 'application/json' } })
+    }
     data.bannerUrl = raw ? raw.trim() || null : null
   }
 

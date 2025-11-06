@@ -29,6 +29,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await auth()
   const userId = session?.user?.id
+  const isAdmin = session?.user?.role === 'ADMIN'
   if (!userId) {
     return NextResponse.json({ ok: false, error: 'Yetkisiz' }, { status: 401 })
   }
@@ -37,6 +38,14 @@ export async function POST(req: Request) {
     const body = await req.json()
     const data: Record<string, any> = {}
     const trim = (v: unknown) => (typeof v === 'string' ? v.trim() : v)
+    const looksGif = (value: unknown) => {
+      if (typeof value !== 'string') return false
+      const trimmed = value.trim().toLowerCase()
+      if (!trimmed) return false
+      if (trimmed.startsWith('data:image/gif')) return true
+      const base = trimmed.split('#')[0].split('?')[0]
+      return base.endsWith('.gif')
+    }
 
     // Yalnızca gönderilen alanları PATCH et.
     if ('name' in body) {
@@ -50,6 +59,9 @@ export async function POST(req: Request) {
     }
     if ('avatarUrl' in body) {
       const v = trim(body.avatarUrl)
+      if (!isAdmin && looksGif(v)) {
+        return NextResponse.json({ ok: false, error: 'Sadece admin kullanıcıları GIF avatar kullanabilir.' }, { status: 400 })
+      }
       data.avatarUrl = v === '' ? null : v ?? null
     }
     if ('city' in body) {
