@@ -300,6 +300,7 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
         setMessage(null)
         setComposerOpen(false)
         clearSelection()
+        setExtraEmailsText('')
       }}
       title={`${eventTitle} – Katılımcılar`}
       size="xl"

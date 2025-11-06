@@ -187,6 +187,7 @@ async function createContact(args: { env: ParasutEnv; token: string; contact: In
         email: contact.email || undefined,
         tax_number: contact.taxNumber || undefined,
         contact_type: 'person',
+        account_type: 'customer',
       },
     },
   }
