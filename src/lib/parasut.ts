@@ -39,6 +39,11 @@ export function getParasutEnv(): ParasutEnv | null {
   const defaultVat = Number(PARASUT_DEFAULT_VAT_RATE || '0')
   const currency = (PARASUT_DEFAULT_CURRENCY || 'TRY').toUpperCase()
 
+  const allowedCurrencies = new Set(['TRY', 'TRL', 'USD', 'EUR', 'GBP'])
+  if (!allowedCurrencies.has(currency)) {
+    throw new Error(`Parasut invalid currency: ${currency}`)
+  }
+
   return {
     baseUrl: PARASUT_BASE_URL.replace(/\/$/, ''),
     clientId: PARASUT_CLIENT_ID,
@@ -105,6 +110,7 @@ export type InvoiceLineInput = {
   quantity: number
   unitPrice: number // in major currency unit, e.g. 99.9
   vatRate?: number // 0, 1, 10, 20
+  productCode?: string
 }
 
 export type CreateInvoiceInput = {
@@ -130,13 +136,19 @@ export async function createSalesInvoice(input: CreateInvoiceInput): Promise<{ i
     // 2) Build JSON:API sales invoice payload
     const issueDate = input.issueDate || new Date().toISOString().slice(0, 10)
     const currency = (input.currency || env.defaultCurrency).toUpperCase()
+    if (!['TRY', 'TRL', 'USD', 'EUR', 'GBP'].includes(currency)) {
+      throw new Error(`Parasut invalid currency: ${currency}`)
+    }
+    const toFixed = (value: number) => Number(value.toFixed(2))
+
     const details = input.lines.map((l) => ({
       type: 'sales_invoice_details',
       attributes: {
-        quantity: String(l.quantity ?? 1),
-        unit_price: String(l.unitPrice),
+        quantity: toFixed(l.quantity ?? 1),
+        unit_price: toFixed(l.unitPrice),
         vat_rate: Number.isFinite(l.vatRate as number) ? l.vatRate : env.defaultVatRate,
         description: l.description,
+        product: l.productCode ? { code: l.productCode } : undefined,
       },
     }))
 
@@ -226,6 +238,7 @@ export async function createInvoiceForPaytr(args: {
         quantity: 1,
         unitPrice: Number(amountTRY.toFixed(2)),
         vatRate: typeof vatRate === 'number' ? vatRate : undefined,
+        productCode: 'SERVICE',
       },
     ],
   }
