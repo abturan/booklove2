@@ -10,6 +10,8 @@ type ParasutEnv = {
   companyId: string
   defaultVatRate: number
   defaultCurrency: string
+  defaultProductId?: string | null
+  defaultProductName?: string | null
 }
 
 let cachedToken: { accessToken: string; expiresAt: number } | null = null
@@ -30,6 +32,8 @@ export function getParasutEnv(): ParasutEnv | null {
     PARASUT_COMPANY_ID,
     PARASUT_DEFAULT_VAT_RATE,
     PARASUT_DEFAULT_CURRENCY,
+    PARASUT_DEFAULT_PRODUCT_ID,
+    PARASUT_DEFAULT_PRODUCT_NAME,
   } = process.env
 
   if (!PARASUT_BASE_URL || !PARASUT_CLIENT_ID || !PARASUT_CLIENT_SECRET || !PARASUT_USERNAME || !PARASUT_PASSWORD || !PARASUT_COMPANY_ID) {
@@ -53,6 +57,8 @@ export function getParasutEnv(): ParasutEnv | null {
     companyId: PARASUT_COMPANY_ID,
     defaultVatRate: Number.isFinite(defaultVat) ? defaultVat : 0,
     defaultCurrency: currency,
+    defaultProductId: PARASUT_DEFAULT_PRODUCT_ID || null,
+    defaultProductName: PARASUT_DEFAULT_PRODUCT_NAME || null,
   }
 }
 
@@ -110,7 +116,8 @@ export type InvoiceLineInput = {
   quantity: number
   unitPrice: number // in major currency unit, e.g. 99.9
   vatRate?: number // 0, 1, 10, 20
-  productCode?: string
+  productId?: string
+  productName?: string
 }
 
 export type CreateInvoiceInput = {
@@ -132,25 +139,39 @@ export async function createSalesInvoice(input: CreateInvoiceInput): Promise<{ i
     const token = await getAccessToken(env)
     // 1) Create or reuse a contact
     const contactId = await createContact({ env, token, contact: input.contact })
+    const defaultProductId = env.defaultProductId || undefined
+    const defaultProductName = env.defaultProductName || 'Book Love Etkinlik'
 
     // 2) Build JSON:API sales invoice payload
     const issueDate = input.issueDate || new Date().toISOString().slice(0, 10)
-    const currency = (input.currency || env.defaultCurrency).toUpperCase()
-    if (!['TRY', 'TRL', 'USD', 'EUR', 'GBP'].includes(currency)) {
-      throw new Error(`Parasut invalid currency: ${currency}`)
+    const initialCurrency = (input.currency || env.defaultCurrency).toUpperCase()
+    if (!['TRY', 'TRL', 'USD', 'EUR', 'GBP'].includes(initialCurrency)) {
+      throw new Error(`Parasut invalid currency: ${initialCurrency}`)
     }
-    const toFixed = (value: number) => Number(value.toFixed(2))
+    const currency = initialCurrency === 'TRY' ? 'TRL' : initialCurrency
+    const toFixed = (value: number) => value.toFixed(2)
 
-    const details = input.lines.map((l) => ({
-      type: 'sales_invoice_details',
-      attributes: {
-        quantity: toFixed(l.quantity ?? 1),
-        unit_price: toFixed(l.unitPrice),
-        vat_rate: Number.isFinite(l.vatRate as number) ? l.vatRate : env.defaultVatRate,
-        description: l.description,
-        product: l.productCode ? { code: l.productCode } : undefined,
-      },
-    }))
+    const details = input.lines.map((l) => {
+      const productId = l.productId || defaultProductId
+      const productName = l.productName || defaultProductName
+      const detail: any = {
+        type: 'sales_invoice_details',
+        attributes: {
+          quantity: toFixed(l.quantity ?? 1),
+          unit_price: toFixed(l.unitPrice),
+          vat_rate: Number.isFinite(l.vatRate as number) ? l.vatRate : env.defaultVatRate,
+          description: l.description,
+          unit: 'Adet',
+          product_name: productName,
+        },
+      }
+      if (productId) {
+        detail.relationships = {
+          product: { data: { type: 'products', id: productId } },
+        }
+      }
+      return detail
+    })
 
     const body = {
       data: {
@@ -159,7 +180,7 @@ export async function createSalesInvoice(input: CreateInvoiceInput): Promise<{ i
           item_type: 'invoice',
           issue_date: issueDate,
           description: `Ödeme ${input.merchantOid}`,
-          currency,
+          ...(currency !== 'TRL' ? { currency } : {}),
         },
         relationships: {
           contact: { data: { type: 'contacts', id: contactId } },
@@ -238,7 +259,7 @@ export async function createInvoiceForPaytr(args: {
         quantity: 1,
         unitPrice: Number(amountTRY.toFixed(2)),
         vatRate: typeof vatRate === 'number' ? vatRate : undefined,
-        productCode: 'SERVICE',
+        productName: 'Book Love Etkinlik',
       },
     ],
   }
