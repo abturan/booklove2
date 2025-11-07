@@ -1,6 +1,7 @@
 // src/components/feed/post/hooks/useEdit.ts
 import { useRef, useState } from 'react'
 import type { Post } from '../types'
+import { prepareImageFile } from '@/lib/prepareImageFile'
 
 async function safeJson(res: Response) {
   try {
@@ -30,7 +31,8 @@ export function useEdit(post: Post, onUpdated?: (p: Post)=>void, onDeleted?: (id
     const room = Math.max(0, 5 - editImages.length)
     const arr = Array.from(files).slice(0, room)
     const up: EditImage[] = []
-    for (const f of arr) {
+    for (const original of arr) {
+      const f = await prepareImageFile(original)
       if (!isImageFile(f)) {
         if (typeof window !== 'undefined') window.alert('Lütfen yalnızca görsel dosyaları seçin.')
         continue

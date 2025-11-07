@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import useVerifyStatus from '@/lib/hooks/useVerifyStatus'
 import EmojiPicker from '@/components/EmojiPicker'
+import { prepareImageFile } from '@/lib/prepareImageFile'
 
 async function safeJson(res: Response) {
   try {
@@ -39,24 +40,25 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
     const roomLeft = Math.max(0, maxImages - images.length)
     const arr = Array.from(files).slice(0, roomLeft)
     for (let idx = 0; idx < arr.length; idx++) {
-      const f = arr[idx]
+      const original = arr[idx]
+      const prepared = await prepareImageFile(original)
       const tempId = `pending-${Date.now()}-${idx}-${Math.random()}`
       setImages((prev) => {
         if (prev.length >= maxImages) return prev
         return [...prev, { url: '', width: null, height: null, pending: true, tempId }]
       })
-      if (!isImageFile(f)) {
+      if (!isImageFile(prepared)) {
         setError('Lütfen yalnızca görsel dosyaları seçin.')
         setImages((prev) => prev.filter((img) => img.tempId !== tempId))
         continue
       }
-      if (f.size > 5 * 1024 * 1024) {
+      if (prepared.size > 5 * 1024 * 1024) {
         setError('Görseller en fazla 5MB olabilir.')
         setImages((prev) => prev.filter((img) => img.tempId !== tempId))
         continue
       }
       const fd = new FormData()
-      fd.set('file', f)
+      fd.set('file', prepared)
       try {
         const res = await fetch('/api/upload?type=post', { method: 'POST', body: fd })
         const data = await safeJson(res)

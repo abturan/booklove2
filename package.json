@@ -28,6 +28,7 @@
     "dotenv": "^17.2.2",
     "fontkit": "^2.0.2",
     "heic-convert": "^2.1.0",
+    "heic2any": "^0.0.4",
     "livekit-client": "^2.15.14",
     "livekit-server-sdk": "^2.14.0",
     "lucide-react": "0.446.0",
