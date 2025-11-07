@@ -6,6 +6,13 @@ import sharp from 'sharp'
 import { auth } from '@/lib/auth'
 
 export const runtime = 'nodejs'
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '16mb',
+    },
+  },
+}
 
 export async function POST(req: Request) {
   try {
