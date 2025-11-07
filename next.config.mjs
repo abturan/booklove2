@@ -1,6 +1,11 @@
 //next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  api: {
+    bodyParser: {
+      sizeLimit: '16mb',
+    },
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
