@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import useVerifyStatus from '@/lib/hooks/useVerifyStatus'
 import EmojiPicker from '@/components/EmojiPicker'
 
@@ -15,9 +16,15 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
   const maxImages = 5
   const { verified } = useVerifyStatus()
   const canPost = verified === true
+  const { data } = useSession()
+  const isAdmin = ((data?.user as any)?.role ?? '') === 'ADMIN'
   const [emojiOpen, setEmojiOpen] = useState(false)
   const emojiBtnRef = useRef<HTMLButtonElement | null>(null)
   // nothing here; EmojiPicker handles outside/esc
+
+  const isImageFile = (file: File) =>
+    (file.type && file.type.startsWith('image/')) ||
+    (file.name && /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(file.name))
 
   async function onSelectFiles(files: FileList | null) {
     if (!files || files.length === 0 || !canPost) return
@@ -26,7 +33,11 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
     const arr = Array.from(files).slice(0, roomLeft)
     const uploaded: { url: string; width?: number | null; height?: number | null }[] = []
     for (const f of arr) {
-      if (f.size > 5 * 1024 * 1024) {
+      if (!isImageFile(f)) {
+        setError('Lütfen yalnızca görsel dosyaları seçin.')
+        continue
+      }
+      if (!isAdmin && f.size > 5 * 1024 * 1024) {
         setError('Görseller en fazla 5MB olabilir.')
         continue
       }
@@ -137,7 +148,7 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
           <input
             ref={fileRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/*"
             multiple
             className="hidden"
             onChange={(e) => onSelectFiles(e.target.files)}

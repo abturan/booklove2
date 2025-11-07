@@ -11,6 +11,7 @@ type Me = {
   avatarUrl: string | null
   email: string
   username?: string | null
+  role?: string | null
 }
 
 export default function ProfileForms({ me }: { me: Me }) {
@@ -31,6 +32,7 @@ export default function ProfileForms({ me }: { me: Me }) {
   const [pwdBusy, setPwdBusy] = React.useState(false)
   const [pwdMsg, setPwdMsg] = React.useState<string | null>(null)
   const fileRef = React.useRef<HTMLInputElement>(null)
+  const isAdmin = me.role === 'ADMIN'
 
   React.useEffect(() => {
     setName(me.name ?? '')
@@ -57,14 +59,16 @@ export default function ProfileForms({ me }: { me: Me }) {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const okTypes = ['image/png', 'image/jpeg']
-    if (!okTypes.includes(file.type)) {
-      setAvatarMsg({ type: 'err', text: 'Lütfen PNG veya JPG dosyası seçin.' })
+    const isImage =
+      (file.type && file.type.startsWith('image/')) ||
+      (file.name && /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(file.name))
+    if (!isImage) {
+      setAvatarMsg({ type: 'err', text: 'Lütfen bir görsel dosyası seçin.' })
       e.target.value = ''
       return
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setAvatarMsg({ type: 'err', text: 'Dosya boyutu 2MB’ı geçmemelidir.' })
+    if (!isAdmin && file.size > 5 * 1024 * 1024) {
+      setAvatarMsg({ type: 'err', text: 'Dosya boyutu 5MB’ı geçmemelidir.' })
       e.target.value = ''
       return
     }
@@ -177,7 +181,7 @@ export default function ProfileForms({ me }: { me: Me }) {
           <input
             ref={fileRef}
             type="file"
-            accept="image/png,image/jpeg"
+            accept="image/*"
             className="hidden"
             onChange={handleFileChange}
           />
@@ -189,7 +193,11 @@ export default function ProfileForms({ me }: { me: Me }) {
           >
             {uploading ? 'Yükleniyor…' : 'Dosya Seç'}
           </button>
-          <div className="text-sm text-gray-600">PNG/JPG; maksimum ~2MB önerilir.</div>
+          <div className="text-sm text-gray-600">
+            {isAdmin
+              ? 'Tüm görsel formatları desteklenir; admin kullanıcıları için boyut sınırı yok.'
+              : 'Tüm görsel formatları desteklenir; maksimum 5MB.'}
+          </div>
         </div>
 
         {avatarMsg && (
@@ -336,8 +344,3 @@ export default function ProfileForms({ me }: { me: Me }) {
     </div>
   )
 }
-
-
-
-
-

@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
 export default async function SubscriptionsPage() {
   const session = await auth()
   if (!session?.user?.id) return <div className="p-6">Lütfen giriş yapın.</div>
+  const isAdmin = (session.user as any)?.role === 'ADMIN'
   const meId = session.user.id
 
   const [me, subs] = await Promise.all([
@@ -56,7 +57,7 @@ export default async function SubscriptionsPage() {
 
       {/* Desktop’ta banner kalsın */}
       <div className="hidden md:block">
-        <ProfileBanner src={me?.bannerUrl ?? null} canEdit />
+        <ProfileBanner src={me?.bannerUrl ?? null} canEdit isAdmin={isAdmin} />
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">

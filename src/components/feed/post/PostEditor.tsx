@@ -34,7 +34,7 @@ export default function PostEditor({
             ))}
           </div>
         )}
-        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" multiple className="hidden" onChange={(e)=>onPick(e.target.files)} />
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e)=>onPick(e.target.files)} />
         <div className="mt-2">
           <button type="button" onClick={()=>fileRef.current?.click()} disabled={images.length>=5} className="rounded-full border px-3 py-1.5 text-xs hover:bg-gray-50 disabled:opacity-60">
             Görsel ekle ({images.length}/5)

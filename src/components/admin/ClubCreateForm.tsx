@@ -330,7 +330,7 @@ export default function ClubCreateForm() {
                 <label className="inline-block">
                   <input
                     type="file"
-                    accept="image/png,image/jpeg"
+                    accept="image/*"
                     className="hidden"
                     onChange={async (e) => {
                       const f = e.target.files?.[0]

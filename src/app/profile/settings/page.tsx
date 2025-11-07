@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic'
 export default async function ProfilePage() {
   const session = await auth()
   if (!session?.user?.id) return <div className="p-6">Lütfen giriş yapın.</div>
+  const isAdmin = (session.user as any)?.role === 'ADMIN'
 
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -20,7 +21,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <ProfileBanner src={me.bannerUrl} canEdit />
+      <ProfileBanner src={me.bannerUrl} canEdit isAdmin={isAdmin} />
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* ⛔️ Mobilde menü tamamen gizli (dolayısıyla 'Çıkış yap' da görünmez) */}
@@ -30,7 +31,15 @@ export default async function ProfilePage() {
 
         <div className="lg:col-span-2 space-y-6">
           <ProfileForms
-            me={{ id: me.id, name: me.name, bio: me.bio, avatarUrl: me.avatarUrl, email: me.email, username: me.username ?? null }}
+            me={{
+              id: me.id,
+              name: me.name,
+              bio: me.bio,
+              avatarUrl: me.avatarUrl,
+              email: me.email,
+              username: me.username ?? null,
+              role: (session.user as any)?.role ?? null,
+            }}
           />
           <NotificationPrefsForm />
         </div>

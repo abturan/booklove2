@@ -185,7 +185,7 @@ export default function ProgramForm({ clubId }: { clubId: string }) {
             <label className="inline-block">
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept="image/*"
                 className="hidden"
                 onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
               />

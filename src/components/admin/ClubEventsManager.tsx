@@ -94,6 +94,10 @@ export default function ClubEventsManager({
     })),
   )
 
+  const isImageFile = (file: File) =>
+    (file.type && file.type.startsWith('image/')) ||
+    (file.name && /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(file.name))
+
   const updateEventState = (
     id: string,
     patch: Partial<EventState> | ((prev: EventState) => EventState),
@@ -113,6 +117,24 @@ export default function ClubEventsManager({
         ...prev,
         coverFile: null,
         coverPreview: prev.bookCoverUrl || fallbackCover,
+        error: null,
+        message: null,
+      }))
+      return
+    }
+    if (!isImageFile(file)) {
+      updateEventState(eventId, (prev) => ({
+        ...prev,
+        error: 'Lütfen yalnızca görsel dosyaları seçin.',
+        message: null,
+      }))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      updateEventState(eventId, (prev) => ({
+        ...prev,
+        error: 'Kapak görselleri en fazla 5MB olabilir.',
+        message: null,
       }))
       return
     }
@@ -120,6 +142,8 @@ export default function ClubEventsManager({
     updateEventState(eventId, {
       coverFile: file,
       coverPreview: preview,
+      error: null,
+      message: null,
     })
   }
 
@@ -520,7 +544,7 @@ export default function ClubEventsManager({
                             <label className="relative inline-flex cursor-pointer items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-slate-800">
                               <input
                                 type="file"
-                                accept="image/png,image/jpeg"
+                                accept="image/*"
                                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                                 onChange={(e) =>
                                   handleCoverFile(event.id, e.target.files?.[0] ?? null)
@@ -544,7 +568,7 @@ export default function ClubEventsManager({
                             )}
                           </div>
                           <p className="text-xs text-slate-400">
-                            PNG veya JPG, en fazla 2 MB. Kaydettiğinizde otomatik yüklenir.
+                            Tüm görsel formatları desteklenir; maksimum 5MB (admin kullanıcıları için sınır yok). Kaydettiğinizde otomatik yüklenir.
                           </p>
                         </div>
                         <div className="space-y-2">

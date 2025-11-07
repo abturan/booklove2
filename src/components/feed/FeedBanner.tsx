@@ -3,6 +3,7 @@
 
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 /**
  * Editable banner (Facebook benzeri). URL, localStorage’da saklanır.
@@ -14,6 +15,8 @@ export default function FeedBanner() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const { data } = useSession()
+  const isAdmin = ((data?.user as any)?.role ?? '') === 'ADMIN'
 
   useEffect(() => {
     const saved = localStorage.getItem('feed.banner.url')
@@ -23,6 +26,19 @@ export default function FeedBanner() {
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
+    const isImage =
+      (f.type && f.type.startsWith('image/')) ||
+      (f.name && /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(f.name))
+    if (!isImage) {
+      setErr('Lütfen yalnızca görsel dosyaları seçin.')
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
+    if (!isAdmin && f.size > 5 * 1024 * 1024) {
+      setErr('Görseller en fazla 5MB olabilir.')
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
     setBusy(true); setErr(null)
     try {
       const fd = new FormData()
@@ -57,7 +73,7 @@ export default function FeedBanner() {
         <input
           ref={fileRef}
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/*"
           className="hidden"
           onChange={onPick}
         />

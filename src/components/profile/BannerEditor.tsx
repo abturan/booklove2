@@ -6,9 +6,10 @@ import * as React from 'react'
 type Props = {
   initialUrl?: string | null
   onSaved?: (url: string) => void
+  isAdmin?: boolean
 }
 
-export default function BannerEditor({ initialUrl, onSaved }: Props) {
+export default function BannerEditor({ initialUrl, onSaved, isAdmin = false }: Props) {
   const [busy, setBusy] = React.useState(false)
   const fileRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -16,8 +17,12 @@ export default function BannerEditor({ initialUrl, onSaved }: Props) {
     const f = e.target.files?.[0]
     if (!f) return
 
-    if (f.size > 2 * 1024 * 1024) { alert('Banner en fazla 2MB olmalı.'); return }
-    if (!['image/png', 'image/jpeg'].includes(f.type)) { alert('Sadece PNG/JPG kabul edilir.'); return }
+    const isImage =
+      (f.type && f.type.startsWith('image/')) ||
+      (f.name && /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(f.name))
+    if (!isImage) { alert('Lütfen bir görsel dosyası seçin.'); return }
+    const maxBytes = isAdmin ? null : 5 * 1024 * 1024
+    if (maxBytes && f.size > maxBytes) { alert('Banner en fazla 5MB olmalı.'); return }
 
     setBusy(true)
     try {
@@ -47,7 +52,7 @@ export default function BannerEditor({ initialUrl, onSaved }: Props) {
       <input
         ref={fileRef}
         type="file"
-        accept="image/png,image/jpeg"
+        accept="image/*"
         className="hidden"
         onChange={pick}
         disabled={busy}

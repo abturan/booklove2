@@ -39,7 +39,7 @@ export default function AvatarUpload({ initialUrl, onFileSelect, className }: Pr
       <label className="relative inline-flex">
         <input
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/*"
           className="sr-only"
           onChange={(e) => {
             const f = e.target.files?.[0] ?? null
@@ -49,7 +49,7 @@ export default function AvatarUpload({ initialUrl, onFileSelect, className }: Pr
         />
         <Button type="button" variant="secondary">Dosya Seç</Button>
       </label>
-      <span className="text-xs text-gray-500">PNG/JPG; maksimum ~2MB önerilir.</span>
+      <span className="text-xs text-gray-500">Tüm görsel formatları desteklenir; maksimum 5MB.</span>
     </div>
   )
 }

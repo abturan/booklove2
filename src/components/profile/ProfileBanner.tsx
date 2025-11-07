@@ -5,7 +5,9 @@ import * as React from 'react'
 import Image from 'next/image'
 import BannerEditor from '@/components/profile/BannerEditor'
 
-export default function ProfileBanner({ src, canEdit = false }: { src?: string | null; canEdit?: boolean }) {
+type Props = { src?: string | null; canEdit?: boolean; isAdmin?: boolean }
+
+export default function ProfileBanner({ src, canEdit = false, isAdmin = false }: Props) {
   const fallback = 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1600&auto=format&fit=crop'
   const [current, setCurrent] = React.useState<string>(src || fallback)
 
@@ -16,7 +18,13 @@ export default function ProfileBanner({ src, canEdit = false }: { src?: string |
   return (
     <div className="relative hero-fixed rounded-3xl overflow-hidden">
       <Image src={current} alt="" fill className="object-cover" priority />
-      {canEdit && <BannerEditor initialUrl={src || undefined} onSaved={(url) => setCurrent(url || fallback)} />}
+      {canEdit && (
+        <BannerEditor
+          initialUrl={src || undefined}
+          onSaved={(url) => setCurrent(url || fallback)}
+          isAdmin={isAdmin}
+        />
+      )}
     </div>
   )
 }

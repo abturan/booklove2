@@ -14,22 +14,44 @@ export async function POST(req: Request) {
     const isAdmin = role === 'ADMIN'
 
     const url = new URL(req.url)
-    const kind = url.searchParams.get('type')
+    const kind = url.searchParams.get('type') ?? 'avatar'
     const form = await req.formData()
     const file = form.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'Dosya bulunamadı' }, { status: 400 })
 
-    const ok = ['image/png', 'image/jpeg', 'image/webp']
-    if (isAdmin) ok.push('image/gif')
-    if (!ok.includes(file.type))
-      return NextResponse.json({ error: isAdmin ? 'Sadece PNG/JPG/WebP/GIF kabul edilir' : 'Sadece PNG/JPG/WebP kabul edilir' }, { status: 400 })
+    const mime = file.type || ''
+    const name = typeof (file as any).name === 'string' ? ((file as any).name as string) : ''
+    const normalizedName = name.toLowerCase()
+    const extPattern = /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i
+    const looksLikeImage = mime.startsWith('image/') || (!!name && extPattern.test(name))
+    if (!looksLikeImage) {
+      return NextResponse.json({ error: 'Yalnızca görsel dosyalar kabul edilir' }, { status: 400 })
+    }
 
-    if (file.size > 5 * 1024 * 1024)
+    const sizeLimit = isAdmin ? null : 5 * 1024 * 1024
+    if (sizeLimit && file.size > sizeLimit)
       return NextResponse.json({ error: 'Dosya en fazla 5MB olmalı' }, { status: 400 })
 
     const sub = kind === 'banner' ? 'banners' : kind === 'post' ? 'posts' : 'avatars'
     const arrayBuffer = await file.arrayBuffer()
     const inputBuffer = Buffer.from(arrayBuffer)
+    const isHeicLike = mime.includes('heic') || mime.includes('heif') || /\.hei[cf]$/i.test(name)
+
+    let workingBuffer = inputBuffer
+    let workingMime = mime
+    if (isHeicLike) {
+      try {
+        const heicConvertMod = (await import('heic-convert')) as any
+        const heicConvert = heicConvertMod?.default || heicConvertMod
+        if (typeof heicConvert === 'function') {
+          const converted = await heicConvert({ buffer: inputBuffer, format: 'PNG' })
+          workingBuffer = Buffer.isBuffer(converted) ? converted : Buffer.from(converted)
+          workingMime = 'image/png'
+        }
+      } catch (err) {
+        console.error('[upload] HEIC dönüşüm hatası:', err)
+      }
+    }
 
     let outputBuffer: Buffer
     let width: number | null = null
@@ -37,19 +59,19 @@ export async function POST(req: Request) {
     let filename: string
     let contentType: string
 
-    const isGif = isAdmin && file.type === 'image/gif'
+    const isGif = workingMime === 'image/gif' || normalizedName.endsWith('.gif')
 
     try {
       if (isGif) {
-        const pipeline = sharp(inputBuffer, { failOnError: false, animated: true })
+        const pipeline = sharp(workingBuffer, { failOnError: false, animated: true })
         const meta = await pipeline.metadata()
         width = meta.width ?? null
         height = meta.height ?? null
-        outputBuffer = inputBuffer
+        outputBuffer = workingBuffer
         filename = `${sub[0]}-${Date.now()}-${Math.floor(Math.random() * 1e6)}.gif`
         contentType = 'image/gif'
       } else {
-        const pipeline = sharp(inputBuffer, { failOnError: false })
+        const pipeline = sharp(workingBuffer, { failOnError: false })
         const meta = await pipeline.metadata()
         outputBuffer = await pipeline.webp({ quality: 82 }).toBuffer()
         const webpMeta = await sharp(outputBuffer).metadata()
@@ -84,6 +106,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e?.message || 'Yükleme hatası' }, { status: 500 })
   }
 }
-
-
-

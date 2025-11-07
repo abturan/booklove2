@@ -12,11 +12,12 @@ type Props = { params: { peerId: string } }
 export default async function StartPeerChatPage({ params }: Props) {
   const session = await auth()
   if (!session?.user?.id) return <div className="p-6">Lütfen giriş yapın.</div>
+  const isAdmin = (session.user as any)?.role === 'ADMIN'
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { bannerUrl: true } })
 
   return (
     <div className="space-y-6">
-      <ProfileBanner src={me?.bannerUrl ?? null} canEdit />
+      <ProfileBanner src={me?.bannerUrl ?? null} canEdit isAdmin={isAdmin} />
       <div className="grid lg:grid-cols-3 gap-6">
         <div>
           <LeftSidebar />

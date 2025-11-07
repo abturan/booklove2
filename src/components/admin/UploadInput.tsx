@@ -42,7 +42,7 @@ export default function UploadInput({
         <input
           ref={ref}
           type="file"
-          accept="image/png,image/jpeg,image/jpg"
+          accept="image/*"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0]

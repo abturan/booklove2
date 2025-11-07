@@ -111,8 +111,11 @@ export default function ClubEditorForm({
       setBannerFile(null)
       return
     }
-    if (!['image/png', 'image/jpeg'].includes(file.type)) {
-      setServerErr('Sadece PNG/JPG yükleyebilirsiniz.')
+    const isImage =
+      (file.type && file.type.startsWith('image/')) ||
+      (file.name && /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(file.name))
+    if (!isImage) {
+      setServerErr('Lütfen bir görsel dosyası seçin.')
       return
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -221,7 +224,7 @@ export default function ClubEditorForm({
             <label className="inline-block">
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept="image/*"
                 className="hidden"
                 onChange={(e) => onBannerFile(e.target.files?.[0] ?? null)}
               />

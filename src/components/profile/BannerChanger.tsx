@@ -2,12 +2,15 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
 export default function BannerChanger() {
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+  const { data } = useSession()
+  const isAdmin = ((data?.user as any)?.role ?? '') === 'ADMIN'
 
   function pick() {
     fileRef.current?.click()
@@ -16,8 +19,11 @@ export default function BannerChanger() {
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
-    if (!['image/png', 'image/jpeg'].includes(f.type)) return alert('PNG/JPG yükleyin.')
-    if (f.size > 5 * 1024 * 1024) return alert('En fazla 5MB.')
+    const isImage =
+      (f.type && f.type.startsWith('image/')) ||
+      (f.name && /\.(heic|heif|hevc|avif|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(f.name))
+    if (!isImage) return alert('Lütfen görsel dosyası yükleyin.')
+    if (!isAdmin && f.size > 5 * 1024 * 1024) return alert('En fazla 5MB.')
 
     setBusy(true)
     try {
@@ -50,7 +56,7 @@ export default function BannerChanger() {
 
   return (
     <>
-      <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onFile} />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       <button
         onClick={pick}
         disabled={busy}
