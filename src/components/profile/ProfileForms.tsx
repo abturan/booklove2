@@ -194,9 +194,7 @@ export default function ProfileForms({ me }: { me: Me }) {
             {uploading ? 'Yükleniyor…' : 'Dosya Seç'}
           </button>
           <div className="text-sm text-gray-600">
-            {isAdmin
-              ? 'Tüm görsel formatları desteklenir; admin kullanıcıları için boyut sınırı yok.'
-              : 'Tüm görsel formatları desteklenir; maksimum 5MB.'}
+            PNG, JPG, WebP, GIF, HEIC/HEIF, AVIF, BMP, TIFF (standart kullanıcılar için maks. 5MB).
           </div>
         </div>
 

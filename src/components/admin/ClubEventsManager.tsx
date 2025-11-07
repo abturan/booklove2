@@ -568,7 +568,7 @@ export default function ClubEventsManager({
                             )}
                           </div>
                           <p className="text-xs text-slate-400">
-                            Tüm görsel formatları desteklenir; maksimum 5MB (admin kullanıcıları için sınır yok). Kaydettiğinizde otomatik yüklenir.
+                            PNG, JPG, WebP, GIF, HEIC/HEIF, AVIF, BMP, TIFF (maks. 5MB). Kaydettiğinizde otomatik yüklenir.
                           </p>
                         </div>
                         <div className="space-y-2">

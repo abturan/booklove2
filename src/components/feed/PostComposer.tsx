@@ -2,22 +2,29 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useSession } from 'next-auth/react'
 import useVerifyStatus from '@/lib/hooks/useVerifyStatus'
 import EmojiPicker from '@/components/EmojiPicker'
+
+async function safeJson(res: Response) {
+  try {
+    return await res.json()
+  } catch {
+    const text = await res.text().catch(() => '')
+    return { error: text || 'Beklenmeyen yanıt alındı.' }
+  }
+}
 
 export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: string) => void; repostOf?: { id: string; body: string; owner?: { name?: string | null; username?: string | null }; images?: { url: string }[] } }) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [images, setImages] = useState<{ url: string; width?: number | null; height?: number | null }[]>([])
+  type ComposerImage = { url: string; width?: number | null; height?: number | null; pending?: boolean; tempId?: string }
+  const [images, setImages] = useState<ComposerImage[]>([])
   const [okMsg, setOkMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const maxImages = 5
   const { verified } = useVerifyStatus()
   const canPost = verified === true
-  const { data } = useSession()
-  const isAdmin = ((data?.user as any)?.role ?? '') === 'ADMIN'
   const [emojiOpen, setEmojiOpen] = useState(false)
   const emojiBtnRef = useRef<HTMLButtonElement | null>(null)
   // nothing here; EmojiPicker handles outside/esc
@@ -31,29 +38,51 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
     setError(null)
     const roomLeft = Math.max(0, maxImages - images.length)
     const arr = Array.from(files).slice(0, roomLeft)
-    const uploaded: { url: string; width?: number | null; height?: number | null }[] = []
-    for (const f of arr) {
+    for (let idx = 0; idx < arr.length; idx++) {
+      const f = arr[idx]
+      const tempId = `pending-${Date.now()}-${idx}-${Math.random()}`
+      setImages((prev) => {
+        if (prev.length >= maxImages) return prev
+        return [...prev, { url: '', width: null, height: null, pending: true, tempId }]
+      })
       if (!isImageFile(f)) {
         setError('Lütfen yalnızca görsel dosyaları seçin.')
+        setImages((prev) => prev.filter((img) => img.tempId !== tempId))
         continue
       }
-      if (!isAdmin && f.size > 5 * 1024 * 1024) {
+      if (f.size > 5 * 1024 * 1024) {
         setError('Görseller en fazla 5MB olabilir.')
+        setImages((prev) => prev.filter((img) => img.tempId !== tempId))
         continue
       }
       const fd = new FormData()
       fd.set('file', f)
-      const res = await fetch('/api/upload?type=post', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (res.ok && data?.url) {
-        uploaded.push({
-          url: data.url,
-          width: typeof data.width === 'number' ? data.width : null,
-          height: typeof data.height === 'number' ? data.height : null,
-        })
-      } else setError(data?.error || 'Yükleme hatası')
+      try {
+        const res = await fetch('/api/upload?type=post', { method: 'POST', body: fd })
+        const data = await safeJson(res)
+        if (res.ok && data?.url) {
+          setImages((prev) =>
+            prev.map((img) =>
+              img.tempId === tempId
+                ? {
+                    url: data.url,
+                    width: typeof data.width === 'number' ? data.width : null,
+                    height: typeof data.height === 'number' ? data.height : null,
+                    pending: false,
+                  }
+                : img,
+            ),
+          )
+        } else {
+          setError(data?.error || 'Yükleme hatası')
+          setImages((prev) => prev.filter((img) => img.tempId !== tempId))
+        }
+      } catch (err) {
+        console.error('[PostComposer] upload failed', err)
+        setError('Görsel yüklenemedi, lütfen tekrar deneyin.')
+        setImages((prev) => prev.filter((img) => img.tempId !== tempId))
+      }
     }
-    setImages((prev) => [...prev, ...uploaded].slice(0, maxImages))
   }
 
   function removeImage(idx: number) {
@@ -80,7 +109,7 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body, images, repostOfId: repostOf?.id }),
       })
-      const data = await res.json()
+      const data = await safeJson(res)
       if (!res.ok) {
         throw new Error(data?.error || 'Gönderilemedi')
       }
@@ -128,7 +157,13 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
         <div className="mt-2 grid grid-cols-2 gap-2">
           {images.map((img, i) => (
             <div key={i} className="relative">
-              <img src={img.url} alt="" className="rounded-xl object-cover w-full h-28" />
+              {img.pending ? (
+                <div className="rounded-xl w-full h-28 bg-gray-100 animate-pulse flex items-center justify-center text-xs text-gray-500">
+                  Yükleniyor…
+                </div>
+              ) : (
+                <img src={img.url} alt="" className="rounded-xl object-cover w-full h-28" />
+              )}
               <button
                 type="button"
                 onClick={() => removeImage(i)}

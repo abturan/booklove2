@@ -2,8 +2,17 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+
+async function safeJson(res: Response) {
+  try {
+    return await res.json()
+  } catch {
+    const text = await res.text().catch(() => '')
+    return { error: text || 'Beklenmeyen yanıt alındı.' }
+  }
+}
 
 export default function BannerChanger() {
   const [busy, setBusy] = useState(false)
@@ -31,7 +40,7 @@ export default function BannerChanger() {
       const fd = new FormData()
       fd.append('file', f)
       const up = await fetch('/api/upload?type=banner', { method: 'POST', body: fd })
-      const j = await up.json()
+      const j = await safeJson(up)
       if (!up.ok || !j?.url) throw new Error(j?.error || 'Yükleme hatası')
 
       // 2) Kaydet
@@ -40,7 +49,7 @@ export default function BannerChanger() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ bannerUrl: j.url }),
       })
-      const k = await res.json()
+      const k = await safeJson(res)
       if (!res.ok || !k?.ok) throw new Error(k?.error || 'Kaydedilemedi')
 
       // 3) Anında yansıt

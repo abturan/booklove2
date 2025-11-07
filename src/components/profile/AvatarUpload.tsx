@@ -49,7 +49,7 @@ export default function AvatarUpload({ initialUrl, onFileSelect, className }: Pr
         />
         <Button type="button" variant="secondary">Dosya Seç</Button>
       </label>
-      <span className="text-xs text-gray-500">Tüm görsel formatları desteklenir; maksimum 5MB.</span>
+      <span className="text-xs text-gray-500">PNG, JPG, WebP, GIF, HEIC/HEIF, AVIF, BMP, TIFF (maks. 5MB).</span>
     </div>
   )
 }

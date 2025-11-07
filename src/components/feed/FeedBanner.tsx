@@ -3,7 +3,15 @@
 
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { useSession } from 'next-auth/react'
+
+async function safeJson(res: Response) {
+  try {
+    return await res.json()
+  } catch {
+    const text = await res.text().catch(() => '')
+    return { error: text || 'Beklenmeyen yanıt alındı.' }
+  }
+}
 
 /**
  * Editable banner (Facebook benzeri). URL, localStorage’da saklanır.
@@ -15,8 +23,6 @@ export default function FeedBanner() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const { data } = useSession()
-  const isAdmin = ((data?.user as any)?.role ?? '') === 'ADMIN'
 
   useEffect(() => {
     const saved = localStorage.getItem('feed.banner.url')
@@ -34,7 +40,7 @@ export default function FeedBanner() {
       if (fileRef.current) fileRef.current.value = ''
       return
     }
-    if (!isAdmin && f.size > 5 * 1024 * 1024) {
+    if (f.size > 5 * 1024 * 1024) {
       setErr('Görseller en fazla 5MB olabilir.')
       if (fileRef.current) fileRef.current.value = ''
       return
@@ -45,7 +51,7 @@ export default function FeedBanner() {
       fd.append('file', f)
       // /api/upload banner’ı /uploads/banners altına kaydediyor
       const res = await fetch('/api/upload?type=banner', { method: 'POST', body: fd })
-      const j = await res.json()
+      const j = await safeJson(res)
       if (!res.ok || !j?.url) throw new Error(j?.error || 'Banner yüklenemedi.')
       setBannerUrl(j.url)
       localStorage.setItem('feed.banner.url', j.url)
