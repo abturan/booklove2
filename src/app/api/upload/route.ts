@@ -44,9 +44,9 @@ export async function POST(req: Request) {
         const heicConvertMod = (await import('heic-convert')) as any
         const heicConvert = heicConvertMod?.default || heicConvertMod
         if (typeof heicConvert === 'function') {
-          const converted = await heicConvert({ buffer: inputBuffer, format: 'PNG' })
+          const converted = await heicConvert({ buffer: inputBuffer, format: 'JPEG', quality: 0.92 })
           workingBuffer = Buffer.isBuffer(converted) ? converted : Buffer.from(converted)
-          workingMime = 'image/png'
+          workingMime = 'image/jpeg'
         }
       } catch (err) {
         console.error('[upload] HEIC dönüşüm hatası:', err)
