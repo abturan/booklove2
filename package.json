@@ -22,6 +22,7 @@
     "@livekit/components-react": "^2.9.15",
     "@livekit/components-styles": "^1.1.6",
     "@prisma/client": "^6.16.2",
+    "@vercel/analytics": "^1.5.0",
     "@vercel/blob": "^2.0.0",
     "@vercel/speed-insights": "^1.2.0",
     "bcryptjs": "^2.4.3",

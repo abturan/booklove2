@@ -2,6 +2,7 @@
 import './globals.css'
 import '@livekit/components-styles'
 import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -43,6 +44,7 @@ export default function RootLayout({
           </div>
           <ShareModal />
           <SpeedInsights />
+          <Analytics />
           {modals}
         </Providers>
       </body>
