@@ -57,7 +57,7 @@ export function buildContractHtml(d: ContractData) {
       <p><strong>Adres:</strong> Rasimpaşa Mah. Elmalıçeşme Sok. No: 23/8 Kadıköy/İstanbul</p>
       <p><strong>Telefon:</strong> 0 (541) 788 94 98</p>
       <p><strong>KEP:</strong> gereklikitaplar@hs01.kep.tr</p>
-      <p><strong>E-posta:</strong> info@boook.love</p>
+      <p><strong>E-posta:</strong> info@book.love</p>
     </div>
 
     <p class="muted">ALICI, işbu Sözleşme’yi elektronik ortamda onayladığında, abonelik bedelini ve varsa ilgili vergileri, seçtiği ödeme planına uygun şekilde ödemeyi peşinen kabul ve taahhüt eder.</p>
@@ -157,7 +157,7 @@ export function renderContractPdf(
   KV('Adres', 'Rasimpaşa Mah. Elmalıçeşme Sok. No: 23/8 Kadıköy/İstanbul')
   KV('Telefon', '0 (541) 788 94 98')
   KV('KEP', 'gereklikitaplar@hs01.kep.tr')
-  KV('E-posta', 'info@boook.love')
+  KV('E-posta', 'info@book.love')
 
   P('ALICI, işbu Sözleşme’yi elektronik ortamda onayladığında, abonelik bedelini ve varsa ilgili vergileri, seçtiği ödeme planına uygun şekilde ödemeyi peşinen kabul ve taahhüt eder.')
 

@@ -10,7 +10,7 @@ const BRAND_RED = '#fa3c30'
 const slides = [
   { id: 1, title: 'Yazar kürasyonlu\nkulüpler', subtitle: 'Katıl, keşfet, oku.', img: '/banners/banner1.png' },
   { id: 2, title: 'Dünyanın tüm okurları,\nbirleşin!', subtitle: 'Kulüpler, seçkiler, yeni kitaplar.', img: '/banners/banner2.png' },
-  { id: 3, title: 'Boook.Love\nseni bekliyor', subtitle: 'Sohbet et, etkinliklere katıl, sosyalleş.', img: '/banners/banner3.png' },
+  { id: 3, title: 'book.love\nseni bekliyor', subtitle: 'Sohbet et, etkinliklere katıl, sosyalleş.', img: '/banners/banner3.png' },
   { id: 4, title: 'Arkadaşlarını ekle\nve keşfet', subtitle: 'Yeni dostluklar kur, birlikte oku.', img: '/banners/banner1.png' },
   { id: 5, title: 'Mesajlaş\nanında bağlan', subtitle: 'Özel mesajlarla sohbet et.', img: '/banners/banner2.png' },
   { id: 6, title: 'Paylaşım yap\nbeğeni topla', subtitle: 'Gönderiler oluştur, beğen ve yorumla.', img: '/banners/banner3.png' },
@@ -71,7 +71,7 @@ export default function HeroSlider() {
           <div className="grid grid-cols-12 items-start gap-6">
             <div className="col-span-12 md:col-span-10 lg:col-span-10">
               <div className="flex items-start gap-4 sm:gap-6">
-                <img src="/logos/logo-white.png" alt="boook.love" className="w-14 sm:w-20 lg:w-28 h-auto shrink-0" />
+                <img src="/logos/logo-white.png" alt="book.love" className="w-14 sm:w-20 lg:w-28 h-auto shrink-0" />
                 <div className="text-white">
                   <h1 className="leading-[1] font-semibold text-[26px] sm:text-[42px] lg:text-[56px] max-w-[18ch]">
                     {s.title.split('\n').map((line, idx) => (
@@ -121,8 +121,6 @@ export default function HeroSlider() {
     </div>
   )
 }
-
-
 
 
 

@@ -30,7 +30,7 @@ export function renderEmail({
     <div style="max-width:640px;margin:0 auto;padding:24px">
       <div style="background:white;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow:hidden">
         <div style="background:${brandColor};color:white;padding:16px 20px;font-size:18px;font-weight:800;letter-spacing:.3px">
-          boook.love
+          book.love
         </div>
         <div style="padding:20px">
           <h1 style="margin:0 0 8px 0;font-size:20px">${escapeHtml(title)}</h1>

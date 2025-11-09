@@ -1,7 +1,7 @@
 // src/content/legal/terms.ts
 export const TERMS_HTML = `
   <h2>Kullanım Koşulları</h2>
-  <p><em>Bu metin, www.boook.love (“<strong>Site</strong>”) kullanımına ilişkin hüküm ve koşulları içerir.
+  <p><em>Bu metin, www.book.love (“<strong>Site</strong>”) kullanımına ilişkin hüküm ve koşulları içerir.
   Siteye giren veya Site’den yararlanan herkes bu koşulları kabul etmiş sayılır.</em></p>
 
   <h3>1. Genel Hükümler</h3>

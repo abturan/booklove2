@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: { mailId: str
     }
 
     const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_BASE_URL || '').replace(/\/$/, '')
-    const cta = `${base || 'https://boook.love'}/clubs/${event.club.slug}`
+    const cta = `${base || 'https://book.love'}/clubs/${event.club.slug}`
     const eventDate = new Date(event.startsAt)
 
     let recipients: { userId: string | null; email: string | null; name: string | null }[]

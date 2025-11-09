@@ -2,6 +2,7 @@
 import './globals.css'
 import '@livekit/components-styles'
 import { Inter } from 'next/font/google'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Providers from '@/components/Providers'
@@ -14,7 +15,7 @@ import ClientErrorCatcher from '@/components/ClientErrorCatcher'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Boook.Love',
+  title: 'book.love',
   description: 'Kitap kulüpleri ve sohbet',
 }
 
@@ -41,11 +42,10 @@ export default function RootLayout({
             <MobileAppFooter />
           </div>
           <ShareModal />
+          <SpeedInsights />
           {modals}
         </Providers>
       </body>
     </html>
   )
 }
-
-

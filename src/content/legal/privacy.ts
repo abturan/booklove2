@@ -2,7 +2,7 @@
 export const privacyHtml = `
   <h2><strong>Gizlilik ve Kişisel Verilerin Korunması Politikası</strong></h2>
   <p>
-    Bu politika, <strong>boook.love</strong> hizmetlerinde toplanan kişisel verilerin nasıl işlendiğini,
+    Bu politika, <strong>book.love</strong> hizmetlerinde toplanan kişisel verilerin nasıl işlendiğini,
     saklandığını ve korunduğunu sade bir dille açıklar.
   </p>
 
@@ -31,5 +31,5 @@ export const privacyHtml = `
   <a href="/iletisim">iletişim formu</a> üzerinden bize yazabilirsiniz.</p>
 
   <h3><strong>7. İletişim</strong></h3>
-  <p>Destek ekibi: <strong>info@boook.love</strong></p>
+  <p>Destek ekibi: <strong>info@book.love</strong></p>
 `

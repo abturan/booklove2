@@ -2,7 +2,7 @@
 function resolveFrom(): { name: string; address: string } {
   const raw = (process.env.MAIL_FROM || '').trim()
   const fallbackName = (process.env.MAIL_FROM_NAME || 'Boook Love').trim()
-  const fallbackAddr = (process.env.MAIL_FROM_ADDRESS || 'noreply@boook.love').trim()
+  const fallbackAddr = (process.env.MAIL_FROM_ADDRESS || 'noreply@book.love').trim()
 
   if (raw) {
     // Try to parse formats like: "Name <addr@host>" or just "addr@host"

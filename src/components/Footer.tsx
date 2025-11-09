@@ -29,11 +29,11 @@ export default function Footer() {
       <footer className="mt-auto border-t border-neutral-200 bg-neutral-50/80 backdrop-blur overflow-x-hidden">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-3">
-            <div className="text-lg font-semibold tracking-tight">boook.love</div>
+            <div className="text-lg font-semibold tracking-tight">book.love</div>
             <p className="text-sm text-neutral-600">
               Okurları; kulüpler, seçkiler ve moderatörlü sohbetlerle bir araya getiren kitap kulübü platformu.
             </p>
-            <p className="text-xs text-neutral-500">© {year} boook.love — Tüm hakları saklıdır.</p>
+            <p className="text-xs text-neutral-500">© {year} book.love — Tüm hakları saklıdır.</p>
 
             <div className="flex gap-2 pt-2">
               <SocialIcon href="https://x.com/booklovetr" title="X (Twitter)">
@@ -76,7 +76,6 @@ export default function Footer() {
     </>
   )
 }
-
 
 
 

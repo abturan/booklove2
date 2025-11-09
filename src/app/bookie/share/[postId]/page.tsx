@@ -16,7 +16,7 @@ export default async function BookieSharePage({ params, searchParams }: { params
   })
   if (!post) return notFound()
 
-  const base = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'https://boook.love'
+  const base = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'https://book.love'
   const origin = base.endsWith('/') ? base.slice(0, -1) : base
   const profileHandle = post.owner.username || post.owner.slug || post.owner.id
   const profileUrl = `${origin}/u/${profileHandle}`

@@ -3,21 +3,21 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'İletişim | boook.love',
+  title: 'İletişim | book.love',
   description:
-    'boook.love iletişim bilgileri: adres, telefon ve e-posta.',
+    'book.love iletişim bilgileri: adres, telefon ve e-posta.',
   alternates: { canonical: '/iletisim' },
   openGraph: {
-    title: 'İletişim | boook.love',
+    title: 'İletişim | book.love',
     description:
-      'boook.love iletişim bilgileri: adres, telefon ve e-posta.',
-    url: 'https://www.boook.love/iletisim',
-    siteName: 'boook.love',
+      'book.love iletişim bilgileri: adres, telefon ve e-posta.',
+    url: 'https://www.book.love/iletisim',
+    siteName: 'book.love',
     type: 'website',
   },
 }
 
-const COMPANY = 'boook.love'
+const COMPANY = 'book.love'
 const ADDRESS_TEXT =
   'Rasimpaşa Mah. Duatepe Sk. No: 55/15 34716 Kadıköy/İstanbul'
 const ADDRESS_MAP_URL =
@@ -25,7 +25,7 @@ const ADDRESS_MAP_URL =
   encodeURIComponent(ADDRESS_TEXT)
 const PHONE_DISPLAY = '0 (541) 788 94 98'
 const PHONE_TEL = '+905417889498'
-const EMAIL = 'info@boook.love'
+const EMAIL = 'info@book.love'
 
 export default function ContactPage() {
   return (
@@ -38,7 +38,7 @@ export default function ContactPage() {
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: COMPANY,
-            url: 'https://www.boook.love',
+            url: 'https://www.book.love',
             email: EMAIL,
             telephone: PHONE_TEL,
             address: {
@@ -121,7 +121,6 @@ export default function ContactPage() {
     </>
   )
 }
-
 
 
 

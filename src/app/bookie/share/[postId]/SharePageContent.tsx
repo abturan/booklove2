@@ -161,7 +161,7 @@ export default function SharePageContent({
         >
           {/* Brand header */}
           <div style={{ height: 84, background: '#fa3d30', color: '#fff', display: 'flex', alignItems: 'center', padding: '0 24px', fontWeight: 800, letterSpacing: '.3px' }}>
-            boook.love
+            book.love
           </div>
           {/* Content */}
           <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, height: 1280 - 84, boxSizing: 'border-box' }}>

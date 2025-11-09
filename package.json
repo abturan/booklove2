@@ -23,6 +23,7 @@
     "@livekit/components-styles": "^1.1.6",
     "@prisma/client": "^6.16.2",
     "@vercel/blob": "^2.0.0",
+    "@vercel/speed-insights": "^1.2.0",
     "bcryptjs": "^2.4.3",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",

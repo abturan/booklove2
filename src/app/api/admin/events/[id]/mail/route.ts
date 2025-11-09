@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
 
     const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_BASE_URL || '').replace(/\/$/, '')
-    const cta = `${base || 'https://boook.love'}/clubs/${event.club.slug}`
+    const cta = `${base || 'https://book.love'}/clubs/${event.club.slug}`
     const eventDate = new Date(event.startsAt)
 
     const generic = buildEventMail({

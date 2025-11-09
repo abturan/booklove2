@@ -60,7 +60,7 @@ export const KVKK_HTML = `
 
   <h3>İletişim</h3>
   <p><strong>Veri Sorumlusu:</strong> Gerekli Kitaplar Yayıncılık Ltd. Şti.<br/>
-  <strong>E-posta:</strong> info@boook.love<br/>
+  <strong>E-posta:</strong> info@book.love<br/>
   <strong>KEP:</strong> gereklikitaplar@hs01.kep.tr<br/>
   <strong>Telefon:</strong> 0 (541) 788 94 98</p>
 

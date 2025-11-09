@@ -177,7 +177,7 @@ export default function PostShareButton({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Bookie paylaş</h3>
           <div ref={cardRef} className="rounded-2xl border border-gray-200 bg-white p-0 shadow-sm overflow-hidden">
-            <div className="h-10 bg-primary text-white flex items-center px-3 text-xs font-extrabold tracking-wide">boook.love</div>
+            <div className="h-10 bg-primary text-white flex items-center px-3 text-xs font-extrabold tracking-wide">book.love</div>
             <div className="p-4 space-y-3">
               <div className="text-[15px] leading-7 text-gray-800 whitespace-pre-line">{sharePreview}</div>
               {previewImages.length > 0 && (

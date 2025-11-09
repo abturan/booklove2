@@ -19,10 +19,10 @@ export default function HeaderLogo({ compact = false, size }: { compact?: boolea
   )
 
   return (
-    <Link href="/" className="font-semibold" aria-label="boook.love">
+    <Link href="/" className="font-semibold" aria-label="book.love">
       <img
         src="/logo-fixed.svg"
-        alt="boook.love"
+        alt="book.love"
         width={computedSize}
         height={computedSize * 0.22}
         className={className}
