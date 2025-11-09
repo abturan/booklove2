@@ -42,7 +42,7 @@ export function buildEventMail({
   recipientName?: string | null
   ctaUrl: string
 }) {
-  const greetingName = recipientName ? escapeHtml(recipientName) : 'Boook.love üyesi'
+  const greetingName = recipientName ? escapeHtml(recipientName) : 'Book.love üyesi'
   const dateLabel = formatDate(eventDate)
   const timeLabel = formatTime(eventDate)
   const safeNote = sanitizeNote(note)
@@ -52,7 +52,7 @@ export function buildEventMail({
     `${escapeHtml(clubName)} kulübünün "${escapeHtml(eventTitle)}" etkinliğine kayıtlısınız.`,
     `Etkinlik ${escapeHtml(dateLabel)} tarihinde, saat ${escapeHtml(timeLabel)}'de gerçekleşecek.`,
     safeNote ? safeNote : null,
-    'Sevgiyle,<br/>Boook.love ekibi',
+    'Sevgiyle,<br/>Book.love ekibi',
   ].filter(Boolean)
 
   const bodyHtml = paragraphs

@@ -4,10 +4,10 @@ export const KVKK_HTML = `
 
   <p><em>6698 Sayılı Kişisel Verilerin Korunması Kanunu (“<strong>KVKK</strong>”) 7 Nisan 2016 tarihli 29677 sayılı
   Resmî Gazete’de yayımlanmıştır. Bu metin, veri sorumlusu <strong>Gerekli Kitaplar Yayıncılık Ltd. Şti.</strong>
-  (“<strong>Boook Love</strong>”) tarafından gerçekleştirilen kişisel veri işleme faaliyetlerine ilişkin bilgilendirmedir.</em></p>
+  (“<strong>Book Love</strong>”) tarafından gerçekleştirilen kişisel veri işleme faaliyetlerine ilişkin bilgilendirmedir.</em></p>
 
   <h3>Veri Sorumlusu</h3>
-  <p>6698 sayılı KVKK uyarınca Boook Love, işbu metinde açıklanan amaçlar çerçevesinde kişisel verilerinizi
+  <p>6698 sayılı KVKK uyarınca Book Love, işbu metinde açıklanan amaçlar çerçevesinde kişisel verilerinizi
   kaydeder, saklar, günceller ve mevzuatın izin verdiği hallerde üçüncü kişilere aktarabilir.</p>
 
   <h3>Kişisel Verilerin İşlenme Şekli</h3>

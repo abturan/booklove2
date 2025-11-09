@@ -31,7 +31,7 @@ export default async function MeetPage({ params }: { params: { eventId: string }
         <div className="h-1 w-full bg-[#fa3d30]" />
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
-            <img src="/logo-fixed.svg" alt="Boook Love" className="h-7 w-auto" />
+            <img src="/logo-fixed.svg" alt="Book Love" className="h-7 w-auto" />
             <span className="hidden text-sm font-medium text-slate-600 sm:inline">{ev.title} · {ev.club.name}</span>
           </div>
           <a href={`/clubs/${encodeURIComponent(ev.club.slug || '')}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">

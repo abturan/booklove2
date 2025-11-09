@@ -20,12 +20,12 @@ export async function POST(req: Request) {
   verifyUrl.searchParams.set('token', token)
   const greet = me.username ? `@${me.username}` : (me.name || me.email)
   const html = renderEmail({
-    title: 'Boook.love — E‑posta doğrulaması',
+    title: 'Book.love — E‑posta doğrulaması',
     bodyHtml: `<p>Merhaba <b>${greet}</b>,<br/>Hesabını etkinleştirmek için e‑posta adresini doğrulamalısın.</p>`,
     ctaLabel: 'E‑postamı doğrula',
     ctaUrl: verifyUrl.toString(),
   })
-  await sendMail(me.email, 'Boook.love — E‑posta doğrulaması', html)
+  await sendMail(me.email, 'Book.love — E‑posta doğrulaması', html)
   return NextResponse.json({ ok: true })
 }
 

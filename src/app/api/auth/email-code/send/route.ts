@@ -20,10 +20,10 @@ export async function POST(req: Request) {
   await (prisma as any).emailVerificationToken.create({ data: { email, token: code, expiresAt } })
 
   const html = renderEmail({
-    title: 'Boook.love — E‑posta doğrulama kodu',
+    title: 'Book.love — E‑posta doğrulama kodu',
     bodyHtml: `<p>Merhaba,</p><p>E‑posta doğrulama kodun: <b style="font-size:18px;letter-spacing:2px;">${code}</b></p><p>Bu kod 20 dakika boyunca geçerlidir.</p>`,
   })
-  await sendMail(email, 'Boook.love — E‑posta doğrulama kodu', html)
+  await sendMail(email, 'Book.love — E‑posta doğrulama kodu', html)
   return NextResponse.json({ ok: true })
 }
 

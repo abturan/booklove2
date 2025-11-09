@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   await (prisma as any).phoneVerification.create({ data: { userId, phone: normalized, code, expiresAt } })
   let debug: string | undefined
   try {
-    await sendSms(normalized, `Boook.love doğrulama kodunuz: ${code}`)
+    await sendSms(normalized, `Book.love doğrulama kodunuz: ${code}`)
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'SMS gönderilemedi' }, { status: 500 })
   }

@@ -6,8 +6,8 @@ export default function ContactPage() {
       <h1>İletişim</h1>
       <p>Öneri, geri bildirim veya iş birlikleri için bize yazın:</p>
       <ul>
-        <li>E-posta: <a href="mailto:hello@book.love">hello@book.love</a></li>
-        <li>X / Twitter: <a href="https://x.com/" target="_blank">/boooklove</a></li>
+        <li>E-posta: <a href="mailto:info@book.love">hello@book.love</a></li>
+        <li>X / Twitter: <a href="https://x.com/" target="_blank">/booklove</a></li>
       </ul>
       <p>Mesajlar genelde 48 saat içinde yanıtlanır.</p>
     </main>

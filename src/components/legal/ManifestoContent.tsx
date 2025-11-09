@@ -6,7 +6,7 @@ export default function ManifestoContent() {
 
       <section className="space-y-4 text-[15px] leading-7 text-neutral-800">
         <p>
-          <strong>Boook Love</strong>, kitap kulüplerini tek bir çatı altında toplayarak okurları buluşturan bir
+          <strong>Book Love</strong>, kitap kulüplerini tek bir çatı altında toplayarak okurları buluşturan bir
           platformdur. Amacımız, insanların düzenli olarak kitap okumalarını teşvik etmek ve ortak bir okuma
           deneyimiyle güçlü bir kültürel topluluk oluşturmaktır.
         </p>
@@ -16,7 +16,7 @@ export default function ManifestoContent() {
           kısaca tüm sanat dallarıyla ilgili yorumlarınızı paylaşabilirsiniz.
         </p>
         <p>
-          <strong>Boook Love</strong>&rsquo;ın bir kültür platformu olduğunu unutmayın. Sitemizde cinsiyetçi, ırkçı,
+          <strong>Book Love</strong>&rsquo;ın bir kültür platformu olduğunu unutmayın. Sitemizde cinsiyetçi, ırkçı,
           homofobik veya saldırgan paylaşımlara yer yoktur. Herkesin kendini güvende hissedeceği bir alan yaratmak
           için özen gösteriyoruz.
         </p>
@@ -37,7 +37,7 @@ export default function ManifestoContent() {
         <div className="rounded-2xl border border-neutral-200/80 bg-white p-4">
           <h3 className="text-sm font-semibold mb-2">Duruşumuz</h3>
           <p className="text-[15px] leading-7 text-neutral-800">
-            Boook Love bir <strong>kültür platformudur</strong>. Güvenli, saygılı ve kapsayıcı bir topluluk için
+            Book Love bir <strong>kültür platformudur</strong>. Güvenli, saygılı ve kapsayıcı bir topluluk için
             ılımlı ama net bir moderasyon uygularız; hakaret ve nefret söylemine yer yoktur.
           </p>
         </div>

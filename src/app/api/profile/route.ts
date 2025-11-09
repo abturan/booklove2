@@ -138,12 +138,12 @@ export async function POST(req: Request) {
       verifyUrl.searchParams.set('token', token)
       const greet = me.username ? `@${me.username}` : (me.name || sendTo)
       const html = renderEmail({
-        title: 'Boook.love — E‑posta doğrulaması',
+        title: 'Book.love — E‑posta doğrulaması',
         bodyHtml: `<p>Merhaba <b>${greet}</b>,<br/>Yeni e‑posta adresini doğrulamalısın.</p>`,
         ctaLabel: 'E‑postamı doğrula',
         ctaUrl: verifyUrl.toString(),
       })
-      await sendMail(sendTo, 'Boook.love — E‑posta doğrulaması', html)
+      await sendMail(sendTo, 'Book.love — E‑posta doğrulaması', html)
     }
 
     if (wantsJson) return NextResponse.json({ ok: true, emailChanged })

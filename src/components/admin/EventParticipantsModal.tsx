@@ -129,7 +129,7 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     const totalParticipants = data.participants.length
     const statsText = `Toplam ${totalParticipants} kayıt · Üyelik ${data.event.stats.membershipCount} · Abonelik ${data.event.stats.subscriptionCount}`
     const reportMeta = [
-      ['Boook.love Etkinlik Raporu'],
+      ['Book.love Etkinlik Raporu'],
       ['Kulüp', data.event.club.name],
       ['Etkinlik', data.event.title],
       ['Etkinlik Tarihi', formatDateTime(data.event.startsAt)],

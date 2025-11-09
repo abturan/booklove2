@@ -1,7 +1,7 @@
 // src/lib/mail.ts
 function resolveFrom(): { name: string; address: string } {
   const raw = (process.env.MAIL_FROM || '').trim()
-  const fallbackName = (process.env.MAIL_FROM_NAME || 'Boook Love').trim()
+  const fallbackName = (process.env.MAIL_FROM_NAME || 'Book Love').trim()
   const fallbackAddr = (process.env.MAIL_FROM_ADDRESS || 'noreply@book.love').trim()
 
   if (raw) {

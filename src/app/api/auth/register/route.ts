@@ -80,13 +80,13 @@ export async function POST(req: Request) {
     verifyUrl.searchParams.set('token', token)
     const greet = uname ? `@${uname}` : (name || email)
     const html = renderEmail({
-      title: 'Boook.love — E‑posta doğrulaması',
+      title: 'Book.love — E‑posta doğrulaması',
       bodyHtml: `<p>Merhaba <b>${greet}</b>,
-                 <br/>Boook.love'a hoş geldin! Hesabını etkinleştirmek için e‑posta adresini doğrulamalısın.</p>`,
+                 <br/>Book.love'a hoş geldin! Hesabını etkinleştirmek için e‑posta adresini doğrulamalısın.</p>`,
       ctaLabel: 'E‑postamı doğrula',
       ctaUrl: verifyUrl.toString(),
     })
-    await sendMail(user.email, 'Boook.love — E‑posta doğrulaması', html)
+    await sendMail(user.email, 'Book.love — E‑posta doğrulaması', html)
     alertUserRegistered({ id: user.id, name: user.name, email: user.email, username: uname }).catch(() => {})
 
     return NextResponse.json({ ok: true })

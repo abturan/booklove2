@@ -3,7 +3,7 @@ export default function AboutContent() {
     <article className="not-prose">
       <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
         <p className="text-[15px] leading-7 text-neutral-800">
-          <strong>Boook Love</strong>, kitap kulüplerini tek bir çatı altında toplayarak okurları buluşturan bir
+          <strong>Book Love</strong>, kitap kulüplerini tek bir çatı altında toplayarak okurları buluşturan bir
           platformdur. Amacımız, insanların düzenli olarak kitap okumalarını teşvik etmek ve ortak bir okuma
           deneyimiyle güçlü bir kültürel topluluk oluşturmaktır.
         </p>
@@ -20,7 +20,7 @@ export default function AboutContent() {
           <div className="rounded-xl border border-amber-200/70 bg-amber-50 p-4">
             <h3 className="font-semibold">Duruşumuz</h3>
             <p className="mt-2 text-[15px] text-neutral-800">
-              Boook Love bir <strong>kültür platformudur</strong>. Cinsiyetçi, ırkçı, homofobik veya saldırgan
+              Book Love bir <strong>kültür platformudur</strong>. Cinsiyetçi, ırkçı, homofobik veya saldırgan
               paylaşımlara yer yoktur. Herkesin kendini güvende hissettiği bir alan için özen gösteririz.
             </p>
           </div>

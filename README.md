@@ -1,4 +1,4 @@
-# Boook.Love (MVP)
+# Book.Love (MVP)
 
 Türkçe UI, İngilizce kod. Next.js 14 + Prisma + NextAuth.
 
