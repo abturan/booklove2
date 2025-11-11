@@ -14,7 +14,14 @@ function IBookie() { return (<svg width="26" height="26" viewBox="0 0 24 24"><re
 function IPlus() { return (<svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>) }
 function IBuddy() { return (<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none"/><circle cx="16" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M3.5 20c0-3.5 3.5-5.5 6.5-5.5M14 14.5c3.5 0 6.5 2 6.5 5.5" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>) }
 function IMessages() { return (<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round"/></svg>) }
-function ISubscriptions() { return (<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M7 10h10M7 14h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>) }
+function ISettings() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
+      <path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M6.343 6.343l1.768 1.768M15.889 15.889l1.768 1.768M6.343 17.657l1.768-1.768M15.889 8.111l1.768-1.768" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
 function ICreateClub() { return (<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 6h10a3 3 0 0 1 3 3v9H5z" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M12 12v4M10 14h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>) }
 function ILogin() {
   return (
@@ -174,18 +181,24 @@ export default function MobileAppFooter() {
                   <span className="absolute top-0 right-0 -translate-x-1/4 translate-y-1/4 inline-block h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_2px_white]" />
                 )}
               </Link>
-              <Link href="/subscriptions" scroll={false} className="grid place-content-center h-12" aria-label="Kulüplerim">
-                <ISubscriptions />
-              </Link>
               <button
                 type="button"
                 onClick={() => setOpenSettings(true)}
+                className="grid place-content-center h-12"
+                aria-label="Ayarlar"
+                title="Ayarlar"
+              >
+                <ISettings />
+              </button>
+              <Link
+                href={profileHref}
+                scroll={false}
                 className="grid place-content-center h-12"
                 aria-label="Profil"
                 title={displayName}
               >
                 <Avatar src={avatarUrl} size={28} alt={displayName} />
-              </button>
+              </Link>
             </>
           ) : (
             <>
@@ -230,10 +243,14 @@ export default function MobileAppFooter() {
         <div className="fixed inset-0 z-[60]">
           <div className="absolute inset-0 bg-black/30" onClick={() => setOpenSettings(false)} />
           <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white shadow-xl p-2">
-            <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
               <Link href={profileHref} scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
                 <Avatar src={avatarUrl} size={24} alt={displayName} />
                 <span>Profil</span>
+              </Link>
+              <Link href="/subscriptions" scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
+                <svg width="24" height="24" viewBox="0 0 24 24" className="text-primary"><path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M7 10h10M7 14h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                <span>Abonelikler</span>
               </Link>
               {/* <Link href="/clubs/create" scroll={false} className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50">
                 <ICreateClub />

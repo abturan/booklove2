@@ -10,11 +10,13 @@ import { useMe } from './useMe'
 import useNotificationCount from '@/lib/hooks/useNotificationCount'
 import AuthButtons from './AuthButtons'
 
-const IProfile = () => (<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>)
-const ISubs    = () => (<svg width="18" height="18" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M7 10h10M7 14h7" stroke="currentColor" strokeWidth="1.8"/></svg>)
-const IBuddy   = () => (<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none"/><circle cx="16" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M3.5 20c0-3.5 3.5-5.5 6.5-5.5M14 14.5c3.5 0 6.5 2 6.5 5.5" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>)
-const IMessages= () => (<svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round"/></svg>)
-const ILogout  = () => (<svg width="18" height="18" viewBox="0 0 24 24"><path d="M9 5h6v14H9" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M13 12H3m0 0 3-3m-3 3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>)
+const IProfile        = () => (<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>)
+const IProfileOutline = () => (<svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>)
+const ISubs           = () => (<svg width="18" height="18" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M7 10h10M7 14h7" stroke="currentColor" strokeWidth="1.8"/></svg>)
+const IBuddy          = () => (<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none"/><circle cx="16" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M3.5 20c0-3.5 3.5-5.5 6.5-5.5M14 14.5c3.5 0 6.5 2 6.5 5.5" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>)
+const IMessages       = () => (<svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round"/></svg>)
+const INotifications  = () => (<svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0v4l2 2v1H4v-1l2-2z" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.8" fill="none"/></svg>)
+const ILogout         = () => (<svg width="18" height="18" viewBox="0 0 24 24"><path d="M9 5h6v14H9" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M13 12H3m0 0 3-3m-3 3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>)
 
 function Dot({ show, className = '' }: { show: boolean; className?: string }) {
   if (!show) return null
@@ -98,16 +100,16 @@ export default function UserMenu() {
           <Link
             href={me?.slug ? `/u/${me.slug}` : '/profile/settings'}
             scroll={false}
-            className="flex items-center justify-between px-3 py-3 text-sm font-semibold text-white bg-primary hover:bg-primary/90"
+            className="flex items-center gap-2 px-3 py-3 text-sm font-semibold text-primary"
           >
-            <span className="inline-flex items-center gap-2">
-              <IProfile />
-              Profilime git
-            </span>
+            <IProfile />
+            Profilime git
           </Link>
 
+          <div className="h-px w-full bg-gray-100" />
+
           <Link href="/profile/settings" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">
-            <span className="inline-flex items-center gap-2"><IProfile /> Profil ayarları</span>
+            <span className="inline-flex items-center gap-2"><IProfileOutline /> Profil ayarları</span>
           </Link>
 
           <Link href="/subscriptions" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">
@@ -125,7 +127,7 @@ export default function UserMenu() {
           </Link>
 
           <Link href="/notifications" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">
-            <span className="inline-flex items-center gap-2"><IMessages /> Bildirimler</span>
+            <span className="inline-flex items-center gap-2"><INotifications /> Bildirimler</span>
             <Dot show={notifUnread > 0} />
           </Link>
 
