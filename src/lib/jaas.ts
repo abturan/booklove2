@@ -70,7 +70,15 @@ const base64Url = (input: string | Buffer) =>
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
 
-export function buildJaasJwt(env: JaasEnv, opts: { roomSlug: string; user: JwtUser; isModerator: boolean }) {
+export function buildJaasJwt(
+  env: JaasEnv,
+  opts: {
+    roomSlug: string
+    user: JwtUser
+    isModerator: boolean
+    features?: Partial<Record<'livestreaming' | 'recording' | 'transcription' | 'outbound-call' | 'sip-outbound-call', boolean>>
+  },
+) {
   const now = Math.floor(Date.now() / 1000)
   const header = {
     alg: 'RS256',
@@ -92,6 +100,13 @@ export function buildJaasJwt(env: JaasEnv, opts: { roomSlug: string; user: JwtUs
         email: opts.user.email || undefined,
         avatar: opts.user.avatarUrl || undefined,
         moderator: opts.isModerator,
+      },
+      features: {
+        livestreaming: opts.features?.livestreaming ?? opts.isModerator,
+        recording: opts.features?.recording ?? opts.isModerator,
+        transcription: opts.features?.transcription ?? opts.isModerator,
+        'outbound-call': opts.features?.['outbound-call'] ?? false,
+        'sip-outbound-call': opts.features?.['sip-outbound-call'] ?? false,
       },
     },
   }
