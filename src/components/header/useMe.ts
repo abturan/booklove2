@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 
-type MeLite = { id: string; avatarUrl: string | null }
+type MeLite = { id: string; avatarUrl: string | null; slug?: string | null }
 
 export function useMe() {
   const [me, setMe] = useState<MeLite | null>(null)
