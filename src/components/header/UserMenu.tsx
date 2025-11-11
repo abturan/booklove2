@@ -80,6 +80,18 @@ export default function UserMenu() {
   }
 
   const totalBadge = dmUnread + followRequests + notifUnread
+  const profileLink = (() => {
+    const username = me?.username
+    const name = me?.name
+    if (typeof username === 'string' && username.trim().length > 0) {
+      return `/u/${encodeURIComponent(username.trim())}`
+    }
+    if (typeof name === 'string' && name.trim().length > 0) {
+      const slug = name.trim().toLowerCase().replace(/\s+/g, '-')
+      return `/u/${encodeURIComponent(slug)}`
+    }
+    return '/profile/settings'
+  })()
 
   return (
     <div className="relative">
@@ -98,7 +110,7 @@ export default function UserMenu() {
           onMouseLeave={() => setMenu(false)}
         >
           <Link
-            href={me?.slug ? `/u/${me.slug}` : '/profile/settings'}
+            href={profileLink}
             scroll={false}
             className="flex items-center gap-2 px-3 py-3 text-sm font-semibold text-primary"
           >
