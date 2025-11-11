@@ -127,6 +127,32 @@ export default function PostActions({
         </button>
       </div>
 
+      <div className="inline-flex items-center gap-2">
+        <button
+          type="button"
+          onClick={canInteract ? onRebook : undefined}
+          disabled={!canInteract}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Rebookie paylaş"
+          title={!canInteract ? 'Önce e‑postanızı doğrulayın' : 'Rebookie paylaş'}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M7 7h10l-3-3m3 3l-3 3" />
+            <path d="M17 17H7l3 3m-3-3l3-3" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={canInteract ? onRebook : undefined}
+          disabled={!canInteract}
+          className="hidden sm:inline min-w-[1.5ch] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Rebookie paylaş"
+          title={!canInteract ? 'Önce e‑postanızı doğrulayın' : 'Rebookie paylaş'}
+        >
+          Rebookie
+        </button>
+      </div>
+
       <div className="relative inline-flex items-center gap-2 ml-auto" ref={menuRef}>
         <button
           type="button"
@@ -147,19 +173,6 @@ export default function PostActions({
         </button>
         {menuOpen && (
           <div role="menu" className="absolute right-0 top-9 z-50 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
-            {/* Rebookie */}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => { setMenuOpen(false); onRebook() }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M7 7h10l-3-3m3 3l-3 3"/>
-                <path d="M17 17H7l3 3m-3-3l3-3"/>
-              </svg>
-              <span>Rebookie</span>
-            </button>
             {/* Düzenle (sadece sahibi) */}
             {isOwner && (
               <button
