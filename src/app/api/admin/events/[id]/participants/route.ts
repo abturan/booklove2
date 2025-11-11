@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ensureCapacityForManualAdd, ensureMembershipActive, deactivateMembershipRecords, notifyMembershipJoined } from '@/lib/membershipLifecycle'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -191,6 +192,82 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await auth()
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const body = await req.json().catch(() => ({}))
+    const userId = String(body?.userId || '').trim()
+    if (!userId) return NextResponse.json({ error: 'Kullanıcı ID gerekli' }, { status: 400 })
+
+    const [user, event] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+      prisma.clubEvent.findUnique({
+        where: { id: params.id },
+        select: {
+          id: true,
+          clubId: true,
+          capacity: true,
+          club: { select: { id: true, capacity: true } },
+        },
+      }),
+    ])
+    if (!user) return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 })
+    if (!event) return NextResponse.json({ error: 'Etkinlik bulunamadı' }, { status: 404 })
+
+    const { activated } = await prisma.$transaction(async (tx) => {
+      await ensureCapacityForManualAdd(tx, {
+        clubId: event.clubId,
+        clubEventId: event.id,
+        eventCapacity: event.capacity ?? null,
+        clubCapacity: event.club?.capacity ?? null,
+      })
+      return ensureMembershipActive(tx, {
+        userId,
+        clubId: event.clubId,
+        clubEventId: event.id,
+      })
+    })
+
+    if (activated) {
+      await notifyMembershipJoined({ userId, clubEventId: event.id })
+    }
+
+    return NextResponse.json({ ok: true, activated })
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Sunucu hatası' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await auth()
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const body = await req.json().catch(() => ({}))
+    const userId = String(body?.userId || '').trim()
+    if (!userId) return NextResponse.json({ error: 'Kullanıcı ID gerekli' }, { status: 400 })
+
+    const event = await prisma.clubEvent.findUnique({
+      where: { id: params.id },
+      select: { id: true, club: { select: { moderatorId: true } } },
+    })
+    if (!event) return NextResponse.json({ error: 'Etkinlik bulunamadı' }, { status: 404 })
+    if (event.club?.moderatorId && event.club.moderatorId === userId) {
+      return NextResponse.json({ error: 'Moderatör kaldırılamaz' }, { status: 400 })
+    }
+
+    await prisma.$transaction((tx) => deactivateMembershipRecords(tx, { userId, clubEventId: event.id }))
+
+    return NextResponse.json({ ok: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Sunucu hatası' }, { status: 500 })
   }
 }
 

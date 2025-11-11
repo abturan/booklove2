@@ -11,6 +11,7 @@ import { redirect } from 'next/navigation'
 import { isRedirectError } from 'next/dist/client/components/redirect'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '@/lib/mail'
+import { ensureCapacityForManualAdd, ensureMembershipActive, notifyMembershipJoined } from '@/lib/membershipLifecycle'
 
 export async function adminSoftDeleteUser(formData: FormData) {
   const session = await auth()
@@ -71,50 +72,25 @@ export async function assignMemberToClub(formData: FormData) {
   const clubId = event.clubId
   const clubEventId = event.id
 
-  // Kulüp kapasitesi (etkinlik öncelikli)
   const club = await prisma.club.findUnique({
     where: { id: clubId },
     select: { id: true, capacity: true },
   })
   if (!club) throw new Error('Kulüp bulunamadı')
 
-  const effectiveCapacity =
-    typeof event.capacity === 'number' && event.capacity >= 0
-      ? event.capacity
-      : typeof club.capacity === 'number' && club.capacity >= 0
-        ? club.capacity
-        : null
-
-  // Admin panelinden manuel eklemede kapasite aşımına izin ver;
-  // gerekirse kapasiteyi otomatik arttır.
-  if (typeof effectiveCapacity === 'number') {
-    const activeCount = await prisma.membership.count({
-      where: { clubEventId, isActive: true },
+  const { activated } = await prisma.$transaction(async (tx) => {
+    await ensureCapacityForManualAdd(tx, {
+      clubId,
+      clubEventId,
+      eventCapacity: event.capacity ?? null,
+      clubCapacity: club.capacity ?? null,
     })
-    if (activeCount >= effectiveCapacity) {
-      const needed = activeCount + 1
-      // Etkinlik kapasitesi tanımlıysa onu arttır; yoksa kulüp kapasitesini arttır.
-      if (typeof event.capacity === 'number' && event.capacity >= 0) {
-        await prisma.clubEvent.update({ where: { id: clubEventId }, data: { capacity: needed } })
-      } else if (typeof club.capacity === 'number' && club.capacity >= 0) {
-        await prisma.club.update({ where: { id: clubId }, data: { capacity: needed } })
-      }
-    }
+    return ensureMembershipActive(tx, { userId, clubId, clubEventId })
+  })
+
+  if (activated) {
+    await notifyMembershipJoined({ userId, clubEventId })
   }
-
-  // Membership upsert (idempotent)
-  await prisma.membership.upsert({
-    where: { userId_clubEventId: { userId, clubEventId } },
-    update: { isActive: true, role: 'MEMBER', clubId },
-    create: { userId, clubId, clubEventId, isActive: true, role: 'MEMBER' },
-  })
-
-  // Subscription upsert (manuel abonelik etkinleştirme)
-  await prisma.subscription.upsert({
-    where: { userId_clubEventId: { userId, clubEventId } },
-    update: { active: true, startedAt: new Date(), canceledAt: null, clubId },
-    create: { userId, clubId, clubEventId, active: true, startedAt: new Date() },
-  })
 
   revalidatePath(`/admin/members/${userId}`)
   revalidatePath('/admin/members')

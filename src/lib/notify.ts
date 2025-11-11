@@ -5,11 +5,13 @@ export type NotificationType =
   | 'follow'
   | 'post_like'
   | 'post_comment'
+  | 'post_comment_reply'
   | 'club_moderator_post'
   | 'club_moderator_secret'
   | 'club_new_messages_daily'
   | 'club_created'
   | 'club_new_event'
+  | 'club_membership_joined'
   | 'dm_message'
 
 export async function createNotification(opts: {

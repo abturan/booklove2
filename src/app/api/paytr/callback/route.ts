@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { alertTicket } from '@/lib/adminAlert'
 import { getPaytrEnv, verifyCallbackHash } from '@/lib/paytr'
 import { createInvoiceForPaytr } from '@/lib/parasut'
+import { ensureMembershipActive, notifyMembershipJoined } from '@/lib/membershipLifecycle'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -67,33 +68,20 @@ export async function POST(req: NextRequest) {
 
     if (intent) {
       if (p.status === 'success') {
-        await prisma.$transaction([
-          prisma.paymentIntent.update({
+        const { activated } = await prisma.$transaction(async (tx) => {
+          await tx.paymentIntent.update({
             where: { id: intent.id },
             data: { status: 'SUCCEEDED' },
-          }),
-          prisma.subscription.upsert({
-            where: { userId_clubEventId: { userId: intent.userId, clubEventId: intent.clubEventId } },
-            update: { active: true, startedAt: new Date(), canceledAt: null, clubId: intent.clubId },
-            create: {
-              userId: intent.userId,
-              clubId: intent.clubId,
-              clubEventId: intent.clubEventId,
-              active: true,
-              startedAt: new Date(),
-            },
-          }),
-          prisma.membership.upsert({
-            where: { userId_clubEventId: { userId: intent.userId, clubEventId: intent.clubEventId } },
-            update: { isActive: true, clubId: intent.clubId },
-            create: {
-              userId: intent.userId,
-              clubId: intent.clubId,
-              clubEventId: intent.clubEventId,
-              isActive: true,
-            },
-          }),
-        ])
+          })
+          return ensureMembershipActive(tx, {
+            userId: intent.userId,
+            clubId: intent.clubId,
+            clubEventId: intent.clubEventId,
+          })
+        })
+        if (activated) {
+          await notifyMembershipJoined({ userId: intent.userId, clubEventId: intent.clubEventId })
+        }
         try { alertTicket({ userId: intent.userId, clubId: intent.clubId, eventId: intent.clubEventId, amountTRY: Number(p.total_amount) / 100, status: 'SUCCEEDED', merchantOid: p.merchant_oid }).catch(() => {}) } catch {}
         // Fire-and-forget: create Parasut sales invoice
         try {

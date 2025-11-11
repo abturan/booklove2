@@ -23,6 +23,11 @@ function resolveFrom(): { name: string; address: string } {
 }
 
 export async function sendMail(to: string, subject: string, html: string) {
+  const allowDev = String(process.env.ALLOW_DEV_EMAIL || '').toLowerCase() === 'true'
+  if (process.env.NODE_ENV !== 'production' && !allowDev) {
+    console.log(`[DEV] Mail suppressed → ${to} :: ${subject}`)
+    return
+  }
   const from = resolveFrom()
   try {
     const nodemailer = await import('nodemailer')

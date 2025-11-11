@@ -44,12 +44,31 @@ export async function POST(req: Request, { params }: { params: { postId: string 
   const c = await prisma.comment.create({
     data: { postId, userId: meId, body: payload.body.trim() }
   })
+  let postOwnerId: string | null = null
   try {
     const post = await prisma.post.findUnique({ where: { id: postId }, select: { ownerId: true } })
+    postOwnerId = post?.ownerId || null
     if (post?.ownerId && post.ownerId !== meId) {
       const payload = { byId: meId, postId, commentId: c.id, url: `/bookie/share/${postId}` }
       await createNotification({ userId: post.ownerId, type: 'post_comment', payload })
       sendNotificationEmail(post.ownerId, 'post_comment', payload).catch(() => {})
+    }
+  } catch {}
+  try {
+    const watchers = await prisma.comment.findMany({
+      where: { postId, userId: { not: meId } },
+      distinct: ['userId'],
+      select: { userId: true },
+    })
+    const watcherIds = watchers
+      .map((row) => row.userId)
+      .filter((id): id is string => Boolean(id) && id !== meId && id !== postOwnerId)
+    if (watcherIds.length > 0) {
+      const payload = { byId: meId, postId, commentId: c.id, url: `/bookie/share/${postId}` }
+      for (const watcherId of watcherIds) {
+        await createNotification({ userId: watcherId, type: 'post_comment_reply', payload })
+        sendNotificationEmail(watcherId, 'post_comment_reply', payload).catch(() => {})
+      }
     }
   } catch {}
   try { alertComment({ userId: meId, postId, ownerId: undefined, commentId: c.id, body: payload.body.trim() }).catch(() => {}) } catch {}

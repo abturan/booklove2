@@ -16,6 +16,8 @@ function titleFor(n: Row): string {
       return `${p.byName || 'Bir kullanıcı'} Bookie'ni beğendi`
     case 'post_comment':
       return `${p.byName || 'Bir kullanıcı'} Bookie'ne yorum yaptı`
+    case 'post_comment_reply':
+      return `${p.byName || 'Bir kullanıcı'} takip ettiğin Bookie'de yeni yorum yaptı`
     case 'dm_message':
       return `${p.byName || 'Bir kullanıcı'} sana mesaj gönderdi`
     case 'club_moderator_post':
@@ -28,6 +30,8 @@ function titleFor(n: Row): string {
       return `${p.clubName || 'Yeni kulüp'} yayında`
     case 'club_new_event':
       return `${p.clubName || 'Kulüp'} için yeni etkinlik eklendi`
+    case 'club_membership_joined':
+      return `${p.clubName || 'Kulüp'} etkinliğine katıldın`
     default:
       return 'Bildirim'
   }

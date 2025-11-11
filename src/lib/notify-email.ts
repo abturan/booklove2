@@ -79,6 +79,26 @@ async function buildEmail(type: NotificationType, payload: Record<string, any>) 
       `
       return wrap(heading, html)
     }
+    case 'post_comment_reply': {
+      const [post, comment] = await Promise.all([
+        payload.postId
+          ? prisma.post.findUnique({ where: { id: String(payload.postId) }, select: { body: true, createdAt: true } })
+          : Promise.resolve(null),
+        payload.commentId
+          ? prisma.comment.findUnique({ where: { id: String(payload.commentId) }, select: { body: true, createdAt: true } })
+          : Promise.resolve(null),
+      ])
+      const postSnippet = makeSnippet(post?.body || '')
+      const commentSnippet = makeSnippet(comment?.body || '')
+      const heading = `${byName} takip ettiğin Bookie'de yeni bir yorum paylaştı`
+      const html = `
+        <p>Merhaba,</p>
+        <p><strong>${escapeHtml(byName)}</strong>, katıldığın Bookie akışında yeni bir yorum bıraktı.</p>
+        ${commentSnippet ? labeledCard('Son yorum', commentSnippet) : ''}
+        ${postSnippet ? labeledCard('Gönderi', postSnippet) : ''}
+      `
+      return wrap(heading, html, 'Bookie\'yi aç', url)
+    }
     case 'club_moderator_post': {
       const heading = `${clubName} — Moderatörden yeni mesaj`
       const snippet = makeSnippet(String(payload.body || ''))
@@ -114,6 +134,18 @@ async function buildEmail(type: NotificationType, payload: Record<string, any>) 
         <p>Merhaba,</p>
         <p><strong>${escapeHtml(clubName)}</strong> kulübünde yeni bir etkinlik eklendi.</p>
       `, 'Etkinliğe göz at', url)
+    case 'club_membership_joined': {
+      const eventTitle = payload.eventTitle || 'Yeni etkinlik'
+      const heading = `${clubName} – ${eventTitle} için hazırsın`
+      const startsAt = formatDate(payload.startsAt)
+      const html = `
+        <p>Merhaba,</p>
+        <p><strong>${escapeHtml(clubName)}</strong> kulübünün <strong>${escapeHtml(eventTitle)}</strong> oturumuna katıldın.</p>
+        ${startsAt ? `<p>Planlanan oturum saati: <strong>${escapeHtml(startsAt)}</strong>.</p>` : ''}
+        <p>Oturum saatinde kulüp sayfasında konferans odası moderatör tarafından aktive edilecek. Aynı sayfadan giriş yaparak katılabilirsin.</p>
+      `
+      return wrap(heading, html, 'Kulüp sayfasını aç', url)
+    }
     case 'dm_message': {
       const snippet = makeSnippet(String(payload.body || ''))
       const heading = `${byName} sana mesaj gönderdi`
@@ -170,4 +202,20 @@ function labeledCard(label: string, content: string) {
       <div style="padding:12px 14px;border-left:3px solid ${brand};margin:12px;color:#374151;white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6">${content}</div>
     </div>
   `
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return ''
+  try {
+    const date = new Date(value)
+    return date.toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return ''
+  }
 }

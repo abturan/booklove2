@@ -74,6 +74,11 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
   const [expandedMail, setExpandedMail] = useState<string | null>(null)
   const [selectedMailId, setSelectedMailId] = useState<string>('')
   const [extraEmailsText, setExtraEmailsText] = useState('')
+  const [userSearch, setUserSearch] = useState('')
+  const [userResults, setUserResults] = useState<Array<{ id: string; name: string | null; email: string | null }>>([])
+  const [searchingUsers, setSearchingUsers] = useState(false)
+  const [addBusyId, setAddBusyId] = useState<string | null>(null)
+  const [removeBusyId, setRemoveBusyId] = useState<string | null>(null)
 
   const pillButton = 'rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100'
   const subtleButton = 'rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-40'
@@ -83,6 +88,36 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     if (!open) return
     void loadData()
   }, [open, eventId])
+
+  useEffect(() => {
+    if (!open) return
+    const q = userSearch.trim()
+    if (q.length < 2) {
+      setUserResults([])
+      setSearchingUsers(false)
+      return
+    }
+    setSearchingUsers(true)
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/users/search?q=${encodeURIComponent(q)}`, { cache: 'no-store', signal: controller.signal })
+        const json = await res.json().catch(() => ({}))
+        if (!controller.signal.aborted) {
+          setUserResults(Array.isArray(json?.items) ? json.items : [])
+        }
+      } catch {
+        if (!controller.signal.aborted) setUserResults([])
+      } finally {
+        if (!controller.signal.aborted) setSearchingUsers(false)
+      }
+    }, 250)
+    return () => {
+      controller.abort()
+      clearTimeout(timer)
+      setSearchingUsers(false)
+    }
+  }, [userSearch, open])
 
   async function loadData() {
     try {
@@ -165,6 +200,50 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  async function handleAddParticipant(userId: string) {
+    if (!userId) return
+    try {
+      setAddBusyId(userId)
+      setMessage(null)
+      const res = await fetch(`/api/admin/events/${eventId}/participants`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error || 'Katılımcı eklenemedi')
+      setMessage(json?.activated ? 'Katılımcı listeye eklendi.' : 'Kullanıcı zaten listede.')
+      setUserSearch('')
+      setUserResults([])
+      await loadData()
+    } catch (err: any) {
+      setMessage(err?.message || 'Katılımcı eklenemedi')
+    } finally {
+      setAddBusyId(null)
+    }
+  }
+
+  async function handleRemoveParticipant(userId: string) {
+    if (!userId) return
+    try {
+      setRemoveBusyId(userId)
+      setMessage(null)
+      const res = await fetch(`/api/admin/events/${eventId}/participants`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error || 'Katılımcı çıkarılamadı')
+      setMessage('Katılımcı listeden çıkarıldı.')
+      await loadData()
+    } catch (err: any) {
+      setMessage(err?.message || 'Katılımcı çıkarılamadı')
+    } finally {
+      setRemoveBusyId(null)
+    }
   }
 
   async function handleSaveMail() {
@@ -292,6 +371,20 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
     return map
   }, [data])
 
+  const participantIdSet = useMemo(() => {
+    if (!data) return new Set<string>()
+    return new Set(data.participants.map((p) => p.userId))
+  }, [data])
+
+  const userSearchFeedback = useMemo(() => {
+    const q = userSearch.trim()
+    if (!q) return 'İsim veya e-posta yazarak üye arayın.'
+    if (q.length < 2) return 'Arama başlatmak için en az 2 karakter yazın.'
+    if (searchingUsers) return 'Kullanıcılar aranıyor…'
+    if (userResults.length === 0) return 'Sonuç bulunamadı.'
+    return ''
+  }, [userSearch, searchingUsers, userResults])
+
   return (
     <Modal
       open={open}
@@ -301,6 +394,11 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
         setComposerOpen(false)
         clearSelection()
         setExtraEmailsText('')
+        setUserSearch('')
+        setUserResults([])
+        setSearchingUsers(false)
+        setAddBusyId(null)
+        setRemoveBusyId(null)
       }}
       title={`${eventTitle} – Katılımcılar`}
       size="xl"
@@ -488,6 +586,43 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
                   <p className="text-xs text-gray-500">Seçim yaparak belirli kişilere mail gönderebilirsiniz.</p>
                 </div>
               </div>
+              <div className="border-t border-slate-100 bg-slate-50 px-6 py-4 space-y-3">
+                <div>
+                  <label className="text-sm font-semibold text-gray-900">Katılımcı ekle</label>
+                  <p className="text-xs text-gray-500">İsim veya e-posta yazarak kullanıcıyı listeye dahil edin.</p>
+                </div>
+                <input
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder="ör. Ayşe Yılmaz ya da ornek@site.com"
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                {userSearchFeedback && <div className="text-xs text-gray-500">{userSearchFeedback}</div>}
+                {userSearch.trim().length >= 2 && userResults.length > 0 && (
+                  <ul className="divide-y divide-gray-200 overflow-hidden rounded-2xl border border-white/80 bg-white">
+                    {userResults.map((user) => {
+                      const alreadyIn = participantIdSet.has(user.id)
+                      const busy = addBusyId === user.id
+                      return (
+                        <li key={user.id} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
+                          <div>
+                            <div className="font-medium text-gray-900">{user.name || 'İsimsiz'}</div>
+                            <div className="text-xs text-gray-500">{user.email || 'E-posta yok'}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddParticipant(user.id)}
+                            disabled={alreadyIn || busy}
+                            className={`${primaryButton} px-3 py-1 text-xs ${alreadyIn || busy ? 'opacity-60 cursor-default' : ''}`}
+                          >
+                            {alreadyIn ? 'Zaten listede' : busy ? 'Ekleniyor…' : 'Listeye ekle'}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-100 text-sm">
                   <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -504,6 +639,7 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
                     {data.participants.map((participant) => {
                       const key = participant.userId || `email:${participant.email}`
                       const status = statusMap.get(key)
+                      const isModeratorSource = participant.sources.some((s) => s.type === 'moderator')
                       return (
                         <tr key={participant.userId} className="align-middle bg-white">
                           <td className="px-6 py-4">
@@ -561,6 +697,14 @@ export default function EventParticipantsModal({ eventId, eventTitle, startsAt, 
                                 disabled={!selectedMailId || sending}
                               >
                                 Seçili maili gönder
+                              </button>
+                              <button
+                                className={`${subtleButton} px-3 text-xs text-rose-600 border-rose-200`}
+                                onClick={() => handleRemoveParticipant(participant.userId)}
+                                disabled={isModeratorSource || removeBusyId === participant.userId}
+                                title={isModeratorSource ? 'Moderatör kaldırılamaz' : undefined}
+                              >
+                                {removeBusyId === participant.userId ? 'Kaldırılıyor…' : 'Listeden çıkar'}
                               </button>
                             </div>
                           </td>
