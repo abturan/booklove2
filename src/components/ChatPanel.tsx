@@ -57,6 +57,7 @@ export default function ChatPanel({
   const [text, setText] = useState('')
   const [isSecret, setIsSecret] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const emojiRef = useRef<HTMLDivElement>(null)
   const emojiBtnRef = useRef<HTMLButtonElement>(null)
@@ -94,6 +95,7 @@ export default function ChatPanel({
   }, [allowSecret])
 
   const items: ChatItem[] = Array.isArray(data?.items) ? (data.items as ChatItem[]) : []
+  const canModerate = Boolean((data as any)?.canModerate)
   const online = useOnlineMap(items.map((m) => String(m.author?.id || ''))) 
 
   useEffect(() => {
@@ -120,6 +122,25 @@ export default function ChatPanel({
     }
   }
 
+  const handleDelete = async (messageId: string) => {
+    if (!eventId || !canModerate) return
+    try {
+      setDeletingId(messageId)
+      const res = await fetch(`/api/chat/events/${eventId}/messages`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messageId }),
+      })
+      if (!res.ok) {
+        console.error('Mesaj silinemedi')
+      } else {
+        mutate()
+      }
+    } finally {
+      setDeletingId((prev) => (prev === messageId ? null : prev))
+    }
+  }
+
   return (
     <div className={clsx('flex flex-col gap-2 pt-2 text-slate-700 max-h-[440px]', className)}>
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto px-1 pb-2">
@@ -134,17 +155,30 @@ export default function ChatPanel({
                 <Avatar src={m.author?.avatarUrl ?? null} size={32} alt={m.author?.name ?? 'Üye'} online={!!online[String(m.author?.id || '')]} />
               </Link>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-semibold text-slate-800">{m.author?.name ?? 'Üye'}</div>
-                  {m.isSecret && (
-                    <span className="inline-flex items-center rounded-full bg-[#fa3d30]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#fa3d30]">
-                      Gizli
-                    </span>
-                  )}
-                  {m.createdAt && (
-                    <time className="ml-auto text-[11px] text-slate-400">
-                      {new Date(m.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </time>
+                <div className="flex items-start gap-2">
+                  <div className="flex flex-1 flex-wrap items-center gap-2">
+                    <div className="text-sm font-semibold text-slate-800">{m.author?.name ?? 'Üye'}</div>
+                    {m.isSecret && (
+                      <span className="inline-flex items-center rounded-full bg-[#fa3d30]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#fa3d30]">
+                        Gizli
+                      </span>
+                    )}
+                    {m.createdAt && (
+                      <time className="ml-auto text-[11px] text-slate-400">
+                        {new Date(m.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </time>
+                    )}
+                  </div>
+                  {canModerate && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(m.id)}
+                      disabled={deletingId === m.id}
+                      className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-500 transition hover:text-rose-700 disabled:opacity-50"
+                      title="Mesajı sil"
+                    >
+                      {deletingId === m.id ? 'Siliniyor…' : 'Sil'}
+                    </button>
                   )}
                 </div>
                 <div

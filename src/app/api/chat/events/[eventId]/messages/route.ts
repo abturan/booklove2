@@ -75,7 +75,7 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({ items: responseItems })
+    return NextResponse.json({ items: responseItems, canModerate: isAdmin || isModerator })
   } catch (err: any) {
     console.error('chat GET error', err)
     return NextResponse.json({ items: [] }, { status: 500 })
@@ -172,6 +172,49 @@ export async function POST(
   } catch (err: any) {
     console.error('chat POST error', err)
     try { alertError('chat_message', err).catch(() => {}) } catch {}
+    return NextResponse.json({ ok: false, error: 'Sunucu hatası' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { eventId: string } },
+) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: 'Giriş gerekli.' }, { status: 401 })
+    }
+
+    const { event, room } = await findRoom(params.eventId)
+    if (!room || !event) {
+      return NextResponse.json({ ok: false, error: 'Etkinlik bulunamadı.' }, { status: 404 })
+    }
+
+    const isAdmin = session.user.role === 'ADMIN'
+    const isModerator = event.club?.moderatorId === session.user.id
+    if (!isAdmin && !isModerator) {
+      return NextResponse.json({ ok: false, error: 'Yetki yok.' }, { status: 403 })
+    }
+
+    const body = await req.json().catch(() => null)
+    const messageId = typeof body?.messageId === 'string' ? body.messageId : ''
+    if (!messageId) {
+      return NextResponse.json({ ok: false, error: 'Mesaj ID gerekli.' }, { status: 400 })
+    }
+
+    const message = await prisma.chatMessage.findFirst({
+      where: { id: messageId, roomId: room.id },
+      select: { id: true },
+    })
+    if (!message) {
+      return NextResponse.json({ ok: false, error: 'Mesaj bulunamadı.' }, { status: 404 })
+    }
+
+    await prisma.chatMessage.delete({ where: { id: message.id } })
+    return NextResponse.json({ ok: true })
+  } catch (err: any) {
+    console.error('chat DELETE error', err)
     return NextResponse.json({ ok: false, error: 'Sunucu hatası' }, { status: 500 })
   }
 }
