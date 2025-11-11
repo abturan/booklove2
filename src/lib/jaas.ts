@@ -80,9 +80,10 @@ export function buildJaasJwt(
   },
 ) {
   const now = Math.floor(Date.now() / 1000)
+  const kid = env.apiKeyId.includes('/') ? env.apiKeyId : `${env.appId}/${env.apiKeyId}`
   const header = {
     alg: 'RS256',
-    kid: env.apiKeyId,
+    kid,
     typ: 'JWT',
   }
   const payload = {
