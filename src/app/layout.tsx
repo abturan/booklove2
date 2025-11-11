@@ -1,17 +1,10 @@
 // src/app/layout.tsx
 import './globals.css'
-import '@livekit/components-styles'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import Providers from '@/components/Providers'
-import MobileAppFooter from '@/components/mobile/MobileAppFooter'
-import ShareModal from '@/components/modals/ShareModal'
-import GlobalVerifyBanner from '@/components/GlobalVerifyBanner'
-import PresencePinger from '@/components/PresencePinger'
-import ClientErrorCatcher from '@/components/ClientErrorCatcher'
+import AppChrome from '@/components/AppChrome'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,21 +24,9 @@ export default function RootLayout({
     <html lang="tr">
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <Providers>
-          <PresencePinger />
-          <ClientErrorCatcher />
-          <Header />
-          <GlobalVerifyBanner />
-          <main className="container mx-auto px-4 py-6 flex-1 pb-24 sm:pb-6">{children}</main>
-          <div className="hidden md:block">
-            <Footer />
-          </div>
-          <div className="md:hidden">
-            <MobileAppFooter />
-          </div>
-          <ShareModal />
+          <AppChrome modals={modals}>{children}</AppChrome>
           <SpeedInsights />
           <Analytics />
-          {modals}
         </Providers>
       </body>
     </html>

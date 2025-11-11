@@ -2,11 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LiveKit UI styles are imported in layout.tsx */
-
 :root { --bg: 255 255 255; --primary-red: #d74532; --app-footer: 64px; }
 
 body { @apply bg-gradient-to-br from-primary/10 via-white to-sky-50 text-gray-900; }
+
+body.meet-fullscreen {
+  background: #000;
+  overflow: hidden;
+}
+
 
 .container { @apply mx-auto px-4 sm:px-6 lg:px-8; }
 .card { @apply bg-white/80 backdrop-blur rounded-3xl shadow-soft; }
@@ -34,11 +38,3 @@ body { @apply bg-gradient-to-br from-primary/10 via-white to-sky-50 text-gray-90
 .primaryRed{ color: #fa3d30 !important; }
 
 .chat-window { height: var(--chat-h, 70vh); max-height: var(--chat-h, 70vh); }
-
-/* Meeting grid tile aspect ratios */
-.bl-meet-tile { aspect-ratio: 4 / 3; }
-@media (max-width: 640px) { .bl-meet-tile { aspect-ratio: 1 / 1; } }
-.bl-meet-tile video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-
-
-

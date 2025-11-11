@@ -14,7 +14,7 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
       username: true,
       avatarUrl: true,
       bio: true,
-      Club: {
+      clubsModerated: {
         select: {
           id: true,
           slug: true,
@@ -40,29 +40,24 @@ export default async function PublicProfileSidebar({ userId }: { userId: string 
   })
   if (!user) return null
 
-  let participantCount = 0
-  if (user.Club?.id) {
-    participantCount = await prisma.membership.count({ where: { clubId: user.Club.id } })
-  }
-
   const { followers, following, mutual } = await listFollowData(user.id)
   const followCounts = await getFollowCounts(user.id)
 
   const memberships = (user.Memberships || []).map((m) => m.club)
+  const moderatedClubs = user.clubsModerated || []
 
   return (
     <div className="space-y-5">
-      {user.Club && (
+      {moderatedClubs.map((club) => (
         <ModeratorClubCard
-          name={user.Club.name}
-          slug={user.Club.slug}
+          key={club.id}
+          name={club.name}
+          slug={club.slug}
           ownerName={user.name || ''}
           ownerUsername={user.username || ''}
-          counts={{
-            participants: participantCount,
-          }}
+          counts={{ participants: club._count?.memberships ?? 0 }}
         />
-      )}
+      ))}
       <FriendCloud
         title="Book Buddy"
         count={followCounts.followers}

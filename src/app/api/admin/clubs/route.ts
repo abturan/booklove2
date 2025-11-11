@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { slugify } from '@/lib/slugify'
+import { relaxClubModeratorConstraint } from '@/lib/relaxModeratorConstraint'
+import { ensureConferenceFlagColumn } from '@/lib/conferenceFlag'
 
 export async function POST(req: Request) {
   try {
@@ -10,6 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
+    await ensureConferenceFlagColumn()
     const body = await req.json().catch(() => null)
     if (!body) {
       return NextResponse.json({ error: 'Geçersiz istek gövdesi.' }, { status: 400 })
@@ -20,20 +23,34 @@ export async function POST(req: Request) {
     const priceTRY: number = Number(body.priceTRY || 0)
     const bannerUrl: string = body.bannerUrl || ''
     const moderatorId: string | undefined = body.moderatorId
+    const conferenceEnabled = Boolean(body.conferenceEnabled)
 
     if (!name) return NextResponse.json({ error: 'Kulüp adı zorunlu' }, { status: 400 })
     if (!moderatorId) return NextResponse.json({ error: 'Moderatör seçin' }, { status: 400 })
 
-    // ——— İş kuralı: Bir moderatör yalnızca 1 kulüp yönetebilir
-    const already = await prisma.club.findFirst({
-      where: { moderatorId },
-      select: { id: true, name: true, slug: true },
-    })
-    if (already) {
-      return NextResponse.json(
-        { error: 'Bu moderatör zaten bir kulüp yönetiyor. Lütfen başka bir moderatör seçin.' },
-        { status: 409 }
-      )
+    const moderatorUser = await prisma.user.findUnique({ where: { id: moderatorId }, select: { id: true, role: true } })
+    if (!moderatorUser) {
+      return NextResponse.json({ error: 'Seçilen moderatör bulunamadı.' }, { status: 404 })
+    }
+
+    const moderatorIsAdmin = String(moderatorUser.role || '').toUpperCase() === 'ADMIN'
+
+    if (moderatorIsAdmin) {
+      await relaxClubModeratorConstraint()
+    }
+
+    // ——— İş kuralı: Moderatörler yalnızca 1 kulüp yönetebilir; istisna sadece admin kullanıcılar için
+    if (!moderatorIsAdmin) {
+      const already = await prisma.club.findFirst({
+        where: { moderatorId },
+        select: { id: true, name: true, slug: true },
+      })
+      if (already) {
+        return NextResponse.json(
+          { error: 'Bu moderatör zaten bir kulüp yönetiyor. Yalnızca admin kullanıcılarının birden fazla kulübü olabilir.' },
+          { status: 409 }
+        )
+      }
     }
 
     // ——— Slug üret ve benzersizleştir
@@ -53,6 +70,7 @@ export async function POST(req: Request) {
         bannerUrl,
         moderatorId,
         published: false,
+        conferenceEnabled,
       },
       select: { id: true, slug: true },
     })
@@ -79,7 +97,7 @@ export async function POST(req: Request) {
     // Yarış koşullarında yine de P2002 düşebilir
     if (err?.code === 'P2002' && Array.isArray(err?.meta?.target) && err.meta.target.includes('moderatorId')) {
       return NextResponse.json(
-        { error: 'Bu moderatör zaten bir kulüp yönetiyor. Lütfen başka bir moderatör seçin.' },
+        { error: 'Bu moderatör zaten bir kulüp yönetiyor. Yalnızca admin kullanıcılarının birden fazla kulübü olabilir.' },
         { status: 409 }
       )
     }

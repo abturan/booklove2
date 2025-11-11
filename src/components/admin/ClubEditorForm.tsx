@@ -15,6 +15,7 @@ type InitialClub = {
   priceTRY: number
   moderator: ModeratorLite | null
   capacity?: number | null
+  conferenceEnabled: boolean
 }
 
 export default function ClubEditorForm({
@@ -54,6 +55,9 @@ export default function ClubEditorForm({
     typeof initialClub.capacity === 'number' && initialClub.capacity >= 0
       ? String(initialClub.capacity)
       : ''
+  )
+  const [conferenceEnabled, setConferenceEnabled] = React.useState<boolean>(
+    !!initialClub.conferenceEnabled
   )
 
   const [saving, setSaving] = React.useState(false)
@@ -199,6 +203,7 @@ export default function ClubEditorForm({
           bannerUrl: bannerToUse || null,
           moderatorId: moderator?.id || null,
           capacity: capacity.trim() === '' ? null : Number(capacity),
+          conferenceEnabled,
         }),
       })
       const j = await res.json()
@@ -338,6 +343,24 @@ export default function ClubEditorForm({
               placeholder="Kısa açıklama…"
             />
           </div>
+        </section>
+
+        <section className="rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-3 shadow-sm">
+          <h2 className="text-base font-medium">Konferans sistemi</h2>
+          <label className="flex items-start gap-3 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-gray-300"
+              checked={conferenceEnabled}
+              onChange={(e) => setConferenceEnabled(e.target.checked)}
+            />
+            <span>
+              <span className="font-semibold text-gray-900">Bu kulüpte konferans odası açılsın</span>
+              <span className="block text-xs text-gray-500 mt-1">
+                İşaretlendiğinde kulübün tüm etkinlikleri konferans bağlantısını gösterir. Üyelere özel bağlantı sadece burada aktif kulüpler için görünür.
+              </span>
+            </span>
+          </label>
         </section>
 
         <section className="rounded-3xl border bg-white/70 backdrop-blur p-5 space-y-3 shadow-sm">

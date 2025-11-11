@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     if (!eventId) return NextResponse.json({ error: 'Missing eventId' }, { status: 400 })
     const ev = await getEventWithClub(eventId)
     if (!ev) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    if (!ev.club.conferenceEnabled) return NextResponse.json({ error: 'Conference disabled' }, { status: 403 })
     const role = (session.user.role || '').toUpperCase()
     const mod = role === 'ADMIN' || role === 'MODERATOR' || (await isModerator(session.user.id, eventId))
     if (!mod) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

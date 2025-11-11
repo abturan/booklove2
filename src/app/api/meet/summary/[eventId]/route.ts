@@ -13,6 +13,9 @@ export async function GET(_req: NextRequest, { params }: { params: { eventId: st
     if (!eventId) return NextResponse.json({ error: 'Missing eventId' }, { status: 400 })
     const ev = await getEventWithClub(eventId)
     if (!ev) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    if (!ev.club.conferenceEnabled) return NextResponse.json({ error: 'Conference disabled' }, { status: 403 })
+
+    const meeting = await prisma.meeting.findUnique({ where: { clubEventId: ev.id }, select: { isActive: true } })
 
     const pres = await prisma.meetingPresence.findMany({
       where: { clubEventId: ev.id },
@@ -41,13 +44,11 @@ export async function GET(_req: NextRequest, { params }: { params: { eventId: st
     const presentIds = new Set(present.map((p) => p.userId))
     const absentCount = members.filter((m) => !presentIds.has(m.userId)).length
     const moderatorOnline = presentIds.has(ev.club.moderatorId)
+    const liveNow = presentOut.length > 0
+    const meetingActive = meeting?.isActive || false
 
-    // Determine meeting active by presence
-    const meetingActive = presentOut.length > 0
-
-    return NextResponse.json({ present: presentOut, absentCount, meetingActive, moderatorOnline })
+    return NextResponse.json({ present: presentOut, absentCount, meetingActive, moderatorOnline, meetingLive: liveNow })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 })
   }
 }
-

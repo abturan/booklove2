@@ -69,6 +69,7 @@ export default function ClubCreateForm() {
   const [bookCoverUrl, setBookCoverUrl] = React.useState<string | null>(null)
   const [savingProgram, setSavingProgram] = React.useState(false)
   const [programErr, setProgramErr] = React.useState<string | null>(null)
+  const [conferenceEnabled, setConferenceEnabled] = React.useState(false)
 
   // --- Moderatör arama (debounce)
   React.useEffect(() => {
@@ -133,6 +134,7 @@ export default function ClubCreateForm() {
           description: description.trim() || null,
           moderatorId: modSelected!.id,
           bannerUrl,
+          conferenceEnabled,
         }),
       })
       const data = await safeJson(res)
@@ -323,6 +325,21 @@ export default function ClubCreateForm() {
                 className="w-full rounded-xl border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400"
               />
             </div>
+
+            <label className="md:col-span-2 flex items-start gap-3 rounded-2xl border border-dashed border-gray-200 px-4 py-3 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-gray-300"
+                checked={conferenceEnabled}
+                onChange={(e) => setConferenceEnabled(e.target.checked)}
+              />
+              <span>
+                <span className="font-semibold text-gray-900">Konferans sistemi bu kulüp için açık olsun</span>
+                <span className="block text-xs text-gray-500 mt-1">
+                  Bu seçenek açıldığında kulübün tüm etkinlikleri konferans odası bağlantısını gösterir. Üyeler yalnızca etkinliğe kayıtlıysa bağlantıyı görebilir.
+                </span>
+              </span>
+            </label>
 
             <div>
               <label className="block text-sm text-gray-600 mb-1">Banner görseli</label>

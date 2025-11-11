@@ -40,7 +40,7 @@ model User {
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
   ChatMessage            ChatMessage[]
-  Club                   Club?                @relation("ClubModerator")
+  clubsModerated         Club[]               @relation("ClubModerator")
   comments               Comment[]            @relation("UserComments")
   following              Follow[]             @relation("UserFollowing")
   followers              Follow[]             @relation("UserFollowers")
@@ -90,7 +90,7 @@ model Club {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   published      Boolean         @default(false)
-  moderatorId    String          @unique
+  moderatorId    String
   chatRooms      ChatRoom[]
   moderator      User            @relation("ClubModerator", fields: [moderatorId], references: [id])
   events         ClubEvent[]
@@ -99,6 +99,7 @@ model Club {
   subscriptions  Subscription[]
 
   capacity       Int?
+  conferenceEnabled Boolean @default(false)
 }
 
 model Membership {
@@ -493,6 +494,7 @@ model Ad {
   startsAt  DateTime?
   endsAt    DateTime?
   weight    Int      @default(1)
+  rules     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   campaignId String?

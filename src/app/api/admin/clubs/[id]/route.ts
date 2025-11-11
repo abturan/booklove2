@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { slugify } from '@/lib/slugify'
+import { relaxClubModeratorConstraint } from '@/lib/relaxModeratorConstraint'
+import { ensureConferenceFlagColumn } from '@/lib/conferenceFlag'
 
 export async function GET(
   req: Request,
@@ -12,6 +14,7 @@ export async function GET(
   if (!session?.user || (session.user as any).role !== 'ADMIN') {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
+  await ensureConferenceFlagColumn()
 
   const club = await prisma.club.findUnique({
     where: { id: params.id },
@@ -25,6 +28,7 @@ export async function GET(
       published: true,
       moderatorId: true,
       capacity: true,
+      conferenceEnabled: true,
       moderator: { select: { id: true, name: true, email: true } },
       _count: { select: { memberships: { where: { isActive: true } as any } } },
       events: { orderBy: { startsAt: 'desc' }, take: 1 },
@@ -47,6 +51,7 @@ export async function PUT(
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
+  await ensureConferenceFlagColumn()
   const body = await req.json()
   const name: string = (body.name || '').trim()
   const description: string = body.description || ''
@@ -59,6 +64,7 @@ export async function PUT(
     capacityRaw === null || capacityRaw === '' || capacityRaw === undefined
       ? null
       : Number(capacityRaw)
+  const conferenceEnabled = Boolean(body.conferenceEnabled)
 
   if (!name) return NextResponse.json('Kulüp adı zorunlu', { status: 400 })
   if (!moderatorId) return NextResponse.json('Moderatör seçin', { status: 400 })
@@ -66,15 +72,22 @@ export async function PUT(
     return NextResponse.json('Kapasite 0 veya pozitif tam sayı olmalı (boş = sınırsız).', { status: 400 })
   }
 
-  const current = await prisma.club.findUnique({
-    where: { id: params.id },
-    select: { moderatorId: true },
-  })
+  const [current, moderatorUser] = await Promise.all([
+    prisma.club.findUnique({
+      where: { id: params.id },
+      select: { moderatorId: true },
+    }),
+    prisma.user.findUnique({ where: { id: moderatorId }, select: { id: true, role: true } }),
+  ])
   if (!current) return NextResponse.json('Kulüp bulunamadı', { status: 404 })
+  if (!moderatorUser) return NextResponse.json('Seçilen moderatör bulunamadı', { status: 404 })
+
+  const moderatorIsAdmin = String(moderatorUser.role || '').toUpperCase() === 'ADMIN'
+  if (moderatorIsAdmin) await relaxClubModeratorConstraint()
 
   const willChangeModerator = current.moderatorId !== moderatorId
 
-  if (willChangeModerator) {
+  if (willChangeModerator && !moderatorIsAdmin) {
     const other = await prisma.club.findFirst({
       where: { moderatorId, NOT: { id: params.id } },
       select: { id: true, name: true },
@@ -99,7 +112,7 @@ export async function PUT(
 
         await tx.user.update({
           where: { id: moderatorId },
-          data: { role: 'MODERATOR' as any },
+          data: { role: moderatorIsAdmin ? (moderatorUser.role as any) : ('MODERATOR' as any) },
         })
 
         return tx.club.update({
@@ -112,6 +125,7 @@ export async function PUT(
             bannerUrl,
             moderatorId,
             capacity,
+            conferenceEnabled,
           },
           select: { id: true, slug: true },
         })
@@ -124,7 +138,7 @@ export async function PUT(
   const updated = await prisma.$transaction(async (tx) => {
     await tx.user.update({
       where: { id: moderatorId },
-      data: { role: 'MODERATOR' as any },
+      data: { role: moderatorIsAdmin ? (moderatorUser.role as any) : ('MODERATOR' as any) },
     })
     return tx.club.update({
       where: { id: params.id },
@@ -136,6 +150,7 @@ export async function PUT(
         bannerUrl,
         moderatorId,
         capacity,
+        conferenceEnabled,
       },
       select: { id: true, slug: true },
     })

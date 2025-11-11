@@ -27,7 +27,14 @@ const pendingKeyFor = (eventId: string) => `paytr_pending_${eventId}`
 const CHAT_HEADER_HEIGHT = 56
 const FOOTER_HEIGHT_VAR = 'var(--mobile-footer-height, 72px)'
 const MEETING_FEATURE_ENABLED = (() => {
-  const flag = (process.env.NEXT_PUBLIC_LIVEKIT_ENABLED || '0').toString().toLowerCase()
+  const flag = (
+    process.env.NEXT_PUBLIC_MEETING_ENABLED ||
+    process.env.NEXT_PUBLIC_JITSI_ENABLED ||
+    process.env.NEXT_PUBLIC_LIVEKIT_ENABLED ||
+    '0'
+  )
+    .toString()
+    .toLowerCase()
   return flag === '1' || flag === 'true' || flag === 'yes' || flag === 'on'
 })()
 
@@ -36,6 +43,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
   const events = initial.club.events
   const defaultEventId = initial.club.activeEventId ?? events[0]?.id ?? null
   const [activeEventId, setActiveEventId] = useState<string | null>(defaultEventId)
+  const meetingAllowed = MEETING_FEATURE_ENABLED && initial.club.conferenceEnabled
 
   const activeEvent = useMemo(() => {
     if (!activeEventId) return events[0] ?? null
@@ -488,7 +496,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="min-w-0 space-y-6 pb-16 lg:pb-0">
+      <div className={clsx('min-w-0 space-y-6', meetingAllowed ? 'pb-0' : 'pb-16', 'lg:pb-0')}>
         <ClubHeader
           moderatorName={initial.club.moderatorName}
           moderatorAvatarUrl={initial.club.moderatorAvatarUrl}
@@ -551,7 +559,7 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
             book={book}
           >
             {/* Desktop: Meeting + a spacer below it */}
-            {MEETING_FEATURE_ENABLED && (
+            {meetingAllowed && (
               <div className="hidden lg:block">
               <MeetingSection
                 eventId={activeEvent.id}
@@ -575,16 +583,16 @@ export default function ClubInteractive({ initial }: { initial: ClubInitial }) {
         </div>
 
       {/* Mobile: show Meeting section openly below the overview card */}
-      {MEETING_FEATURE_ENABLED && (
+      {meetingAllowed && (
         <div className="lg:hidden">
-          <div className="mt-4" style={{ marginBottom: 'calc(var(--mobile-footer-height, 72px) + 80px)' }}>
-          <MeetingSection
-            eventId={activeEvent.id}
-            eventStartsAt={activeEvent.startsAt}
-            isMember={isMember || initial.club.isModerator}
-            isModerator={initial.club.isModerator}
-            moderatorId={initial.club.moderatorId}
-          />
+          <div className="mt-0 pb-16">
+            <MeetingSection
+              eventId={activeEvent.id}
+              eventStartsAt={activeEvent.startsAt}
+              isMember={isMember || initial.club.isModerator}
+              isModerator={initial.club.isModerator}
+              moderatorId={initial.club.moderatorId}
+            />
           </div>
         </div>
       )}

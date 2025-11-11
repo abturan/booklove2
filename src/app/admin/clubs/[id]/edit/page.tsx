@@ -5,12 +5,14 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ClubEditorForm from '@/components/admin/ClubEditorForm'
 import ClubEventsManager from '@/components/admin/ClubEventsManager'
+import { ensureConferenceFlagColumn } from '@/lib/conferenceFlag'
 
 export const dynamic = 'force-dynamic'
 
 export default async function EditClubPage({ params }: { params: { id: string } }) {
   const session = await auth()
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/')
+  await ensureConferenceFlagColumn()
 
   const club = await prisma.club.findUnique({
     where: { id: params.id },
@@ -22,6 +24,7 @@ export default async function EditClubPage({ params }: { params: { id: string } 
       bannerUrl: true,
       priceTRY: true,
       capacity: true,
+      conferenceEnabled: true,
       moderator: { select: { id: true, name: true, email: true } },
     },
   })
@@ -70,6 +73,7 @@ export default async function EditClubPage({ params }: { params: { id: string } 
             ? { id: club.moderator.id, name: club.moderator.name || '—', email: club.moderator.email }
             : null,
           capacity: club.capacity ?? null,
+          conferenceEnabled: club.conferenceEnabled ?? false,
         }}
       />
 

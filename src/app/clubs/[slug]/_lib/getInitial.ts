@@ -1,6 +1,7 @@
 // src/app/clubs/[slug]/_lib/getInitial.ts
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ensureConferenceFlagColumn } from '@/lib/conferenceFlag'
 
 type EventMember = {
   id: string
@@ -61,6 +62,7 @@ export type ClubInitial = {
     activeEventId: string | null
     events: EventInitial[]
     isModerator: boolean
+    conferenceEnabled: boolean
   }
 }
 
@@ -71,6 +73,7 @@ const fallbackCover =
 
 export async function getInitial(slug: string): Promise<ClubInitial | null> {
   const session = await auth()
+  await ensureConferenceFlagColumn()
 
   const club = await prisma.club.findUnique({
     where: { slug },
@@ -83,6 +86,7 @@ export async function getInitial(slug: string): Promise<ClubInitial | null> {
       priceTRY: true,
       capacity: true,
       moderatorId: true,
+      conferenceEnabled: true,
       moderator: { select: { name: true, avatarUrl: true, username: true, slug: true } },
       events: {
         // Son eklenen/son tarihli etkinlik en üstte görünsün
@@ -274,6 +278,7 @@ export async function getInitial(slug: string): Promise<ClubInitial | null> {
       activeEventId,
       events,
       isModerator,
+      conferenceEnabled: !!club.conferenceEnabled,
     },
   }
 }

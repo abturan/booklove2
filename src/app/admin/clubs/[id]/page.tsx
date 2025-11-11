@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import PublishButton from '../../../../components/admin/publish-button'
 import EventParticipantsButton from '@/components/admin/EventParticipantsButton'
+import { ensureConferenceFlagColumn } from '@/lib/conferenceFlag'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,7 @@ export default async function AdminPreview({
 }: { params: { id: string } }) {
   const session = await auth()
   if (!session?.user || (session.user as any).role !== 'ADMIN') redirect('/')
+  await ensureConferenceFlagColumn()
 
   const club = await prisma.club.findUnique({
     where: { id: params.id },
@@ -25,6 +27,7 @@ export default async function AdminPreview({
       priceTRY: true,
       capacity: true,
       published: true,
+      conferenceEnabled: true,
       moderator: { select: { name: true } },
       events: {
         orderBy: { startsAt: 'asc' },
@@ -85,6 +88,9 @@ export default async function AdminPreview({
           {club.name}
         </h1>
         <span className="rounded-full bg-gray-100 px-3 py-1 text-sm">₺{club.priceTRY}</span>
+        <span className={club.conferenceEnabled ? 'rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700' : 'rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600'}>
+          Konferans {club.conferenceEnabled ? 'açık' : 'kapalı'}
+        </span>
         <span className="text-sm text-gray-500">
           Toplam aktif katılımcı: {club.events.reduce((sum, ev) => sum + ev.memberships.length, 0)}
         </span>

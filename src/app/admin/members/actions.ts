@@ -85,12 +85,20 @@ export async function assignMemberToClub(formData: FormData) {
         ? club.capacity
         : null
 
+  // Admin panelinden manuel eklemede kapasite aşımına izin ver;
+  // gerekirse kapasiteyi otomatik arttır.
   if (typeof effectiveCapacity === 'number') {
     const activeCount = await prisma.membership.count({
       where: { clubEventId, isActive: true },
     })
     if (activeCount >= effectiveCapacity) {
-      throw new Error('Etkinlik kapasitesi dolu')
+      const needed = activeCount + 1
+      // Etkinlik kapasitesi tanımlıysa onu arttır; yoksa kulüp kapasitesini arttır.
+      if (typeof event.capacity === 'number' && event.capacity >= 0) {
+        await prisma.clubEvent.update({ where: { id: clubEventId }, data: { capacity: needed } })
+      } else if (typeof club.capacity === 'number' && club.capacity >= 0) {
+        await prisma.club.update({ where: { id: clubId }, data: { capacity: needed } })
+      }
     }
   }
 
