@@ -95,6 +95,17 @@ export default function UserMenu() {
           className="absolute right-0 mt-2 w-56 rounded-xl border bg-white shadow-lg overflow-hidden"
           onMouseLeave={() => setMenu(false)}
         >
+          <Link
+            href={me?.slug ? `/u/${me.slug}` : '/profile/settings'}
+            scroll={false}
+            className="flex items-center justify-between px-3 py-3 text-sm font-semibold text-white bg-primary hover:bg-primary/90"
+          >
+            <span className="inline-flex items-center gap-2">
+              <IProfile />
+              Profilime git
+            </span>
+          </Link>
+
           <Link href="/profile/settings" scroll={false} className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50">
             <span className="inline-flex items-center gap-2"><IProfile /> Profil ayarları</span>
           </Link>

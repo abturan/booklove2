@@ -97,7 +97,7 @@ async function buildEmail(type: NotificationType, payload: Record<string, any>) 
         ${commentSnippet ? labeledCard('Son yorum', commentSnippet) : ''}
         ${postSnippet ? labeledCard('Gönderi', postSnippet) : ''}
       `
-      return wrap(heading, html, 'Bookie\'yi aç', url)
+      return wrap(heading, html)
     }
     case 'club_moderator_post': {
       const heading = `${clubName} — Moderatörden yeni mesaj`
