@@ -122,22 +122,13 @@ function HomeBody() {
       <HomeCalendar />
 
       <div className="md:hidden space-y-5">
-        <section className="rounded-3xl bg-gradient-to-r from-[#fa3d30] via-[#ff5b4a] to-[#ff9660] p-5 text-white shadow-xl ring-1 ring-white/40">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-white/70">Topluluk</p>
-              <h1 className="text-3xl font-black tracking-tight">book.love</h1>
-              <p className="text-sm text-white/85">Gönderileri, kulüpleri ve arkadaşlarını tek akışta takip et.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setTab('bookie')}
-              className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm"
-            >
-              Akışa dön
-            </button>
+        <section className="rounded-[28px] bg-gradient-to-r from-[#fa3d30] via-[#ff5b4a] to-[#ff9660] p-4 text-white shadow-xl ring-1 ring-white/40">
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/70">Topluluk</p>
+            <h1 className="text-2xl font-black tracking-tight">book.love</h1>
+            <p className="text-[12px] font-medium text-white/85 whitespace-nowrap">Gönderileri, kulüpleri ve arkadaşlarını tek akışta takip et.</p>
           </div>
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Mobil sekmeler">
+          <div className="mt-4 flex gap-2" role="tablist" aria-label="Mobil sekmeler">
             {mobileSections.map((tab) => {
               const selected = activeTab === tab.value
               return (
@@ -148,14 +139,16 @@ function HomeBody() {
                   aria-selected={selected}
                   onClick={() => setTab(tab.value)}
                   className={clsx(
-                    'flex min-w-[110px] flex-col rounded-2xl border px-4 py-2 text-left text-sm font-semibold transition',
+                    'flex-1 min-w-0 rounded-2xl border px-3 py-2 text-left text-xs font-semibold transition',
                     selected
                       ? 'border-white bg-white text-[#fa3d30]'
                       : 'border-white/25 bg-white/10 text-white/90'
                   )}
                 >
-                  <span>{tab.label}</span>
-                  <span className="text-xs font-normal text-white/70">{tab.helper}</span>
+                  <span className="block text-sm leading-tight">{tab.label}</span>
+                  <span className={clsx('text-[11px] font-normal', selected ? 'text-[#fa3d30]/80' : 'text-white/70')}>
+                    {tab.helper}
+                  </span>
                 </button>
               )
             })}
@@ -163,15 +156,15 @@ function HomeBody() {
         </section>
 
         {activeTab === 'bookie' && (
-          <section className="rounded-3xl border border-white/70 bg-white/95 p-3 shadow-soft">
-            <div ref={setMobileIntroHost} className="mb-3" />
+          <div className="space-y-3">
+            <div ref={setMobileIntroHost} />
             <GlobalFeed
               hideTopBar={false}
               active
               focusPostId={focusId}
               introPortal={mobileIntroHost}
             />
-          </section>
+          </div>
         )}
 
         {activeTab === 'clubs' && (

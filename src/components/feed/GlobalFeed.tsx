@@ -199,40 +199,35 @@ export default function GlobalFeed({
   const showIntro = showTopBar || (!ownerId && loggedIn)
 
   const introContent = showIntro ? (
-    <div className="space-y-3 rounded-3xl border border-white/70 bg-white p-3 shadow-sm">
-      {showTopBar && (
-        <>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="text-2xl font-extrabold tracking-tight">Bookie!</div>
-            <div className="ml-auto inline-flex rounded-full border border-gray-200 bg-white p-0.5 text-xs shadow-sm">
-              <button
-                type="button"
-                onClick={() => setAudience('global')}
-                className={`px-3 py-1 rounded-full transition ${audience==='global' ? 'bg-[#fa3d30] text-white' : 'text-gray-700 hover:bg-gray-50'}`}
-                aria-pressed={audience==='global'}
-              >
-                Herkes
-              </button>
-              <button
-                type="button"
-                onClick={() => setAudience('following')}
-                className={`px-3 py-1 rounded-full transition ${audience==='following' ? 'bg-[#fa3d30] text-white' : 'text-gray-700 hover:bg-gray-50'}`}
-                aria-pressed={audience==='following'}
-              >
-                Takip
-              </button>
-            </div>
-          </div>
-          <div className="hidden h-1 w-full rounded-full bg-primary sm:block" />
-        </>
-      )}
-      {!ownerId && loggedIn && (
-        <PostComposer onPosted={onPosted} />
-      )}
+    <div className="space-y-3">
+      {!ownerId && loggedIn && <PostComposer onPosted={onPosted} />}
     </div>
   ) : null;
 
   const introNode = introPortal && introContent ? createPortal(introContent, introPortal) : null;
+  const audienceSwitch = showTopBar ? (
+    <div className="flex w-full items-center justify-between px-1">
+      <span className="text-xl font-extrabold tracking-tight text-[#fa3d30]">Bookie!</span>
+      <div className="inline-flex rounded-full border border-gray-200 bg-white p-0.5 text-xs shadow-sm">
+        <button
+          type="button"
+          onClick={() => setAudience('global')}
+          className={`px-3 py-1 rounded-full transition ${audience === 'global' ? 'bg-[#fa3d30] text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+          aria-pressed={audience === 'global'}
+        >
+          Herkes
+        </button>
+        <button
+          type="button"
+          onClick={() => setAudience('following')}
+          className={`px-3 py-1 rounded-full transition ${audience === 'following' ? 'bg-[#fa3d30] text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+          aria-pressed={audience === 'following'}
+        >
+          Takip
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <>
@@ -240,6 +235,7 @@ export default function GlobalFeed({
       <aside className="space-y-4 pb-4 px-0 sm:px-1">
         {!introPortal && introContent}
         <div className="space-y-3 px-0 sm:px-1">
+          {audienceSwitch}
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
               {error}

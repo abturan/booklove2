@@ -1,25 +1,64 @@
 // src/components/Header.tsx
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import clsx from 'clsx'
 import HeaderLogo from '@/components/header/HeaderLogo'
 import UserMenu from '@/components/header/UserMenu'
 import AuthButtons from '@/components/header/AuthButtons'
 import SearchFilters from '@/components/SearchFilters'
 import { useSession } from 'next-auth/react'
-import { usePathname } from 'next/navigation'
 
 export default function Header() {
   const { status } = useSession()
   const isGuest = status !== 'authenticated'
-  const pathname = usePathname()
-  const isHome = pathname === '/'
+  const [isHidden, setIsHidden] = useState(false)
+  const lastScrollY = useRef(0)
+  const rafRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    lastScrollY.current = window.scrollY
+
+    const handleScroll = () => {
+      if (rafRef.current) return
+      rafRef.current = window.requestAnimationFrame(() => {
+        const current = window.scrollY
+        const goingDown = current > lastScrollY.current + 4
+        const goingUp = current < lastScrollY.current - 4
+        const nearTop = current < 24
+
+        if (nearTop || goingUp) {
+          setIsHidden(false)
+        } else if (goingDown) {
+          setIsHidden(true)
+        }
+
+        lastScrollY.current = current
+        if (rafRef.current) {
+          window.cancelAnimationFrame(rafRef.current)
+          rafRef.current = null
+        }
+      })
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (rafRef.current) window.cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
+  const headerClass = clsx(
+    'sticky top-0 z-50 border-b border-white/20 bg-gradient-to-r from-[#fa3d30] via-[#ff5b4a] to-[#ff9660] text-white backdrop-blur supports-backdrop-blur:bg-[#fa3d30]/90 shadow-lg transition-all duration-300 ease-out will-change-transform',
+    isHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
+  )
 
   return (
     <>
       <div className="fixed left-0 right-0 top-0 z-40 h-1 bg-[#fa3d30] md:hidden" />
 
-      <header className="sticky top-0 z-50 border-b border-white/20 bg-gradient-to-r from-[#fa3d30] via-[#ff5b4a] to-[#ff9660] text-white backdrop-blur supports-backdrop-blur:bg-[#fa3d30]/90 shadow-lg">
+      <header className={headerClass}>
         <div className="container relative mx-auto flex h-[60px] items-center gap-3 overflow-visible rounded-3xl px-4">
           <div className="pointer-events-none absolute inset-0 opacity-30 blur-3xl" style={{ background: 'radial-gradient(circle at top, rgba(255,255,255,0.35), transparent 60%)' }} />
           <div className="flex w-full items-center justify-between md:hidden">
