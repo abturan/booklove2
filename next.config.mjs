@@ -17,7 +17,10 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['heic-convert', 'libheif-js'],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    if (isServer && config?.output?.chunkFilename?.includes('chunks/')) {
+      config.output.chunkFilename = config.output.chunkFilename.replace('chunks/', '')
+    }
     config.externals = config.externals || []
     config.externals.push({ 'libheif-js': 'commonjs libheif-js' })
     return config

@@ -162,7 +162,7 @@ export default function PostShareButton({
           setMessage(null)
           setOpen(true)
         }}
-        className="inline-flex items-center justify-center rounded-full border border-primary/30 px-2.5 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 gap-0 sm:gap-2 sm:px-3"
+        className="inline-flex items-center justify-center rounded-full bg-primary px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 gap-0 sm:gap-2 sm:px-3"
         aria-label="Paylaş"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">

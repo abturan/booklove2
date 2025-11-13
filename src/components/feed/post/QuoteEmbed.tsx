@@ -51,7 +51,7 @@ export default function QuoteEmbed({ quoted, depth = 0 }: { quoted: MinimalPost;
             </div>
           </div>
           <PostBody text={quoted.body} />
-          <PostImages images={quoted.images} />
+          <PostImages images={quoted.images} enableLightbox={false} />
 
           {depth < 1 && quoted.repostOf && (
             <div className="mt-2">

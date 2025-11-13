@@ -6,6 +6,7 @@ export type NotificationType =
   | 'post_like'
   | 'post_comment'
   | 'post_comment_reply'
+  | 'comment_like'
   | 'club_moderator_post'
   | 'club_moderator_secret'
   | 'club_new_messages_daily'

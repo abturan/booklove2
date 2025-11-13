@@ -209,7 +209,7 @@ export default function PostComposer({ onPosted, repostOf }: { onPosted: (id: st
           type="button"
           onClick={submit}
           disabled={busy || !canPost}
-          className="rounded-full bg-rose-600 text-white px-4 py-1.5 text-sm font-medium hover:bg-rose-700 disabled:opacity-60"
+          className="rounded-full bg-primary text-white px-4 py-1.5 text-sm font-semibold shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Paylaş
         </button>

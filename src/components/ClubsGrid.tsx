@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
+import { Users } from "lucide-react";
 import FilterBar, { type FilterValue } from "@/components/FilterBar";
 
 type ClubCard = {
@@ -66,7 +67,10 @@ export default function ClubsGrid() {
               <div className="p-4">
                 <div className="font-medium">{c.name}</div>
                 <div className="mt-1 text-sm text-gray-500">{c.moderator}</div>
-                <div className="mt-3 text-xs text-gray-600">👥 {c.memberCount} üye</div>
+                <div className="mt-3 text-xs text-gray-600 inline-flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5 text-gray-500" aria-hidden />
+                  {c.memberCount} üye
+                </div>
               </div>
             </a>
           ))}

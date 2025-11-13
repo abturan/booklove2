@@ -17,13 +17,13 @@ enum PostStatus {
 }
 
 model User {
-  id                     String               @id @default(cuid())
-  email                  String               @unique
+  id                     String                   @id @default(cuid())
+  email                  String                   @unique
   passwordHash           String
   name                   String
-  username               String?              @unique
-  slug                   String?              @unique
-  role                   String               @default("USER")
+  username               String?                  @unique
+  slug                   String?                  @unique
+  role                   String                   @default("USER")
   avatarUrl              String?
   city                   String?
   bannerUrl              String?
@@ -37,33 +37,34 @@ model User {
   website                String?
   location               String?
   lastSeenAt             DateTime?
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
   ChatMessage            ChatMessage[]
-  clubsModerated         Club[]               @relation("ClubModerator")
-  comments               Comment[]            @relation("UserComments")
-  following              Follow[]             @relation("UserFollowing")
-  followers              Follow[]             @relation("UserFollowers")
-  likes                  Like[]               @relation("UserLikes")
+  clubsModerated         Club[]                   @relation("ClubModerator")
+  comments               Comment[]                @relation("UserComments")
+  following              Follow[]                 @relation("UserFollowing")
+  followers              Follow[]                 @relation("UserFollowers")
+  likes                  Like[]                   @relation("UserLikes")
+  commentLikes           CommentLike[]            @relation("UserCommentLikes")
   Memberships            Membership[]
   Notifications          Notification[]
   PaymentIntent          PaymentIntent[]
-  posts                  Post[]               @relation("UserPosts")
+  posts                  Post[]                   @relation("UserPosts")
   Subscriptions          Subscription[]
-  dmMessagesAuthored     DmMessage[]          @relation("DmMessageAuthor")
-  dmThreadsAsA           DmThread[]           @relation("DmThreadUserA")
-  dmThreadsAsB           DmThread[]           @relation("DmThreadUserB")
-  dmThreadsRequested     DmThread[]           @relation("DmThreadRequestAuthor")
+  dmMessagesAuthored     DmMessage[]              @relation("DmMessageAuthor")
+  dmThreadsAsA           DmThread[]               @relation("DmThreadUserA")
+  dmThreadsAsB           DmThread[]               @relation("DmThreadUserB")
+  dmThreadsRequested     DmThread[]               @relation("DmThreadRequestAuthor")
   PasswordResetTokens    PasswordResetToken[]
   EmailVerificationToken EmailVerificationToken[]
   NotificationPreference NotificationPreference?
   PhoneVerification      PhoneVerification[]
   DmThreadReads          DmThreadRead[]
   DmReactions            DmReaction[]
-  PostReports            PostReport[]         @relation("UserReports")
+  PostReports            PostReport[]             @relation("UserReports")
   MeetingPresence        MeetingPresence[]
-  EventMailsAuthored     EventMail[]          @relation("EventMailAuthor")
-  EventMailRecipients    EventMailRecipient[] @relation("EventMailRecipientUser")
+  EventMailsAuthored     EventMail[]              @relation("EventMailAuthor")
+  EventMailRecipients    EventMailRecipient[]     @relation("EventMailRecipientUser")
 }
 
 model Notification {
@@ -98,103 +99,103 @@ model Club {
   paymentIntents PaymentIntent[]
   subscriptions  Subscription[]
 
-  capacity       Int?
+  capacity          Int?
   conferenceEnabled Boolean @default(false)
 }
 
 model Membership {
-  id       String   @id @default(cuid())
-  userId   String
-  clubId   String
+  id          String    @id @default(cuid())
+  userId      String
+  clubId      String
   clubEventId String
-  role     String   @default("MEMBER")
-  isActive Boolean  @default(true)
-  joinedAt DateTime @default(now())
-  club     Club     @relation(fields: [clubId], references: [id])
-  event    ClubEvent @relation(fields: [clubEventId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  role        String    @default("MEMBER")
+  isActive    Boolean   @default(true)
+  joinedAt    DateTime  @default(now())
+  club        Club      @relation(fields: [clubId], references: [id])
+  event       ClubEvent @relation(fields: [clubEventId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, clubEventId])
 }
 
 model Subscription {
-  id         String    @id @default(cuid())
-  userId     String
-  clubId     String
+  id          String    @id @default(cuid())
+  userId      String
+  clubId      String
   clubEventId String
-  active     Boolean   @default(false)
-  startedAt  DateTime?
-  canceledAt DateTime?
-  club       Club      @relation(fields: [clubId], references: [id])
-  event      ClubEvent @relation(fields: [clubEventId], references: [id])
-  user       User      @relation(fields: [userId], references: [id])
+  active      Boolean   @default(false)
+  startedAt   DateTime?
+  canceledAt  DateTime?
+  club        Club      @relation(fields: [clubId], references: [id])
+  event       ClubEvent @relation(fields: [clubEventId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, clubEventId])
 }
 
 model PaymentIntent {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   clubId      String
   clubEventId String
   amountTRY   Int
-  status      String   @default("REQUIRES_PAYMENT")
-  createdAt   DateTime @default(now())
-  merchantOid String   @unique
-  club        Club     @relation(fields: [clubId], references: [id])
+  status      String    @default("REQUIRES_PAYMENT")
+  createdAt   DateTime  @default(now())
+  merchantOid String    @unique
+  club        Club      @relation(fields: [clubId], references: [id])
   event       ClubEvent @relation(fields: [clubEventId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
 
   @@index([createdAt])
 }
 
 model ClubEvent {
-  id       String   @id @default(cuid())
-  clubId   String
-  startsAt DateTime
-  title    String   @default("Aylık Oturum")
-  notes    String?
-  priceTRY Int?
-  capacity Int?
-  bookTitle String?
-  bookAuthor String?
-  bookTranslator String?
-  bookPages Int?
-  bookIsbn String?
-  bookCoverUrl String?
-  club     Club     @relation(fields: [clubId], references: [id])
-  memberships Membership[]
-  subscriptions Subscription[]
-  paymentIntents PaymentIntent[]
-  chatRoom ChatRoom?
-  meeting       Meeting?
+  id               String            @id @default(cuid())
+  clubId           String
+  startsAt         DateTime
+  title            String            @default("Aylık Oturum")
+  notes            String?
+  priceTRY         Int?
+  capacity         Int?
+  bookTitle        String?
+  bookAuthor       String?
+  bookTranslator   String?
+  bookPages        Int?
+  bookIsbn         String?
+  bookCoverUrl     String?
+  club             Club              @relation(fields: [clubId], references: [id])
+  memberships      Membership[]
+  subscriptions    Subscription[]
+  paymentIntents   PaymentIntent[]
+  chatRoom         ChatRoom?
+  meeting          Meeting?
   meetingPresences MeetingPresence[]
-  reminders     EventReminder[]
-  mails         EventMail[]
+  reminders        EventReminder[]
+  mails            EventMail[]
 }
 
 model Meeting {
-  id          String   @id @default(cuid())
-  clubEventId String   @unique
-  isActive    Boolean  @default(false)
+  id          String    @id @default(cuid())
+  clubEventId String    @unique
+  isActive    Boolean   @default(false)
   opensAt     DateTime?
   startedAt   DateTime?
   endedAt     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   event       ClubEvent @relation(fields: [clubEventId], references: [id])
 }
 
 model MeetingPresence {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   clubEventId String
   userId      String
-  joinedAt    DateTime @default(now())
-  lastSeenAt  DateTime @default(now())
+  joinedAt    DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
   leftAt      DateTime?
-  allowSpeak  Boolean  @default(false)
-  micOn       Boolean  @default(false)
-  cameraOn    Boolean  @default(false)
+  allowSpeak  Boolean   @default(false)
+  micOn       Boolean   @default(false)
+  cameraOn    Boolean   @default(false)
   event       ClubEvent @relation(fields: [clubEventId], references: [id])
   user        User      @relation(fields: [userId], references: [id])
 
@@ -203,10 +204,10 @@ model MeetingPresence {
 }
 
 model EventReminder {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   clubEventId String
   kind        String
-  sentAt      DateTime @default(now())
+  sentAt      DateTime  @default(now())
   event       ClubEvent @relation(fields: [clubEventId], references: [id])
 
   @@unique([clubEventId, kind])
@@ -214,77 +215,77 @@ model EventReminder {
 }
 
 model EventMail {
-  id          String    @id @default(cuid())
+  id          String               @id @default(cuid())
   eventId     String
   subject     String
   previewText String?
   bodyHtml    String
   note        String?
-  sendScope   String    @default("ALL")
-  createdAt   DateTime  @default(now())
+  sendScope   String               @default("ALL")
+  createdAt   DateTime             @default(now())
   createdById String?
-  event       ClubEvent @relation(fields: [eventId], references: [id])
-  createdBy   User?     @relation("EventMailAuthor", fields: [createdById], references: [id])
+  event       ClubEvent            @relation(fields: [eventId], references: [id])
+  createdBy   User?                @relation("EventMailAuthor", fields: [createdById], references: [id])
   recipients  EventMailRecipient[]
 }
 
 model EventMailRecipient {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   mailId    String
   userId    String?
   email     String
   name      String?
-  status    String   @default("PENDING")
+  status    String    @default("PENDING")
   sentAt    DateTime?
   error     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   mail      EventMail @relation(fields: [mailId], references: [id], onDelete: Cascade)
-  user      User?      @relation("EventMailRecipientUser", fields: [userId], references: [id])
+  user      User?     @relation("EventMailRecipientUser", fields: [userId], references: [id])
 
   @@index([mailId])
   @@index([userId])
 }
 
 model NotificationPreference {
-  id                         String   @id @default(cuid())
-  userId                     String   @unique
-  user                       User     @relation(fields: [userId], references: [id])
-  emailFollow                Boolean  @default(true)
-  emailPostLike              Boolean  @default(true)
-  emailPostComment           Boolean  @default(true)
-  emailClubModeratorPost     Boolean  @default(true)
-  emailClubModeratorSecret   Boolean  @default(true)
-  emailClubNewMessagesDaily  Boolean  @default(true)
-  emailClubCreated           Boolean  @default(true)
-  emailClubNewEvent          Boolean  @default(true)
-  createdAt                  DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
+  id                        String   @id @default(cuid())
+  userId                    String   @unique
+  user                      User     @relation(fields: [userId], references: [id])
+  emailFollow               Boolean  @default(true)
+  emailPostLike             Boolean  @default(true)
+  emailPostComment          Boolean  @default(true)
+  emailClubModeratorPost    Boolean  @default(true)
+  emailClubModeratorSecret  Boolean  @default(true)
+  emailClubNewMessagesDaily Boolean  @default(true)
+  emailClubCreated          Boolean  @default(true)
+  emailClubNewEvent         Boolean  @default(true)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 }
 
 model EmailVerificationToken {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
   email      String
-  token      String   @unique
-  createdAt  DateTime @default(now())
+  token      String    @unique
+  createdAt  DateTime  @default(now())
   expiresAt  DateTime
   consumedAt DateTime?
-  user       User     @relation(fields: [userId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
 
 model PhoneVerification {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
   phone      String
   code       String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   expiresAt  DateTime
   verifiedAt DateTime?
-  attempts   Int      @default(0)
-  user       User     @relation(fields: [userId], references: [id])
+  attempts   Int       @default(0)
+  user       User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -313,22 +314,22 @@ model ChatMessage {
 }
 
 model Post {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   ownerId     String
   body        String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  clientToken String?     @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  clientToken String?      @unique
   images      PostImage[]
   comments    Comment[]
   likes       Like[]
-  owner       User        @relation("UserPosts", fields: [ownerId], references: [id])
-  status      PostStatus  @default(PENDING)
+  owner       User         @relation("UserPosts", fields: [ownerId], references: [id])
+  status      PostStatus   @default(PENDING)
   reports     PostReport[]
   // Rebookie (repost/quote) desteği
   repostOfId  String?
-  repostOf    Post?       @relation("Repost", fields: [repostOfId], references: [id])
-  reposts     Post[]      @relation("Repost")
+  repostOf    Post?        @relation("Repost", fields: [repostOfId], references: [id])
+  reposts     Post[]       @relation("Repost")
 
   @@index([ownerId, createdAt])
   @@index([status, createdAt])
@@ -359,15 +360,28 @@ model Like {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   postId    String
   userId    String
   body      String
-  createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id])
-  user      User     @relation("UserComments", fields: [userId], references: [id])
+  createdAt DateTime      @default(now())
+  post      Post          @relation(fields: [postId], references: [id])
+  user      User          @relation("UserComments", fields: [userId], references: [id])
+  likes     CommentLike[]
 
   @@index([postId])
+  @@index([userId])
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  user      User     @relation("UserCommentLikes", fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
   @@index([userId])
 }
 
@@ -377,8 +391,8 @@ model Follow {
   followingId String
   createdAt   DateTime @default(now())
 
-  follower    User     @relation("UserFollowing", fields: [followerId], references: [id])
-  following   User     @relation("UserFollowers", fields: [followingId], references: [id])
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id])
+  following User @relation("UserFollowers", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
   @@index([followingId])
@@ -386,17 +400,17 @@ model Follow {
 }
 
 model DmThread {
-  id             String          @id @default(cuid())
+  id             String         @id @default(cuid())
   userAId        String
   userBId        String
-  lastMessage    DateTime        @default(now())
-  status         DmThreadStatus  @default(ACTIVE)
+  lastMessage    DateTime       @default(now())
+  status         DmThreadStatus @default(ACTIVE)
   requestedById  String?
   requestedAt    DateTime?
   lastDecisionAt DateTime?
-  userA          User            @relation("DmThreadUserA", fields: [userAId], references: [id])
-  userB          User            @relation("DmThreadUserB", fields: [userBId], references: [id])
-  requestedBy    User?           @relation("DmThreadRequestAuthor", fields: [requestedById], references: [id])
+  userA          User           @relation("DmThreadUserA", fields: [userAId], references: [id])
+  userB          User           @relation("DmThreadUserB", fields: [userBId], references: [id])
+  requestedBy    User?          @relation("DmThreadRequestAuthor", fields: [requestedById], references: [id])
   messages       DmMessage[]
   reads          DmThreadRead[]
 
@@ -407,13 +421,13 @@ model DmThread {
 }
 
 model DmMessage {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   threadId  String
   authorId  String
   body      String
-  createdAt DateTime @default(now())
-  thread    DmThread @relation(fields: [threadId], references: [id])
-  author    User     @relation("DmMessageAuthor", fields: [authorId], references: [id])
+  createdAt DateTime     @default(now())
+  thread    DmThread     @relation(fields: [threadId], references: [id])
+  author    User         @relation("DmMessageAuthor", fields: [authorId], references: [id])
   reactions DmReaction[]
 
   @@index([threadId, createdAt])
@@ -450,8 +464,8 @@ model PostReport {
   reason    String
   createdAt DateTime @default(now())
 
-  post      Post     @relation(fields: [postId], references: [id])
-  user      User     @relation("UserReports", fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+  user User @relation("UserReports", fields: [userId], references: [id])
 
   @@index([postId, createdAt])
   @@index([userId, createdAt])
@@ -464,11 +478,11 @@ enum DmThreadStatus {
 }
 
 model DmReaction {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   messageId String
   userId    String
   emoji     String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   message   DmMessage @relation(fields: [messageId], references: [id])
   user      User      @relation(fields: [userId], references: [id])
 
@@ -478,36 +492,36 @@ model DmReaction {
 
 // Simple banner/ad model
 model Ad {
-  id        String   @id @default(cuid())
-  title     String
-  type      String   @default("image_full") // image_full | announcement
-  slot      String   @default("feed")       // feed | hero | sidebar
-  imageUrl  String?
-  mobileImageUrl String?
+  id              String      @id @default(cuid())
+  title           String
+  type            String      @default("image_full") // image_full | announcement
+  slot            String      @default("feed") // feed | hero | sidebar
+  imageUrl        String?
+  mobileImageUrl  String?
   desktopImageUrl String?
-  linkUrl   String?
-  html      String?
-  mobileHtml String?
-  desktopHtml String?
-  device    String   @default("all") // all | mobile | desktop
-  active    Boolean  @default(true)
-  startsAt  DateTime?
-  endsAt    DateTime?
-  weight    Int      @default(1)
-  rules     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  campaignId String?
-  campaign   AdCampaign? @relation(fields: [campaignId], references: [id])
+  linkUrl         String?
+  html            String?
+  mobileHtml      String?
+  desktopHtml     String?
+  device          String      @default("all") // all | mobile | desktop
+  active          Boolean     @default(true)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  weight          Int         @default(1)
+  rules           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  campaignId      String?
+  campaign        AdCampaign? @relation(fields: [campaignId], references: [id])
 }
 
 model AdCampaign {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  type      String  @default("rotate") // rotate | pinned_top
-  frequency Int     @default(1)
-  scope     String  @default("all")
-  active    Boolean @default(true)
+  type      String   @default("rotate") // rotate | pinned_top
+  frequency Int      @default(1)
+  scope     String   @default("all")
+  active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   Ads       Ad[]

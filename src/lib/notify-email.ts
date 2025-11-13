@@ -10,7 +10,7 @@ export async function sendNotificationEmail(userId: string, type: NotificationTy
     if (pref) {
       const disabled =
         (type === 'follow' && !pref.emailFollow) ||
-        (type === 'post_like' && !pref.emailPostLike) ||
+        ((type === 'post_like' || type === 'comment_like') && !pref.emailPostLike) ||
         (type === 'post_comment' && !pref.emailPostComment) ||
         (type === 'club_moderator_post' && !pref.emailClubModeratorPost) ||
         (type === 'club_moderator_secret' && !pref.emailClubModeratorSecret) ||
@@ -98,6 +98,19 @@ async function buildEmail(type: NotificationType, payload: Record<string, any>) 
         ${postSnippet ? labeledCard('Gönderi', postSnippet) : ''}
       `
       return wrap(heading, html)
+    }
+    case 'comment_like': {
+      const comment = payload.commentId
+        ? await prisma.comment.findUnique({ where: { id: String(payload.commentId) }, select: { body: true } })
+        : null
+      const snippet = makeSnippet(comment?.body || '')
+      const heading = `${byName} yorumunu beğendi`
+      const html = `
+        <p>Merhaba,</p>
+        <p><strong>${escapeHtml(byName)}</strong> Bookie altında yaptığın yorumu beğendi.</p>
+        ${snippet ? labeledCard('Yorumun', snippet) : ''}
+      `
+      return wrap(heading, html, 'Yorumu gör', url)
     }
     case 'club_moderator_post': {
       const heading = `${clubName} — Moderatörden yeni mesaj`

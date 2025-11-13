@@ -11,6 +11,8 @@ export async function GET(req: Request, { params }: { params: { postId: string }
   const { searchParams } = new URL(req.url)
   const limit = Math.min(Number(searchParams.get('limit') || '20'), 50)
   const postId = params.postId
+  const session = await auth().catch(() => null)
+  const meId = session?.user?.id ?? null
 
   const comments = await prisma.comment.findMany({
     where: { postId },
@@ -18,10 +20,28 @@ export async function GET(req: Request, { params }: { params: { postId: string }
     take: limit,
     select: {
       id: true, body: true, createdAt: true,
+      _count: { select: { likes: true } },
       user: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } }
     }
   })
-  return NextResponse.json({ items: comments })
+  let likedMap = new Set<string>()
+  if (meId && comments.length > 0) {
+    const likedRows = await prisma.commentLike.findMany({
+      where: { userId: meId, commentId: { in: comments.map((c) => c.id) } },
+      select: { commentId: true },
+    })
+    likedMap = new Set(likedRows.map((row) => row.commentId))
+  }
+  return NextResponse.json({
+    items: comments.map((c) => ({
+      id: c.id,
+      body: c.body,
+      createdAt: c.createdAt,
+      user: c.user,
+      likes: c._count?.likes ?? 0,
+      likedByMe: likedMap.has(c.id),
+    })),
+  })
 }
 
 export async function POST(req: Request, { params }: { params: { postId: string } }) {

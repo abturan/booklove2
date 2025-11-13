@@ -16,7 +16,7 @@ import EmptyRow from './panel/EmptyRow'
 import FriendRow from './panel/FriendRow'
 import useOnlineMap from '@/lib/hooks/useOnlineMap'
 
-export default function BookBuddyPanel({ active = true }: { active?: boolean }) {
+export default function BookBuddyPanel({ active = true, showSearch = true }: { active?: boolean; showSearch?: boolean }) {
   const { authed } = useAuth()
   const { isDesktop, inputShell, wrapRing } = useResponsive()
 
@@ -73,25 +73,7 @@ export default function BookBuddyPanel({ active = true }: { active?: boolean }) 
             />
           )}
 
-          <SearchBox
-            {...sug}
-            placeholder="Book Buddy'lerini bul"
-            inputShell={inputShell}
-            userPath={userPath}
-            sets={lists.sets}
-            follow={lists.followUser}
-            followBack={lists.followBack}
-            unfollow={lists.unfollowUser}
-          />
-
-          {sections}
-        </div>
-      )}
-
-      {isDesktop && (
-        <section className={`mb-10 rounded-2xl ring-1 ${wrapRing} shadow-sm overflow-hidden`}>
-          <div className="bg-primary text-white p-5 space-y-3 relative">
-            <HeaderBar compact={compact} onToggleCompact={() => setCompact(v => !v)} />
+          {showSearch && (
             <SearchBox
               {...sug}
               placeholder="Book Buddy'lerini bul"
@@ -102,7 +84,31 @@ export default function BookBuddyPanel({ active = true }: { active?: boolean }) 
               followBack={lists.followBack}
               unfollow={lists.unfollowUser}
             />
-            <div style={{ height: 10 }} />
+          )}
+
+          {sections}
+        </div>
+      )}
+
+      {isDesktop && (
+        <section className={`mb-10 rounded-2xl ring-1 ${wrapRing} shadow-sm overflow-hidden`}>
+          <div className="bg-primary text-white p-5 space-y-3 relative">
+            <HeaderBar compact={compact} onToggleCompact={() => setCompact((v) => !v)} />
+            {showSearch && (
+              <>
+                <SearchBox
+                  {...sug}
+                  placeholder="Book Buddy'lerini bul"
+                  inputShell={inputShell}
+                  userPath={userPath}
+                  sets={lists.sets}
+                  follow={lists.followUser}
+                  followBack={lists.followBack}
+                  unfollow={lists.unfollowUser}
+                />
+                <div style={{ height: 10 }} />
+              </>
+            )}
           </div>
 
           {totalHeaderCount > 0 && (

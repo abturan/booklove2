@@ -18,6 +18,8 @@ function titleFor(n: Row): string {
       return `${p.byName || 'Bir kullanıcı'} Bookie'ne yorum yaptı`
     case 'post_comment_reply':
       return `${p.byName || 'Bir kullanıcı'} takip ettiğin Bookie'de yeni yorum yaptı`
+    case 'comment_like':
+      return `${p.byName || 'Bir kullanıcı'} yorumunu beğendi`
     case 'dm_message':
       return `${p.byName || 'Bir kullanıcı'} sana mesaj gönderdi`
     case 'club_moderator_post':
@@ -36,6 +38,8 @@ function titleFor(n: Row): string {
       return 'Bildirim'
   }
 }
+
+const MODAL_POST_TYPES = new Set(['post_like', 'post_comment', 'post_comment_reply'])
 
 export default function NotificationsPanel({ active }: { active?: boolean }) {
   const [items, setItems] = React.useState<Row[]>([])
@@ -81,9 +85,7 @@ export default function NotificationsPanel({ active }: { active?: boolean }) {
             {items.map((n) => (
               <li key={n.id} className={`px-3 py-3 ${n.read ? '' : 'bg-amber-50/50'}`}>
                 <div className="text-sm text-gray-800">{titleFor(n)}</div>
-                {(
-                  (n.type === 'post_like' || n.type === 'post_comment') && n.payload?.postId
-                ) ? (
+                {MODAL_POST_TYPES.has(n.type) && n.payload?.postId ? (
                   <button
                     type="button"
                     className="text-xs text-primary underline"
@@ -155,9 +157,16 @@ function PostQuickView({ openId, onClose }: { openId: string | null; onClose: ()
   }, [openId])
 
   return (
-    <Modal open={!!openId} onClose={onClose} title="Gönderi">
-      {loading && <div className="text-sm text-gray-600">Yükleniyor…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
+    <Modal
+      open={!!openId}
+      onClose={onClose}
+      showHeader={false}
+      showFooter={false}
+      floatingCloseButton
+      contentClassName="p-0"
+    >
+      {loading && <div className="p-5 text-sm text-gray-600">Yükleniyor…</div>}
+      {error && <div className="p-5 text-sm text-red-600">{error}</div>}
       {post && (
         <div className="space-y-3">
           {/* reuse PostCard for full interactions */}

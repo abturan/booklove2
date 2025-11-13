@@ -90,9 +90,10 @@ function extractList(payload: any): any[] {
 type Props = {
   initialQuery?: Record<string, string | undefined>
   pageSize?: number
+  scrollRoot?: HTMLElement | null
 }
 
-export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Props) {
+export default function InfiniteClubs({ initialQuery = {}, pageSize = 12, scrollRoot = null }: Props) {
   const [items, setItems] = React.useState<Club[]>([])
   // we use page-number based pagination for /api/events
   const pageRef = React.useRef<number>(1)
@@ -168,11 +169,11 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
         const first = entries[0]
         if (first.isIntersecting) loadMore(false)
       },
-      { rootMargin: '400px 0px' }
+      { rootMargin: '400px 0px', root: scrollRoot ?? null }
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [sentinelRef.current, hasMore, loading])
+  }, [scrollRoot, hasMore, loading])
 
   const safeItems = items.filter(Boolean)
 
@@ -188,21 +189,16 @@ export default function InfiniteClubs({ initialQuery = {}, pageSize = 12 }: Prop
         <div className="text-sm text-gray-600">Kulüp bulunamadı.</div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 sm:gap-y-3 xl:grid-cols-3">
         {safeItems.map((club, i) => {
           const key = club.id || `${club.slug || 'club'}-${i}`
-          return <ClubCard key={key} club={club} />
+          return <ClubCard key={key} club={club} className="h-full" />
         })}
       </div>
 
       <div ref={sentinelRef} />
 
-      <div className="flex justify-center py-4">
-        {loading && <span className="text-sm text-gray-600">Yükleniyor…</span>}
-        {!hasMore && safeItems.length > 0 && (
-          <span className="text-sm text-gray-500">❤️❤️❤️</span>
-        )}
-      </div>
+      {loading && <span className="text-sm text-gray-600">Daha fazlası…</span>}
     </div>
   )
 }

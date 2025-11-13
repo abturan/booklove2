@@ -6,16 +6,23 @@ import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { useDockedLogo } from './useDockedLogo'
 
-export default function HeaderLogo({ compact = false, size }: { compact?: boolean; size?: number } = {}) {
+type Props = {
+  compact?: boolean
+  size?: number
+  className?: string
+}
+
+export default function HeaderLogo({ compact = false, size, className }: Props = {}) {
   const pathname = usePathname()
   const isHome = pathname === '/'
   const dockedLogo = useDockedLogo()
   const visible = isHome ? dockedLogo : true
-  const computedSize = size ?? (compact ? 140 : 140)
+  const computedSize = size ?? (compact ? 80 : 140)
 
-  const className = clsx(
+  const baseClass = clsx(
     'transition-all duration-200',
-    !compact && isHome ? 'rounded-md logo-main-page1 mt-[36px] lg:mt-[60px] w-[50%]' : 'rounded-md logo-main-page1 mt-[36px] lg:mt-[60px] w-[50%]',
+    compact ? 'h-auto w-auto' : 'rounded-md logo-main-page1 mt-[36px] lg:mt-[60px] w-[50%]',
+    className
   )
 
   return (
@@ -24,8 +31,8 @@ export default function HeaderLogo({ compact = false, size }: { compact?: boolea
         src="/logo-fixed.svg"
         alt="book.love"
         width={computedSize}
-        height={computedSize * 0.22}
-        className={className}
+        height={computedSize * 0.25}
+        className={baseClass}
         style={{
           opacity: visible ? 1 : 0,
           transform: `translateY(${visible ? 0 : -6}px)`,

@@ -79,7 +79,7 @@ export default function PostActions({
   }, [menuOpen])
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-6 text-sm text-gray-700">
+    <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-700">
       <div className="inline-flex items-center gap-2">
         <button
           type="button"
@@ -140,16 +140,6 @@ export default function PostActions({
             <path d="M7 7h10l-3-3m3 3l-3 3" />
             <path d="M17 17H7l3 3m-3-3l3-3" />
           </svg>
-        </button>
-        <button
-          type="button"
-          onClick={canInteract ? onRebook : undefined}
-          disabled={!canInteract}
-          className="hidden sm:inline min-w-[1.5ch] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Rebookie paylaş"
-          title={!canInteract ? 'Önce e‑postanızı doğrulayın' : 'Rebookie paylaş'}
-        >
-          Rebookie
         </button>
       </div>
 

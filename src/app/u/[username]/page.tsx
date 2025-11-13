@@ -31,9 +31,14 @@ export default async function PublicProfilePage({ params, searchParams }: Props)
   const canonical = canonicalFromUser(user)
   const urlTab = searchParams?.tab as Tab | undefined
 
+  const [postCount, memberships] = await Promise.all([
+    prisma.post.count({ where: { ownerId: user.id, status: 'PUBLISHED' } }),
+    prisma.membership.count({ where: { userId: user.id, isActive: true } }),
+  ])
+
   let defaultTab: Tab = 'posts'
-  const memberships = await prisma.membership.count({ where: { userId: user.id, isActive: true } })
-  if (memberships > 0) defaultTab = 'clubs'
+  if (postCount > 0) defaultTab = 'posts'
+  else if (memberships > 0) defaultTab = 'clubs'
 
   const activeTab: Tab = urlTab && (urlTab === 'clubs' || urlTab === 'posts') ? urlTab : defaultTab
 

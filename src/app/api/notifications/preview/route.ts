@@ -25,6 +25,8 @@ function makeSample(type: NotificationType, url: string) {
       return { title: "Bookie'ne yorum", bodyHtml: "<p><b>Ayşe</b> Bookie'ne yorum yaptı.</p>", ctaLabel: 'Yorumu gör', ctaUrl: url }
     case 'post_comment_reply':
       return { title: "Bookie'nde yeni yorum", bodyHtml: "<p><b>Ayşe</b> takip ettiğin Bookie'ye yanıt verdi.</p>", ctaLabel: 'Gönderiyi aç', ctaUrl: url }
+    case 'comment_like':
+      return { title: 'Yorumuna beğeni', bodyHtml: "<p><b>Ayşe</b> yorumunu beğendi.</p>", ctaLabel: 'Yorumu gör', ctaUrl: url }
     case 'club_moderator_post':
       return { title: 'Moderatörden yeni mesaj', bodyHtml: '<p>Moderatör yeni bir mesaj paylaştı.</p>', ctaLabel: 'Sohbete git', ctaUrl: url }
     case 'club_moderator_secret':

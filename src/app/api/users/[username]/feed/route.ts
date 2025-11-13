@@ -15,6 +15,23 @@ export async function GET(req: Request, { params }: { params: { username: string
   })
   if (!user) return NextResponse.json({ error: 'Kullanıcı yok' }, { status: 404 })
 
+  const repostSelect = {
+    id: true,
+    body: true,
+    createdAt: true,
+    owner: { select: { id: true, name: true, username: true, avatarUrl: true } },
+    images: { select: { url: true, width: true, height: true } },
+    repostOf: {
+      select: {
+        id: true,
+        body: true,
+        createdAt: true,
+        owner: { select: { id: true, name: true, username: true, avatarUrl: true } },
+        images: { select: { url: true, width: true, height: true } },
+      },
+    },
+  }
+
   const rows = await prisma.post.findMany({
     where: { ownerId: user.id },
     orderBy: { createdAt: 'desc' },
@@ -24,8 +41,10 @@ export async function GET(req: Request, { params }: { params: { username: string
       id: true,
       body: true,
       createdAt: true,
+      status: true,
       owner: { select: { id: true, name: true, username: true, avatarUrl: true } },
       images: { select: { url: true, width: true, height: true } },
+      repostOf: { select: repostSelect },
       _count: { select: { likes: true, comments: true } },
     },
   })

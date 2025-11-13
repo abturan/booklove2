@@ -170,6 +170,8 @@ export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { pos
             }}
             canInteract={canInteract}
             reload={c.load}
+            onToggleLike={c.toggleLike}
+            likingId={c.likingId}
           />
         </>
       )}

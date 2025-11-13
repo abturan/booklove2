@@ -89,9 +89,11 @@ export default function PaginatedClubs({
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 sm:gap-y-3">
             {items.map((club) => (
-              <ClubCard key={club.id} club={club} />
+              <div key={club.id} className="relative w-full pb-[100%]">
+                <ClubCard club={club} className="absolute inset-0" />
+              </div>
             ))}
           </div>
 

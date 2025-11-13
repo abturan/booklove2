@@ -2,7 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --bg: 255 255 255; --primary-red: #d74532; --app-footer: 64px; }
+:root {
+  --bg: 255 255 255;
+  --primary-red: #fa3d30;
+  --app-footer: 64px;
+  --ticket-hole: #fff2ec;
+  --ticket-bg-light: #fff8f0;
+  --ticket-bg-dark: #ffd8b0;
+}
 
 body { @apply bg-gradient-to-br from-primary/10 via-white to-sky-50 text-gray-900; }
 
@@ -11,8 +18,31 @@ body.meet-fullscreen {
   overflow: hidden;
 }
 
+.ticket-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 28px;
+  background: var(--primary-red);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
 
-.container { @apply mx-auto px-4 sm:px-6 lg:px-8; }
+.ticket-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  border: 2px dotted var(--primary-red);
+  pointer-events: none;
+}
+
+.ticket-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+
+.container { @apply mx-auto w-full max-w-[1500px] px-4 sm:px-6 lg:px-8; }
 .card { @apply bg-white/80 backdrop-blur rounded-3xl shadow-soft; }
 
 .header-buttons-container{ min-width: 180px; }
@@ -21,8 +51,11 @@ body.meet-fullscreen {
 @media (max-width: 640px) { .logo-header { margin-top: 8px; } }
 
 .logo-hero { @apply w-[112px] sm:w-[128px] h-auto select-none; }
-.hero-fixed { @apply h-[200px] sm:h-[320px] lg:h-[320px]; }
+.hero-fixed { @apply h-[160px] sm:h-[240px] lg:h-[260px]; }
 .h-41{ height: 11rem; }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
 
 .legal-content h2 { font-size: 1.25rem; line-height: 1.4; font-weight: 800; margin: 0 0 0.75rem 0; }
 .legal-content h3 { font-size: 1.05rem; line-height: 1.5; font-weight: 700; margin: 1rem 0 0.5rem 0; }

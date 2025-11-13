@@ -12,7 +12,7 @@ type PostImage = {
   link?: string | null
 }
 
-export default function PostImages({ images }: { images: PostImage[] }) {
+export default function PostImages({ images, enableLightbox = true }: { images: PostImage[]; enableLightbox?: boolean }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const normalized = useMemo(() => images?.filter((img) => img && img.url) ?? [], [images])
   if (!normalized || normalized.length === 0) return null
@@ -46,80 +46,95 @@ export default function PostImages({ images }: { images: PostImage[] }) {
   return (
     <>
       <div className={clsx('mt-2 grid gap-2', isSingle ? 'grid-cols-1' : 'grid-cols-2')}>
-        {normalized.map((img, i) => (
-          <button
-            type="button"
-            key={i}
-            onClick={() => setActiveIndex(i)}
-            className="group relative aspect-square w-full max-h-[420px] overflow-hidden rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <img
-              src={img.url}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
-            />
-          </button>
-        ))}
+        {normalized.map((img, i) => {
+          const interactive = enableLightbox
+          const commonClasses = clsx(
+            'group relative aspect-square w-full max-h-[420px] overflow-hidden rounded-2xl',
+            interactive ? 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer' : 'pointer-events-none'
+          )
+          return (
+            <button
+              type="button"
+              key={i}
+              onClick={interactive ? () => setActiveIndex(i) : undefined}
+              className={commonClasses}
+              tabIndex={interactive ? 0 : -1}
+              aria-disabled={!interactive}
+            >
+              <img
+                src={img.url}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+              />
+            </button>
+          )
+        })}
       </div>
 
-      <BareModal open={activeIndex !== null} onClose={() => setActiveIndex(null)}>
+      <BareModal
+        open={activeIndex !== null}
+        onClose={() => setActiveIndex(null)}
+        title={null}
+        size="xl"
+        className="bg-black text-white rounded-none w-screen h-screen max-h-none"
+        contentClassName="p-0 h-full flex items-center justify-center"
+        scrollable={false}
+      >
         {currentImage && (
-          <div className="space-y-4">
+          <div className="relative flex h-full w-full items-center justify-center bg-black">
             {currentImage.link && (
               <a
                 href={currentImage.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-sm text-primary hover:bg-primary/15"
+                className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-sm text-white backdrop-blur hover:bg-white/20"
               >
                 Bağlantıyı aç
               </a>
             )}
-            <div className="relative flex items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 p-2">
-              {hasMultiple && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeIndex !== null) showAt(activeIndex - 1)
-                    }}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow hover:bg-white"
-                    aria-label="Önceki görsel"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeIndex !== null) showAt(activeIndex + 1)
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow hover:bg-white"
-                    aria-label="Sonraki görsel"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-              <img
-                src={currentImage.url}
-                alt=""
-                className="mx-auto h-auto max-h-[65dvh] w-full select-none object-contain"
-              />
-              {hasMultiple && (
-                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1">
-                  {normalized.map((_, dotIdx) => (
-                    <span
-                      key={dotIdx}
-                      className={clsx(
-                        'h-1.5 w-1.5 rounded-full',
-                        dotIdx === activeIndex ? 'bg-primary' : 'bg-gray-300'
-                      )}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            {hasMultiple && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeIndex !== null) showAt(activeIndex - 1)
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-3 text-white shadow hover:bg-black/60"
+                  aria-label="Önceki görsel"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeIndex !== null) showAt(activeIndex + 1)
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-3 text-white shadow hover:bg-black/60"
+                  aria-label="Sonraki görsel"
+                >
+                  ›
+                </button>
+              </>
+            )}
+            <img
+              src={currentImage.url}
+              alt=""
+              className="max-h-full max-w-full select-none object-contain"
+            />
+            {hasMultiple && (
+              <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
+                {normalized.map((_, dotIdx) => (
+                  <span
+                    key={dotIdx}
+                    className={clsx(
+                      'h-1.5 w-4 rounded-full transition-colors',
+                      dotIdx === activeIndex ? 'bg-white' : 'bg-white/30'
+                    )}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </BareModal>

@@ -15,13 +15,16 @@ export async function GET(req: Request) {
   const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1
   const skip = limit ? (page - 1) * limit : undefined
   const hideSoldOut = searchParams.get('soldout') === '1'
+  const includePast = searchParams.get('past') === '1'
 
   // Basic search filter
   const tokens = q.split(/\s+/).filter(Boolean)
   const where: any = {
     club: { published: true },
-    // Only list upcoming and ongoing sessions on homepage
-    startsAt: { gte: new Date(Date.now() - 1000 * 60 * 60 * 4) }, // include recent ones within 4h
+  }
+  if (!includePast) {
+    // Only list upcoming and ongoing sessions on homepage unless past view enabled
+    where.startsAt = { gte: new Date(Date.now() - 1000 * 60 * 60 * 4) } // include recent ones within 4h
   }
   if (tokens.length > 0) {
     where.AND = tokens.map((tok) => ({

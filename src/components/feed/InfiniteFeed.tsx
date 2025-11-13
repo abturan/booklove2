@@ -14,6 +14,7 @@ type Post = {
   owner: { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
   images: { url: string; width?: number | null; height?: number | null }[]
   _count: { likes: number; comments: number }
+  counts?: { likes: number; comments: number }
   status?: Status
 }
 
@@ -55,8 +56,15 @@ export default function InfiniteFeed({ scope = 'friends', status = 'PUBLISHED' }
 
       const j = await res.json().catch(() => ({}))
       const rows: Post[] = Array.isArray(j.items) ? j.items : []
+      const normalized = rows.map((p: any) => ({
+        ...p,
+        counts: {
+          likes: Number((p._count?.likes ?? p.counts?.likes) || 0),
+          comments: Number((p._count?.comments ?? p.counts?.comments) || 0),
+        },
+      }))
 
-      const filtered = rows.filter((p) => !seenIdsRef.current.has(p.id))
+      const filtered = normalized.filter((p) => !seenIdsRef.current.has(p.id))
       filtered.forEach((p) => seenIdsRef.current.add(p.id))
       if (filtered.length) setItems((prev) => [...prev, ...filtered])
 
