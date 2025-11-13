@@ -3,10 +3,10 @@
 
 import { Suspense, useMemo, useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import clsx from 'clsx'
 import HeroSlider from '@/components/HeroSlider'
 import SearchFilters from '@/components/SearchFilters'
 import InfiniteClubs from '@/components/InfiniteClubs'
-import Tabs from '@/components/ui/Tabs'
 // import PaginatedClubs from '@/components/PaginatedClubs'
 import GlobalFeed from '@/components/feed/GlobalFeed'
 import BookBuddyTab from '@/components/home/BookBuddyTab'
@@ -110,39 +110,86 @@ function HomeBody() {
 
   const effectiveScrollRoot = isDesktop ? feedScrollRoot : null
 
+  const mobileSections: Array<{ value: 'bookie' | 'clubs' | 'buddy'; label: string; helper: string }> = [
+    { value: 'bookie', label: 'Akış', helper: 'Gönderiler' },
+    { value: 'clubs', label: 'Kulüpler', helper: 'Keşfet' },
+    { value: 'buddy', label: 'Buddy', helper: 'Eşleş' },
+  ]
+
   return (
     <div className="space-y-6">
       {SHOW_HERO && <HeroSlider />}
       <HomeCalendar />
 
-      <div className="md:hidden space-y-4">
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setTab(v as 'clubs' | 'bookie' | 'buddy')}
-          tabs={[
-            { value: 'bookie', label: 'Bookie!' },
-            { value: 'clubs', label: 'Kulüpler' },
-            { value: 'buddy', label: 'Book Buddy' },
-          ]}
-        />
-        <div aria-hidden={activeTab !== 'bookie'} className={activeTab === 'bookie' ? 'block' : 'hidden'}>
-          {activeTab === 'bookie' && <div ref={setMobileIntroHost} className="mb-4" />}
-          <GlobalFeed
-            hideTopBar={false}
-            active={activeTab === 'bookie'}
-            focusPostId={focusId}
-            introPortal={activeTab === 'bookie' ? mobileIntroHost : null}
-          />
-        </div>
-        <div aria-hidden={activeTab !== 'clubs'} className={activeTab === 'clubs' ? 'block' : 'hidden'}>
-          <Suspense fallback={null}>
-            <SearchFilters />
-          </Suspense>
-          <InfiniteClubs initialQuery={initialQuery} pageSize={6} />
-        </div>
-        <div aria-hidden={activeTab !== 'buddy'} className={activeTab === 'buddy' ? 'block' : 'hidden'}>
-          <BookBuddyTab active={activeTab === 'buddy'} />
-        </div>
+      <div className="md:hidden space-y-5">
+        <section className="rounded-3xl bg-gradient-to-r from-[#fa3d30] via-[#ff5b4a] to-[#ff9660] p-5 text-white shadow-xl ring-1 ring-white/40">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-white/70">Topluluk</p>
+              <h1 className="text-3xl font-black tracking-tight">book.love</h1>
+              <p className="text-sm text-white/85">Gönderileri, kulüpleri ve arkadaşlarını tek akışta takip et.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTab('bookie')}
+              className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm"
+            >
+              Akışa dön
+            </button>
+          </div>
+          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Mobil sekmeler">
+            {mobileSections.map((tab) => {
+              const selected = activeTab === tab.value
+              return (
+                <button
+                  key={tab.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setTab(tab.value)}
+                  className={clsx(
+                    'flex min-w-[110px] flex-col rounded-2xl border px-4 py-2 text-left text-sm font-semibold transition',
+                    selected
+                      ? 'border-white bg-white text-[#fa3d30]'
+                      : 'border-white/25 bg-white/10 text-white/90'
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  <span className="text-xs font-normal text-white/70">{tab.helper}</span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        {activeTab === 'bookie' && (
+          <section className="rounded-3xl border border-white/70 bg-white/95 p-3 shadow-soft">
+            <div ref={setMobileIntroHost} className="mb-3" />
+            <GlobalFeed
+              hideTopBar={false}
+              active
+              focusPostId={focusId}
+              introPortal={mobileIntroHost}
+            />
+          </section>
+        )}
+
+        {activeTab === 'clubs' && (
+          <section className="space-y-4 rounded-3xl border border-white/70 bg-white/95 p-4 shadow-soft">
+            <div className="rounded-2xl bg-gray-50 p-3">
+              <Suspense fallback={<div className="h-12 w-full animate-pulse rounded-xl bg-gray-200" />}>
+                <SearchFilters />
+              </Suspense>
+            </div>
+            <InfiniteClubs initialQuery={initialQuery} pageSize={6} />
+          </section>
+        )}
+
+        {activeTab === 'buddy' && (
+          <section className="rounded-3xl border border-white/70 bg-white/95 p-4 shadow-soft">
+            <BookBuddyTab active />
+          </section>
+        )}
       </div>
 
       <div className="hidden md:block space-y-4">

@@ -47,8 +47,11 @@ body.meet-fullscreen {
 
 .header-buttons-container{ min-width: 180px; }
 
-.logo-header { @apply h-8 sm:h-9 lg:h-9 w-auto select-none; }
-@media (max-width: 640px) { .logo-header { margin-top: 8px; } }
+.logo-header {
+  @apply w-auto select-none;
+  height: 51px;
+  margin-top: 6px;
+}
 
 .logo-hero { @apply w-[112px] sm:w-[128px] h-auto select-none; }
 .hero-fixed { @apply h-[160px] sm:h-[240px] lg:h-[260px]; }

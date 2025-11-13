@@ -29,7 +29,7 @@ export default function HeaderLogo({ compact = false, size, className }: Props =
   return (
     <Link href="/" className="font-semibold" aria-label="book.love">
       <img
-        src="/logos/logo-n-w-v3.png"
+        src="/logos/logo-n-w.png"
         alt="book.love"
         width={computedSize}
         height={computedSize * 0.32}
