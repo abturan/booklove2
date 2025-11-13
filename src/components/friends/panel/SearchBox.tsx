@@ -179,8 +179,15 @@ export default function SearchBox({
       />
       {open && box && createPortal(
         <div
-          className="z-50 rounded-xl border border-black/10 bg-white text-gray-900 shadow-lg"
-          style={{ position: 'fixed', top: box.top, left: box.left, width: box.width, maxHeight: '60vh', overflowY: 'auto' }}
+          className="z-50 rounded-2xl border border-black/10 bg-white text-gray-900 shadow-xl"
+          style={{
+            position: 'fixed',
+            top: box.top,
+            left: Math.max(box.left - (Math.max(box.width, 360) - box.width), 16),
+            width: Math.max(box.width, 360),
+            maxHeight: '60vh',
+            overflowY: 'auto'
+          }}
           onMouseDown={(e) => e.preventDefault()}
         >
           {loading && <div className="px-4 py-3 text-sm text-gray-500">Yükleniyor…</div>}

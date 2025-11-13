@@ -172,7 +172,7 @@ export default function SearchFilters({ variant = 'default', className }: Props)
 
   const wrapperClass = clsx(
     'relative',
-    compact ? 'w-full' : 'z-40 mb-4 md:mb-6',
+    compact ? 'w-full z-40' : 'z-40 mb-4 md:mb-6',
     className
   )
 

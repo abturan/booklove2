@@ -106,7 +106,7 @@ export default function UserMenu() {
 
       {menu && (
         <div
-          className="absolute right-0 mt-2 w-56 rounded-xl border bg-white shadow-lg overflow-hidden"
+          className="absolute right-0 mt-2 w-56 rounded-xl border bg-white text-gray-900 shadow-lg overflow-hidden z-[60]"
           onMouseLeave={() => setMenu(false)}
         >
           <Link

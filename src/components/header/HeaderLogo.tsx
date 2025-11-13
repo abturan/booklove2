@@ -20,18 +20,19 @@ export default function HeaderLogo({ compact = false, size, className }: Props =
   const computedSize = size ?? (compact ? 80 : 140)
 
   const baseClass = clsx(
-    'transition-all duration-200',
-    compact ? 'h-auto w-auto' : 'rounded-md logo-main-page1 mt-[36px] lg:mt-[60px] w-[50%]',
-    className
+    'transition-all duration-200 select-none',
+    compact ? 'logo-header object-contain' : 'rounded-md logo-main-page1 mt-[36px] lg:mt-[60px] w-[50%]',
+    className,
+    { 'opacity-0 pointer-events-none': !visible && compact }
   )
 
   return (
     <Link href="/" className="font-semibold" aria-label="book.love">
       <img
-        src="/logo-fixed.svg"
+        src="/logos/logo-n-w-v3.png"
         alt="book.love"
         width={computedSize}
-        height={computedSize * 0.25}
+        height={computedSize * 0.32}
         className={baseClass}
         style={{
           opacity: visible ? 1 : 0,
