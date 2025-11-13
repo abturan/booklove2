@@ -33,7 +33,7 @@ export async function GET(_req: Request, { params }: { params: { postId: string 
           },
         },
       },
-      _count: { select: { likes: true, comments: true } },
+      _count: { select: { likes: true, comments: true, reposts: true } },
     },
   })
   if (!post) return NextResponse.json({ error: 'Bulunamadı' }, { status: 404 })
@@ -44,7 +44,7 @@ export async function GET(_req: Request, { params }: { params: { postId: string 
     status: post.status,
     owner: post.owner,
     images: post.images,
-    counts: { likes: post._count.likes, comments: post._count.comments },
+    counts: { likes: post._count.likes, comments: post._count.comments, rebooks: post._count.reposts },
     repostOf: post.repostOf || null,
   })
 }

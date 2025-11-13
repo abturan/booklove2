@@ -13,8 +13,8 @@ type Post = {
   createdAt: string
   owner: { id: string; name: string | null; username: string | null; slug: string | null; avatarUrl: string | null }
   images: { url: string; width?: number | null; height?: number | null }[]
-  _count: { likes: number; comments: number }
-  counts?: { likes: number; comments: number }
+  _count: { likes: number; comments: number; reposts?: number }
+  counts?: { likes: number; comments: number; rebooks?: number }
   status?: Status
 }
 
@@ -61,6 +61,7 @@ export default function InfiniteFeed({ scope = 'friends', status = 'PUBLISHED' }
         counts: {
           likes: Number((p._count?.likes ?? p.counts?.likes) || 0),
           comments: Number((p._count?.comments ?? p.counts?.comments) || 0),
+          rebooks: Number((p._count?.reposts ?? p.counts?.rebooks) || 0),
         },
       }))
 

@@ -6,7 +6,7 @@ export type Post = {
   status?: 'PUBLISHED' | 'PENDING' | 'HIDDEN'
   owner: { id: string; name: string; username: string | null; slug: string | null; avatarUrl: string | null }
   images: { url: string; width: number | null; height: number | null }[]
-  counts?: { likes?: number; comments?: number }
+  counts?: { likes?: number; comments?: number; rebooks?: number }
   repostOf?: {
     id: string
     body: string

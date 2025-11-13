@@ -19,6 +19,7 @@ import BareModal from '@/components/ui/BareModal'
 import Modal from '@/components/ui/modal'
 import PostComposer from '@/components/feed/PostComposer'
 import LikeListModal from './LikeListModal'
+import RebookListModal from './RebookListModal'
 
 const REPORT_OPTIONS = ['Spam','Nefret söylemi','Taciz','Müstehcen içerik','Dolandırıcılık','Diğer']
 
@@ -42,6 +43,7 @@ export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { pos
   const [likersOpen, setLikersOpen] = useState(false)
   const [rebookOpen, setRebookOpen] = useState(false)
   const [reportedBanner, setReportedBanner] = useState(false)
+  const [rebookListOpen, setRebookListOpen] = useState(false)
 
   useEffect(() => {
     if ((post.counts as any)?.comments > 0 && !c.open) {
@@ -98,6 +100,7 @@ export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { pos
     null
 
   const commentCountForBadge = c.open ? c.items.length : Number((post.counts as any)?.comments || 0)
+  const rebookCount = Number((post.counts as any)?.rebooks ?? (post as any)?._count?.reposts ?? 0)
 
   return (
     <div className="card p-3" data-post-id={post.id} id={`post-${post.id}`}>
@@ -147,10 +150,12 @@ export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { pos
             liked={like.liked}
             likeCount={like.count}
             commentCount={commentCountForBadge}
+            rebookCount={rebookCount}
             onToggleLike={like.toggle}
             onShowLikers={() => setLikersOpen(true)}
             onToggleComments={() => { c.setOpen(!c.open); if (!c.open) c.load() }}
             onRebook={() => setRebookOpen(true)}
+            onShowRebooks={() => setRebookListOpen(true)}
             onEdit={() => { ed.setEditText(post.body); ed.setEditImages(post.images || []); ed.setEditing(true) }}
             onDelete={() => setDeleteOpen(true)}
             onReport={() => setReportOpen(true)}
@@ -209,6 +214,10 @@ export default function PostCard({ post, onUpdated, onDeleted, onPosted }: { pos
             </button>
           </div>
         </div>
+      </BareModal>
+
+      <BareModal open={rebookListOpen} onClose={() => setRebookListOpen(false)} title="Rebookie dökümü">
+        <RebookListModal postId={post.id} />
       </BareModal>
 
       <BareModal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Gönderiyi sil">

@@ -75,21 +75,6 @@ export default function PostComments({
                       )}
                     </div>
                     {!inEdit && <CommentBody text={c.body || ''} />}
-                    {!inEdit && (
-                      <div className="mt-1 flex items-center justify-end text-xs text-gray-500">
-                        <button
-                          type="button"
-                          onClick={() => canInteract && onToggleLike(c.id)}
-                          disabled={!canInteract || likingId === c.id}
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
-                            liked ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-transparent text-gray-600 hover:bg-white'
-                          } ${(!canInteract || likingId === c.id) ? 'opacity-60 cursor-not-allowed' : ''}`}
-                        >
-                          <Heart className={`h-3.5 w-3.5 ${liked ? 'fill-current' : 'fill-none'}`} />
-                          <span>{likeCount}</span>
-                        </button>
-                      </div>
-                    )}
                     {inEdit && (
                       <div className="mt-1 flex items-center gap-2">
                         <textarea value={editText} onChange={(e)=>setEditText(e.target.value)} rows={2} className="flex-1 rounded-xl border px-3 py-2 text-sm" />
@@ -98,6 +83,21 @@ export default function PostComments({
                       </div>
                     )}
                   </div>
+                  {!inEdit && (
+                    <div className="ml-auto flex shrink-0 items-start">
+                      <button
+                        type="button"
+                        onClick={() => canInteract && onToggleLike(c.id)}
+                        disabled={!canInteract || likingId === c.id}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
+                          liked ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-transparent text-gray-600 hover:bg-white'
+                        } ${(!canInteract || likingId === c.id) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      >
+                        <Heart className={`h-3.5 w-3.5 ${liked ? 'fill-current' : 'fill-none'}`} />
+                        <span>{likeCount}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )

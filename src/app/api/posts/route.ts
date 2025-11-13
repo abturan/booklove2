@@ -88,7 +88,7 @@ export async function GET(req: Request) {
           status: true,
           owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
           images: { select: { url: true, width: true, height: true} },
-          _count: { select: { likes: true, comments: true, reports: true } },
+          _count: { select: { likes: true, comments: true, reports: true, reposts: true } },
           reports: {
             select: { createdAt: true },
             orderBy: { createdAt: 'desc' },
@@ -149,7 +149,7 @@ export async function GET(req: Request) {
           },
         },
       },
-      _count: { select: { likes: true, comments: true, reports: true } },
+      _count: { select: { likes: true, comments: true, reports: true, reposts: true } },
     }
     const selectLegacy = {
       id: true,
@@ -158,7 +158,7 @@ export async function GET(req: Request) {
       status: true,
       owner: { select: { id: true, name: true, username: true, slug: true, avatarUrl: true } },
       images: { select: { url: true, width: true, height: true } },
-      _count: { select: { likes: true, comments: true, reports: true } },
+      _count: { select: { likes: true, comments: true, reports: true, reposts: true } },
     }
     let posts: any[]
     let withRel = true

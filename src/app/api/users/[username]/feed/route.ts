@@ -45,7 +45,7 @@ export async function GET(req: Request, { params }: { params: { username: string
       owner: { select: { id: true, name: true, username: true, avatarUrl: true } },
       images: { select: { url: true, width: true, height: true } },
       repostOf: { select: repostSelect },
-      _count: { select: { likes: true, comments: true } },
+      _count: { select: { likes: true, comments: true, reposts: true } },
     },
   })
 

@@ -7,10 +7,12 @@ export default function PostActions({
   liked,
   likeCount,
   commentCount = 0,
+  rebookCount = 0,
   onToggleLike,
   onShowLikers,
   onToggleComments,
   onRebook,
+  onShowRebooks,
   onEdit,
   onDelete,
   onReport,
@@ -20,10 +22,12 @@ export default function PostActions({
   liked: boolean
   likeCount: number
   commentCount?: number
+  rebookCount?: number
   onToggleLike: () => void
   onShowLikers: () => void
   onToggleComments: () => void
   onRebook: () => void
+  onShowRebooks: () => void
   onEdit: () => void
   onDelete: () => void
   onReport: () => void
@@ -32,6 +36,8 @@ export default function PostActions({
 }) {
   const begeniYazi = likeCount === 1 ? '1 beğeni' : `${likeCount} beğeni`
   const yorumYazi = commentCount === 1 ? '1 yorum' : `${commentCount} yorum`
+  const rebookYazi = `${rebookCount} Reebokie`
+  const canShowRebooks = rebookCount > 0
   const [menuOpen, setMenuOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -79,8 +85,8 @@ export default function PostActions({
   }, [menuOpen])
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-      <div className="inline-flex items-center gap-2">
+    <div className="mt-3 flex items-center gap-3 text-[12px] text-gray-700 md:gap-4">
+      <div className="inline-flex items-center gap-1.5">
         <button
           type="button"
           onClick={canInteract ? onToggleLike : undefined}
@@ -96,7 +102,7 @@ export default function PostActions({
         <button
           type="button"
           onClick={onShowLikers}
-          className="min-w-[1.5ch] hover:underline"
+          className="min-w-[1.5ch] text-[11px] hover:underline"
           aria-label="Beğenenleri göster"
           title="Beğenenleri göster"
         >
@@ -104,7 +110,7 @@ export default function PostActions({
         </button>
       </div>
 
-      <div className="inline-flex items-center gap-2">
+      <div className="inline-flex items-center gap-1.5">
         <button
           type="button"
           onClick={onToggleComments}
@@ -119,7 +125,7 @@ export default function PostActions({
         <button
           type="button"
           onClick={onToggleComments}
-          className="min-w-[1.5ch] hover:underline"
+          className="min-w-[1.5ch] text-[11px] hover:underline"
           aria-label="Yorumları aç/kapat"
           title="Yorumlar"
         >
@@ -127,7 +133,7 @@ export default function PostActions({
         </button>
       </div>
 
-      <div className="inline-flex items-center gap-2">
+      <div className="inline-flex items-center gap-1.5">
         <button
           type="button"
           onClick={canInteract ? onRebook : undefined}
@@ -141,9 +147,21 @@ export default function PostActions({
             <path d="M17 17H7l3 3m-3-3l3-3" />
           </svg>
         </button>
+        {canShowRebooks ? (
+          <button
+            type="button"
+            onClick={onShowRebooks}
+            className="min-w-[1.5ch] text-[11px] hover:underline"
+            aria-label="Rebookie listesini göster"
+          >
+            {rebookYazi}
+          </button>
+        ) : (
+          <span className="min-w-[1.5ch] text-[11px] text-gray-500">{rebookYazi}</span>
+        )}
       </div>
 
-      <div className="relative inline-flex items-center gap-2 ml-auto" ref={menuRef}>
+      <div className="relative ml-auto inline-flex items-center gap-2" ref={menuRef}>
         <button
           type="button"
           onClick={canInteract ? () => setMenuOpen(v => !v) : undefined}

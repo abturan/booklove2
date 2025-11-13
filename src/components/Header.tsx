@@ -8,10 +8,12 @@ import UserMenu from '@/components/header/UserMenu'
 import AuthButtons from '@/components/header/AuthButtons'
 import SearchFilters from '@/components/SearchFilters'
 import { useSession } from 'next-auth/react'
+import { usePathname } from 'next/navigation'
 
 export default function Header() {
   const { status } = useSession()
   const isGuest = status !== 'authenticated'
+  const pathname = usePathname()
   const [isHidden, setIsHidden] = useState(false)
   const lastScrollY = useRef(0)
   const rafRef = useRef<number | null>(null)
@@ -53,6 +55,7 @@ export default function Header() {
     'sticky top-0 z-50 border-b border-white/20 bg-gradient-to-r from-[#fa3d30] via-[#ff5b4a] to-[#ff9660] text-white backdrop-blur supports-backdrop-blur:bg-[#fa3d30]/90 shadow-lg transition-all duration-300 ease-out will-change-transform',
     isHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
   )
+  const showSearch = pathname === '/'
 
   return (
     <>
@@ -82,11 +85,15 @@ export default function Header() {
             <div aria-hidden className="hidden xl:block" style={{ width: 30 }} />
           </div>
 
-          <div className="relative hidden md:flex flex-1 min-w-0 justify-center z-50">
-            <Suspense fallback={<div className="h-9 w-full max-w-[460px]" />}>
-              <SearchFilters variant="compact" className="w-full" />
-            </Suspense>
-          </div>
+          {showSearch ? (
+            <div className="relative hidden md:flex flex-1 min-w-0 justify-center z-50">
+              <Suspense fallback={<div className="h-9 w-full max-w-[460px]" />}>
+                <SearchFilters variant="compact" className="w-full" />
+              </Suspense>
+            </div>
+          ) : (
+            <div className="hidden md:block flex-1" />
+          )}
 
           <div className="relative hidden md:flex flex-none items-center gap-3 z-50">
             <div className="hidden md:block">{isGuest ? <AuthButtons /> : <UserMenu />}</div>

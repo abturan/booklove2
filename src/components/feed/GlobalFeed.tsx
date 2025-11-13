@@ -336,7 +336,11 @@ function normalizePost(p: any): Post {
           height: typeof i.height === 'number' ? i.height : null,
         }))
       : [],
-    counts: { likes: Number(p._count?.likes || 0), comments: Number(p._count?.comments || 0) },
+    counts: {
+      likes: Number(p._count?.likes || 0),
+      comments: Number(p._count?.comments || 0),
+      rebooks: Number((p._count as any)?.reposts ?? 0),
+    },
     repostOf: p.repostOf
       ? {
           id: String(p.repostOf.id),
